@@ -1,0 +1,23 @@
+{
+  mzwing.profiles.darwin-laptop = [
+    "core/nix"
+    "network/china-mirrors"
+    "users/mzwing"
+    "darwin/system"
+    "darwin/packages"
+    "darwin/homebrew"
+    "darwin/homebrew/mas"
+    "darwin/homebrew/taps"
+    "darwin/homebrew/brews"
+    "darwin/homebrew/casks"
+    "ui/fonts"
+    "home/base"
+    "software/shell"
+    "software/fish"
+    "software/git"
+    "software/cli"
+    "software/neovim"
+    "software/ghostty"
+    "software/java"
+  ];
+}

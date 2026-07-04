@@ -1,0 +1,38 @@
+{
+  mzwing.features."network/china-mirrors" = {
+    meta.platforms = [
+      "darwin"
+      "nixos"
+    ];
+
+    darwin = {lib, ...}: let
+      homebrewMirrorEnv = {
+        HOMEBREW_API_DOMAIN = "https://mirrors.cernet.edu.cn/homebrew-bottles/api";
+        HOMEBREW_BOTTLE_DOMAIN = "https://mirrors.cernet.edu.cn/homebrew-bottles";
+        HOMEBREW_BREW_GIT_REMOTE = "https://mirror.nju.edu.cn/git/homebrew/brew.git";
+        HOMEBREW_CORE_GIT_REMOTE = "https://mirror.nju.edu.cn/git/homebrew/homebrew-core.git";
+        HOMEBREW_PIP_INDEX_URL = "https://mirrors.aliyun.com/pypi/simple/";
+      };
+    in {
+      mzwing.nix.enableMirrorSubstituter = true;
+      environment.variables = homebrewMirrorEnv;
+
+      system.activationScripts.homebrew.text = let
+        envScript =
+          lib.attrsets.foldlAttrs (
+            acc: name: value:
+              acc + "\nexport ${name}=${value}"
+          ) ""
+          homebrewMirrorEnv;
+      in
+        lib.mkBefore ''
+          echo >&2 '${envScript}'
+          ${envScript}
+        '';
+    };
+
+    nixos = {
+      mzwing.nix.enableMirrorSubstituter = true;
+    };
+  };
+}

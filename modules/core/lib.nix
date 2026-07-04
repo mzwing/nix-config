@@ -1,0 +1,99 @@
+{
+  config,
+  inputs,
+  lib,
+  self,
+  ...
+}: let
+  inherit (lib) attrValues concatMap filter mapAttrs optional;
+
+  availableFeatures = builtins.attrNames config.mzwing.features;
+  availableProfiles = builtins.attrNames config.mzwing.profiles;
+
+  missingMessage = kind: name: available: "Unknown ${kind} '${name}'. Available ${kind}s: ${lib.concatStringsSep ", " available}";
+
+  profileFeatures = profile:
+    config.mzwing.profiles.${profile} or (throw (missingMessage "profile" profile availableProfiles));
+
+  featureByName = feature:
+    config.mzwing.features.${feature} or (throw (missingMessage "feature" feature availableFeatures));
+
+  selectFeatures = host: let
+    featureNames = (concatMap profileFeatures host.profiles) ++ host.features;
+  in
+    map featureByName featureNames;
+
+  modulesFor = kind: features:
+    map (feature: feature.${kind}) (filter (feature: feature.${kind} != null) features);
+
+  moduleAttrsFor = kind:
+    builtins.listToAttrs (
+      map
+      (feature: {
+        name = feature.name;
+        value = feature.${kind};
+      })
+      (filter (feature: feature.${kind} != null) (attrValues config.mzwing.features))
+    );
+
+  specialArgsFor = host: {
+    inherit inputs self;
+    flake = self;
+    inherit
+      (host)
+      hostname
+      system
+      username
+      useremail
+      ;
+  };
+
+  homeManagerModule = hmInput: host: homeModules: {
+    home-manager = {
+      useGlobalPkgs = true;
+      useUserPackages = true;
+      extraSpecialArgs = specialArgsFor host;
+      users.${host.username}.imports = homeModules;
+      backupFileExtension = ".bak";
+    };
+  };
+
+  mkDarwinHost = host: let
+    features = selectFeatures host;
+    darwinModules = modulesFor "darwin" features;
+    homeModules = modulesFor "home" features;
+  in
+    inputs.darwin.lib.darwinSystem {
+      inherit (host) system;
+      specialArgs = specialArgsFor host;
+      modules =
+        darwinModules
+        ++ optional (homeModules != []) inputs.home-manager-darwin.darwinModules.home-manager
+        ++ optional (homeModules != []) (homeManagerModule inputs.home-manager-darwin host homeModules);
+    };
+
+  mkNixosHost = host: let
+    features = selectFeatures host;
+    nixosModules = modulesFor "nixos" features;
+    homeModules = modulesFor "home" features;
+  in
+    inputs.nixpkgs.lib.nixosSystem {
+      inherit (host) system;
+      specialArgs = specialArgsFor host;
+      modules =
+        nixosModules
+        ++ optional (host.hardware != null) host.hardware
+        ++ optional (homeModules != []) inputs.home-manager-nixos.nixosModules.home-manager
+        ++ optional (homeModules != []) (homeManagerModule inputs.home-manager-nixos host homeModules);
+    };
+in {
+  config.mzwing.lib = {
+    inherit
+      selectFeatures
+      modulesFor
+      moduleAttrsFor
+      mkDarwinHost
+      mkNixosHost
+      ;
+  };
+}
