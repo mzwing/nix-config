@@ -1,48 +1,19 @@
-# mzwing nix-config
+# nix config
 
-Import-free, dendritic Nix configuration for macOS and NixOS.
+My nix config for macOS and NixOS.
 
-## Shape
+The NixOS part is under construction.
 
-`flake.nix` only wires `flake-parts` and `import-tree`. Every real `.nix` file
-under `modules/` is imported as a top-level module, so new behavior is added by
-placing a feature, profile, or host declaration in the right directory.
+Reference welcome, but my config is not intended to be used as a template for your own config. It is highly opinionated and tailored to my personal preferences and workflow.
 
-```text
-modules/
-  core/       schema, helpers, flake outputs
-  features/   feature records with optional darwin/nixos/home fragments
-  profiles/   reusable feature lists
-  hosts/      host declarations
-```
+## Credits
 
-## Outputs
+- [Misaka13514/flake](https://github.com/Misaka13514/flake)
+- [AsterisMono/nixcn-conf-2605-flakesharing](https://github.com/AsterisMono/nixcn-conf-2605-flakesharing)
+- [ryan4yin/nix-darwin-kickstarter](https://github.com/ryan4yin/nix-darwin-kickstarter)
 
-- `darwinConfigurations.mzwing-MacBook-Pro`
-- `nixosConfigurations.mzwing-do-sgp`
-- `darwinModules`, `nixosModules`, `homeModules`
-- `devShells`, `formatter`
+Super thx [Misaka13514](https://github.com/Misaka13514) for patient guidance and great help with my config!!!!!
 
-## Commands
+## License
 
-```bash
-just show
-just flake-check
-just darwin-hosts
-just darwin
-just nixos-hosts
-just nixos-build mzwing-do-sgp
-just fmt
-```
-
-## Adding Config
-
-Add a feature under `modules/features/<area>/<name>.nix` and register it as
-`mzwing.features."<area>/<name>"`. A feature can provide any combination of:
-
-- `darwin`
-- `nixos`
-- `home`
-
-Then add the feature id to a profile in `modules/profiles/` or directly to a
-host in `modules/hosts/`.
+MIT License.
