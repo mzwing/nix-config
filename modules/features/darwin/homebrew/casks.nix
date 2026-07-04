@@ -59,6 +59,7 @@
         "sfm@alpha"
         "thunder"
         "karabiner-elements"
+        "crossover"
       ];
     };
   };
