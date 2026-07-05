@@ -1,4 +1,9 @@
 {pkgs, ...}: {
+  languages.nix = {
+    enable = true;
+    lsp.enable = true;
+  };
+
   packages = with pkgs; [
     alejandra
     just
