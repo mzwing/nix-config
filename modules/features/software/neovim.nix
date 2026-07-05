@@ -5,20 +5,18 @@
       "nixos"
     ];
 
-    darwin = {pkgs, ...}: {
-      environment.systemPackages = [pkgs.neovim];
-      environment.variables.EDITOR = "nvim";
-    };
-
-    home = {
-      home.sessionVariables.EDITOR = "nvim";
-
+    # TODO: Configure neovim completely.
+    home = {pkgs, ...}: {
       programs.neovim = {
         enable = true;
         defaultEditor = true;
         viAlias = true;
         vimAlias = true;
         vimdiffAlias = true;
+        extraPackages = with pkgs; [
+          ast-grep
+          luarocks
+        ];
       };
     };
   };

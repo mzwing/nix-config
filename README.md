@@ -6,6 +6,22 @@ The NixOS part is under construction.
 
 Reference welcome, but my config is not intended to be used as a template for your own config. It is highly opinionated and tailored to my personal preferences and workflow.
 
+## Structure
+
+- `environments/` - contains examples of [devenv](https://devenv.sh) config for different languages and tools
+- `modules/` - contains nix modules for system configuration, including nix-darwin and NixOS
+
+## Usage
+
+```shell
+devenv shell # to quick start a shell with all required tools, default shell is bash
+# If you want customized shell, use this:
+devenv shell --shell {bash, zsh, fish, nu}
+
+just # list all available shortcut commands
+just darwin # to build and apply nix-darwin config
+```
+
 ## Credits
 
 - [Misaka13514/flake](https://github.com/Misaka13514/flake)

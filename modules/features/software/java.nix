@@ -5,16 +5,10 @@
       "nixos"
     ];
 
-    darwin = {pkgs, ...}: {
-      environment.systemPackages = with pkgs; [
-        graalvmPackages.graalvm-ce
-      ];
-    };
-
     home = {pkgs, ...}: {
       programs.java = {
         enable = true;
-        package = pkgs.openjdk17;
+        package = pkgs.graalvmPackages.graalvm-ce;
       };
     };
   };

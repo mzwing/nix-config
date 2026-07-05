@@ -27,16 +27,8 @@
           set -- .
         fi
 
-        exec alejandra "$@"
+        exec alejandra --exclude .devbox "$@"
       '';
-    };
-
-    devShells.default = pkgs.mkShell {
-      packages = with pkgs; [
-        alejandra
-        just
-        nixd
-      ];
     };
   };
 }

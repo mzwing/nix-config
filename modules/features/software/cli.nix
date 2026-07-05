@@ -1,9 +1,42 @@
-{
+let
+  systemCliPackages = pkgs:
+    with pkgs; [
+      any-nix-shell
+      devenv
+      devbox
+      fastfetch
+      nano
+      p7zip
+      procps
+      procs
+      rclone
+      ripgrep
+      starship
+      tmux
+      tokei
+    ];
+
+  systemCliModule = {pkgs, ...}: {
+    environment.systemPackages = systemCliPackages pkgs;
+  };
+in {
   mzwing.features."software/cli" = {
     meta.platforms = [
       "darwin"
       "nixos"
     ];
+
+    darwin = {pkgs, ...}: {
+      environment.systemPackages =
+        systemCliPackages pkgs
+        ++ (with pkgs; [
+          bash
+          iproute2mac
+          mas
+        ]);
+    };
+
+    nixos = systemCliModule;
 
     home = {pkgs, ...}: {
       programs = {
@@ -70,17 +103,11 @@
           enableFishIntegration = true;
         };
 
-        gpg.enable = true;
-      };
-
-      services.gpg-agent = {
-        enable = true;
-        pinentry.package =
-          if pkgs.stdenv.isDarwin
-          then pkgs.pinentry_mac
-          else pkgs.pinentry-curses;
-        enableFishIntegration = true;
-        enableSshSupport = true;
+        direnv = {
+          enable = true;
+          enableFishIntegration = true;
+          nix-direnv.enable = true;
+        };
       };
     };
   };

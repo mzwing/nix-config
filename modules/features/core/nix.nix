@@ -1,13 +1,16 @@
 let
-  mirrorSubstituters = [
-    "https://mirror.sjtu.edu.cn/nix-channels/store"
-    "https://mirrors.ustc.edu.cn/nix-channels/store"
-  ];
   defaultSubstituters = [
     "https://cache.nixos.org"
     "https://nix-community.cachix.org"
   ];
   nixCommunityKey = "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=";
+  nixOptions = lib: {
+    extraSubstitutersBeforeDefault = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "Extra substituters placed before cache.nixos.org and nix-community caches.";
+    };
+  };
 in {
   mzwing.features."core/nix" = {
     meta.platforms = [
@@ -23,8 +26,7 @@ in {
       system,
       ...
     }: {
-      options.mzwing.nix.enableMirrorSubstituter =
-        lib.mkEnableOption "Enable China mirror substituters before cache.nixos.org";
+      options.mzwing.nix = nixOptions lib;
 
       config = {
         nix = {
@@ -37,10 +39,10 @@ in {
               "flakes"
             ];
             substituters = lib.mkForce (
-              lib.optionals config.mzwing.nix.enableMirrorSubstituter mirrorSubstituters
+              config.mzwing.nix.extraSubstitutersBeforeDefault
               ++ defaultSubstituters
             );
-            trusted-public-keys = lib.mkForce [nixCommunityKey];
+            extra-trusted-public-keys = [nixCommunityKey];
             builders-use-substitutes = true;
             auto-optimise-store = false;
           };
@@ -66,8 +68,7 @@ in {
       system,
       ...
     }: {
-      options.mzwing.nix.enableMirrorSubstituter =
-        lib.mkEnableOption "Enable China mirror substituters before cache.nixos.org";
+      options.mzwing.nix = nixOptions lib;
 
       config = {
         nix = {
@@ -78,10 +79,10 @@ in {
               "flakes"
             ];
             substituters = lib.mkForce (
-              lib.optionals config.mzwing.nix.enableMirrorSubstituter mirrorSubstituters
+              config.mzwing.nix.extraSubstitutersBeforeDefault
               ++ defaultSubstituters
             );
-            trusted-public-keys = lib.mkForce [nixCommunityKey];
+            extra-trusted-public-keys = [nixCommunityKey];
             builders-use-substitutes = true;
           };
 

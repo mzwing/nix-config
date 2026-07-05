@@ -1,4 +1,9 @@
-{
+let
+  nixMirrorSubstituters = [
+    "https://mirror.sjtu.edu.cn/nix-channels/store"
+    "https://mirrors.ustc.edu.cn/nix-channels/store"
+  ];
+in {
   mzwing.features."network/china-mirrors" = {
     meta.platforms = [
       "darwin"
@@ -14,7 +19,7 @@
         HOMEBREW_PIP_INDEX_URL = "https://mirrors.aliyun.com/pypi/simple/";
       };
     in {
-      mzwing.nix.enableMirrorSubstituter = true;
+      mzwing.nix.extraSubstitutersBeforeDefault = nixMirrorSubstituters;
       environment.variables = homebrewMirrorEnv;
 
       system.activationScripts.homebrew.text = let
@@ -32,7 +37,7 @@
     };
 
     nixos = {
-      mzwing.nix.enableMirrorSubstituter = true;
+      mzwing.nix.extraSubstitutersBeforeDefault = nixMirrorSubstituters;
     };
   };
 }

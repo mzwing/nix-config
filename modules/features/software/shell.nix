@@ -1,28 +1,22 @@
-{
+let
+  systemShellModule = {
+    pkgs,
+    username,
+    ...
+  }: {
+    programs.fish.enable = true;
+    environment.shells = [pkgs.fish];
+    users.users.${username}.shell = pkgs.fish;
+  };
+in {
   mzwing.features."software/shell" = {
     meta.platforms = [
       "darwin"
       "nixos"
     ];
 
-    darwin = {
-      pkgs,
-      username,
-      ...
-    }: {
-      programs.fish.enable = true;
-      environment.shells = [pkgs.fish];
-      users.users.${username}.shell = pkgs.fish;
-    };
-
-    nixos = {
-      pkgs,
-      username,
-      ...
-    }: {
-      programs.fish.enable = true;
-      users.users.${username}.shell = pkgs.fish;
-    };
+    darwin = systemShellModule;
+    nixos = systemShellModule;
 
     home = {pkgs, ...}: {
       home.packages = [pkgs.any-nix-shell];
