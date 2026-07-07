@@ -15,18 +15,19 @@ in {
         systemAiPackages pkgs;
       homebrew = {
         brews = [
-        "hfd"
-        "llama.cpp"
-        {
-          name = "manboster@rc";
-          link = true;
-        }
-        "stable-diffusion.cpp"
-      ];
-      casks = [
-        "chatgpt"
-        "kelivo"
-      ];};
+          "hfd"
+          "llama.cpp"
+          {
+            name = "manboster@rc";
+            link = true;
+          }
+          "stable-diffusion.cpp"
+        ];
+        casks = [
+          "chatgpt"
+          "kelivo"
+        ];
+      };
     };
 
     # TODO: sync hfd & manboster, add custom llama.cpp build

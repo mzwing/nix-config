@@ -1,7 +1,10 @@
 {pkgs, ...}: {
   languages.c.enable = true;
 
-  env.CMAKE_GENERATOR = "Ninja";
+  env = {
+    CMAKE_GENERATOR = "Ninja";
+    VCPKG_ROOT = "$HOME/vcpkg";
+  };
 
   packages = with pkgs; [
     ccache

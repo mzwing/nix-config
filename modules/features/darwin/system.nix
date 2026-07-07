@@ -91,9 +91,6 @@
         ANDROID_HOME = "/opt/homebrew/share/android-commandlinetools";
         ANDROID_SDK_ROOT = "/opt/homebrew/share/android-commandlinetools";
       };
-
-      documentation.doc.enable = false; # TODO: temp fix
-      system.tools.darwin-uninstaller.enable = false; # TODO: temp fix
     };
   };
 }
