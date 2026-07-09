@@ -30,6 +30,8 @@
         extraGroups = [
           "wheel"
           "networkmanager"
+          "adbusers"
+          "kvm"
         ];
       };
 

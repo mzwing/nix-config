@@ -1,12 +1,14 @@
 {
   mzwing.features."software/communication" = {
-    meta.platforms = ["darwin"];
+    meta.platforms = [
+      "darwin"
+      "nixos"
+    ];
 
     darwin.homebrew = {
       casks = [
         "discord"
         "element"
-        "soduto"
       ];
       masApps = {
         "钉钉" = 1435447041;
@@ -17,6 +19,19 @@
         "QQ" = 451108668;
         "Telegram" = 747648890;
       };
+    };
+
+    nixos = {pkgs, ...}: {
+      environment.systemPackages = with pkgs; [
+        ayugram-desktop
+        discord
+        element-desktop
+        feishu
+        qq
+        wechat
+        wemeet
+        nur.repos.xddxdd.dingtalk
+      ];
     };
   };
 }

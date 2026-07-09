@@ -1,10 +1,17 @@
-let
+{
+  config,
+  lib,
+  ...
+}: let
   defaultSubstituters = [
     "https://cache.nixos.org"
     "https://nix-community.cachix.org"
   ];
   nixCommunityKey = "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=";
-  nixOptions = lib: {
+  nurAtticCaches = map (entry: entry.attic) (builtins.attrValues config.mzwing.registry.nur);
+  nurAtticSubstituters = map (cache: cache.url) nurAtticCaches;
+  nurAtticPublicKeys = map (cache: cache.publicKey) nurAtticCaches;
+  nixOptions = {
     extraSubstitutersBeforeDefault = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
@@ -26,7 +33,7 @@ in {
       system,
       ...
     }: {
-      options.mzwing.nix = nixOptions lib;
+      options.mzwing.nix = nixOptions;
 
       config = {
         nix = {
@@ -41,8 +48,9 @@ in {
             substituters = lib.mkForce (
               config.mzwing.nix.extraSubstitutersBeforeDefault
               ++ defaultSubstituters
+              ++ nurAtticSubstituters
             );
-            extra-trusted-public-keys = [nixCommunityKey];
+            extra-trusted-public-keys = lib.unique ([nixCommunityKey] ++ nurAtticPublicKeys);
             builders-use-substitutes = true;
             auto-optimise-store = false;
           };
@@ -55,7 +63,10 @@ in {
 
         nixpkgs = {
           hostPlatform = lib.mkDefault system;
-          config.allowUnfree = true;
+          config = {
+            allowUnfree = true;
+            android_sdk.accept_license = true;
+          };
           overlays = [inputs.nur.overlays.default];
         };
       };
@@ -68,7 +79,7 @@ in {
       system,
       ...
     }: {
-      options.mzwing.nix = nixOptions lib;
+      options.mzwing.nix = nixOptions;
 
       config = {
         nix = {
@@ -80,9 +91,10 @@ in {
             ];
             substituters = lib.mkForce (
               config.mzwing.nix.extraSubstitutersBeforeDefault
+              ++ nurAtticSubstituters
               ++ defaultSubstituters
             );
-            extra-trusted-public-keys = [nixCommunityKey];
+            extra-trusted-public-keys = lib.unique ([nixCommunityKey] ++ nurAtticPublicKeys);
             builders-use-substitutes = true;
           };
 

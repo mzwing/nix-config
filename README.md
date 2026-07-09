@@ -20,6 +20,7 @@ devenv shell --shell {bash, zsh, fish, nu}
 
 just # list all available shortcut commands
 just darwin # to build and apply nix-darwin config
+just typecheck # to type check the nix config
 ```
 
 ## Credits

@@ -86,11 +86,6 @@
           swapLeftCommandAndLeftAlt = false;
         };
       };
-
-      environment.variables = {
-        ANDROID_HOME = "/opt/homebrew/share/android-commandlinetools";
-        ANDROID_SDK_ROOT = "/opt/homebrew/share/android-commandlinetools";
-      };
     };
   };
 }

@@ -133,11 +133,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1783388784,
-        "narHash": "sha256-w+YU5vatysjLZIg1wOKSzo/RL9Z66eBQuIjVnBM/1Zg=",
+        "lastModified": 1783550008,
+        "narHash": "sha256-qbbZUk9IG9dLNwCPwdPBs6I5clxwugRpP+1YU+GPK20=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "63d02d1c19f1c2b47a5bc7e55c620b6af7b218a6",
+        "rev": "f4d01c1d87c7c2ec909549165d5a8338f1bd3315",
         "type": "github"
       },
       "original": {
@@ -154,16 +154,37 @@
         ]
       },
       "locked": {
-        "lastModified": 1783388784,
-        "narHash": "sha256-w+YU5vatysjLZIg1wOKSzo/RL9Z66eBQuIjVnBM/1Zg=",
+        "lastModified": 1783550008,
+        "narHash": "sha256-qbbZUk9IG9dLNwCPwdPBs6I5clxwugRpP+1YU+GPK20=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "63d02d1c19f1c2b47a5bc7e55c620b6af7b218a6",
+        "rev": "f4d01c1d87c7c2ec909549165d5a8338f1bd3315",
         "type": "github"
       },
       "original": {
         "owner": "nix-community",
         "ref": "master",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "home-manager_2": {
+      "inputs": {
+        "nixpkgs": [
+          "zen-browser",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1782839684,
+        "narHash": "sha256-vzs4SBgPsK4aNzlJR2PpFwtARazXMOxZonQnDz0YHxk=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "2a37d71bbe69e1522ddabf03a4cea0374958bdbe",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
         "repo": "home-manager",
         "type": "github"
       }
@@ -238,11 +259,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1783433764,
-        "narHash": "sha256-m1fpyfPbucDQrrjF+Pi9UGZUsP5mRPF01vZhVTD/vck=",
+        "lastModified": 1783581051,
+        "narHash": "sha256-23ouasHqej9n3qGGqnq682pEBfYcmCGHVPUnm6WDf8U=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "858fbdecc92a5b17b8045a0737f336df315a768e",
+        "rev": "21d8513f565042678d71826adffd25fa1ac9418b",
         "type": "github"
       },
       "original": {
@@ -261,7 +282,9 @@
         "import-tree": "import-tree",
         "nixpkgs": "nixpkgs",
         "nixpkgs-darwin": "nixpkgs-darwin",
-        "nur": "nur"
+        "nur": "nur",
+        "typenix": "typenix",
+        "zen-browser": "zen-browser"
       }
     },
     "systems": {
@@ -276,6 +299,64 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "tree-sitter-nix": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1764782150,
+        "narHash": "sha256-cSiBd0XkSR8l1CF2vkThWUtMxqATwuxCNO5oy2kyOZY=",
+        "owner": "nix-community",
+        "repo": "tree-sitter-nix",
+        "rev": "eabf96807ea4ab6d6c7f09b671a88cd483542840",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "tree-sitter-nix",
+        "type": "github"
+      }
+    },
+    "typenix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "tree-sitter-nix": "tree-sitter-nix"
+      },
+      "locked": {
+        "lastModified": 1773282070,
+        "narHash": "sha256-lLnCbe+m2R6ONA+EYLu8bC8slMjC28wnO0Qsuic89Ww=",
+        "owner": "ryanrasti",
+        "repo": "typenix",
+        "rev": "13550ee05461121a74a6467aefc479a62026cdfc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ryanrasti",
+        "repo": "typenix",
+        "type": "github"
+      }
+    },
+    "zen-browser": {
+      "inputs": {
+        "home-manager": "home-manager_2",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1783489920,
+        "narHash": "sha256-sZediA0pfMCXm6nA6fvO1vEsWvybEvP5GCnaAPDcTq0=",
+        "owner": "0xc000022070",
+        "repo": "zen-browser-flake",
+        "rev": "3671c6eceee35fd06fd1f60b71eed968cc9d7449",
+        "type": "github"
+      },
+      "original": {
+        "owner": "0xc000022070",
+        "repo": "zen-browser-flake",
         "type": "github"
       }
     }

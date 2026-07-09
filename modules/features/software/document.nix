@@ -9,10 +9,6 @@ let
       poppler-utils
       qpdf
     ];
-
-  systemDocumentModule = {pkgs, ...}: {
-    environment.systemPackages = systemDocumentPackages pkgs;
-  };
 in {
   mzwing.features."software/document" = {
     meta.platforms = [
@@ -38,6 +34,14 @@ in {
       };
     };
 
-    nixos = systemDocumentModule;
+    nixos = {pkgs, ...}: {
+      environment.systemPackages =
+        systemDocumentPackages pkgs
+        ++ (with pkgs; [
+          kdePackages.okular
+          typora
+          wpsoffice-cn
+        ]);
+    };
   };
 }

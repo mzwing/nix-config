@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   ...
 }: {
@@ -18,7 +19,11 @@
     homeModules = config.mzwing.lib.moduleAttrsFor "home";
   };
 
-  perSystem = {pkgs, ...}: {
+  perSystem = {
+    pkgs,
+    system,
+    ...
+  }: {
     formatter = pkgs.writeShellApplication {
       name = "nix-config-format";
       runtimeInputs = [pkgs.alejandra];

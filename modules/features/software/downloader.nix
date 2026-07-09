@@ -5,10 +5,6 @@ let
       curl
       wget
     ];
-
-  systemDownloaderModule = {pkgs, ...}: {
-    environment.systemPackages = systemDownloaderPackages pkgs;
-  };
 in {
   mzwing.features."software/downloader" = {
     meta.platforms = [
@@ -29,6 +25,13 @@ in {
       };
     };
 
-    nixos = systemDownloaderModule;
+    nixos = {pkgs, ...}: {
+      environment.systemPackages =
+        systemDownloaderPackages pkgs
+        ++ (with pkgs; [
+          motrix-next
+          nur.repos.xddxdd.baidunetdisk
+        ]);
+    };
   };
 }

@@ -30,6 +30,7 @@ in {
         systemVpnPackages pkgs
         ++ (with pkgs; [
           sing-box
+          tailscale
         ]);
     };
   };

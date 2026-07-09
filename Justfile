@@ -34,6 +34,10 @@ flake-check:
   nix flake check --no-build --show-trace
 
 [group('nix')]
+typecheck:
+  typenix --noEmit
+
+[group('nix')]
 show:
   nix flake show --no-write-lock-file
 

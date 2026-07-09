@@ -30,7 +30,7 @@ in {
       };
     };
 
-    # TODO: sync hfd & manboster, add custom llama.cpp build
+    # TODO: sync hfd & manboster & kelivo, add custom llama.cpp build
     nixos = {pkgs, ...}: {
       environment.systemPackages =
         systemAiPackages pkgs

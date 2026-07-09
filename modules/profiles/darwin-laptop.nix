@@ -11,11 +11,9 @@
     "software/shell"
     "software/fish"
     "software/git"
-    "software/cli"
     "software/android"
     "software/browser"
     "software/vpn"
-    "software/docker"
     "software/ai"
     "software/communication"
     "software/ctf"
@@ -37,5 +35,6 @@
     "software/vibecoding"
     "software/wine"
     "software/development"
+    "software/vscode"
   ];
 }

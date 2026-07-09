@@ -1,9 +1,22 @@
-{
+let
+  systemFishModule = {
+    pkgs,
+    username,
+    ...
+  }: {
+    programs.fish.enable = true;
+    environment.shells = [pkgs.fish];
+    users.users.${username}.shell = pkgs.fish;
+  };
+in {
   mzwing.features."software/fish" = {
     meta.platforms = [
       "darwin"
       "nixos"
     ];
+
+    darwin = systemFishModule;
+    nixos = systemFishModule;
 
     home = {pkgs, ...}: {
       programs.fish = {
@@ -41,9 +54,10 @@
           ]
           ++ map (x: {inherit (x) name src;}) (
             with pkgs.fishPlugins; [
-              done
               autopair
+              done
               fzf-fish
+              pure
               z
             ]
           );

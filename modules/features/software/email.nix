@@ -3,10 +3,6 @@ let
     with pkgs; [
       hydroxide
     ];
-
-  systemEmailModule = {pkgs, ...}: {
-    environment.systemPackages = systemEmailPackages pkgs;
-  };
 in {
   mzwing.features."software/email" = {
     meta.platforms = [
@@ -21,6 +17,9 @@ in {
       ];
     };
 
-    nixos = systemEmailModule;
+    nixos = {pkgs, ...}: {
+      environment.systemPackages = systemEmailPackages pkgs;
+      programs.thunderbird.enable = true;
+    };
   };
 }
