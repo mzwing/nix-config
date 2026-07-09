@@ -78,6 +78,16 @@ in {
           enableFishIntegration = true;
           nix-direnv.enable = true;
         };
+        starship = {
+          enable = true;
+          enableFishIntegration = true;
+          enableInteractive = false;
+          enableTransience = true;
+          presets = [
+            "nerd-font-symbols"
+            # "jetpack"
+          ];
+        };
       };
       home.packages = [pkgs.any-nix-shell];
       home.shellAliases = {

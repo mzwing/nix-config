@@ -57,7 +57,6 @@ in {
               autopair
               done
               fzf-fish
-              pure
               z
             ]
           );
