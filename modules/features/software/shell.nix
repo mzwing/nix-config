@@ -2,7 +2,6 @@ let
   systemShellPackages = pkgs:
     with pkgs; [
       any-nix-shell
-      tmux
     ];
 in {
   mzwing.features."software/shell" = {
@@ -18,9 +17,6 @@ in {
           bash
           iproute2mac
         ]);
-      homebrew.casks = [
-        "kakuku"
-      ];
     };
 
     nixos = {pkgs, ...}: {
