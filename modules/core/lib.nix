@@ -5,23 +5,16 @@
   self,
   ...
 }: let
-  inherit (lib) attrValues concatMap filter mapAttrs optional;
+  inherit (lib) attrValues filter optional;
 
   availableFeatures = builtins.attrNames config.mzwing.features;
-  availableProfiles = builtins.attrNames config.mzwing.profiles;
 
   missingMessage = kind: name: available: "Unknown ${kind} '${name}'. Available ${kind}s: ${lib.concatStringsSep ", " available}";
-
-  profileFeatures = profile:
-    config.mzwing.profiles.${profile} or (throw (missingMessage "profile" profile availableProfiles));
 
   featureByName = feature:
     config.mzwing.features.${feature} or (throw (missingMessage "feature" feature availableFeatures));
 
-  selectFeatures = host: let
-    featureNames = (concatMap profileFeatures host.profiles) ++ host.features;
-  in
-    map featureByName featureNames;
+  selectFeatures = host: map featureByName host.features;
 
   modulesFor = kind: features:
     map (feature: feature.${kind}) (filter (feature: feature.${kind} != null) features);
@@ -43,6 +36,7 @@
       (host)
       hostname
       system
+      type
       username
       useremail
       ;
@@ -81,7 +75,11 @@
       inherit (host) system;
       specialArgs = specialArgsFor host;
       modules =
-        nixosModules
+        [
+          inputs.agenix.nixosModules.default
+          inputs.disko.nixosModules.disko
+        ]
+        ++ nixosModules
         ++ optional (host.hardware != null) host.hardware
         ++ optional (homeModules != []) inputs.home-manager-nixos.nixosModules.home-manager
         ++ optional (homeModules != []) (homeManagerModule inputs.home-manager-nixos host homeModules);

@@ -19,13 +19,14 @@
         viAlias = true;
         vimAlias = true;
         vimdiffAlias = true;
-        extraPackages = with pkgs; [
-          ast-grep
-          luarocks
-        ]
-        ++ [
-          typenix
-        ];
+        extraPackages = with pkgs;
+          [
+            ast-grep
+            luarocks
+          ]
+          ++ [
+            typenix
+          ];
         # TODO: Maybe here we can make typenix a neovim extension
         initLua = ''
           vim.filetype.add({

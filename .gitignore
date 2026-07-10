@@ -2,8 +2,6 @@ result
 result/
 .DS_Store
 
-modules/features/nixos/
-
 # Devenv
 .devenv*
 devenv.local.nix

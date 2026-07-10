@@ -24,6 +24,12 @@
     system,
     ...
   }: {
+    apps.nixos-anywhere = {
+      type = "app";
+      program = "${inputs.nixos-anywhere.packages.${system}.default}/bin/nixos-anywhere";
+      meta.description = "Install NixOS hosts with nixos-anywhere.";
+    };
+
     formatter = pkgs.writeShellApplication {
       name = "nix-config-format";
       runtimeInputs = [pkgs.alejandra];

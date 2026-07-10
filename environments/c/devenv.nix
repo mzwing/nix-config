@@ -3,7 +3,6 @@
 
   env = {
     CMAKE_GENERATOR = "Ninja";
-    VCPKG_ROOT = "$HOME/vcpkg";
   };
 
   packages = with pkgs; [
@@ -13,7 +12,7 @@
     cmake-format
     cmake-lint
     ninja
-    vcpkg
+    vcpkg-tool
     gcc
     clang
   ];

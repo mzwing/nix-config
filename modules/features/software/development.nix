@@ -24,7 +24,6 @@ in {
           "xcode-build-server"
         ];
         casks = [
-          "clion"
           "openinterminal"
         ];
         masApps = {
@@ -42,6 +41,7 @@ in {
           licensed
           jetbrains.idea
         ]);
+      programs.ccache.enable = true;
     };
 
     home = {

@@ -13,8 +13,6 @@
         ];
         casks = [
           "antigravity"
-          "codex-app"
-          "codex-plus-plus"
         ];
       };
     };

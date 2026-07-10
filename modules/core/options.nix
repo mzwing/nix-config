@@ -53,15 +53,17 @@
           default = "aarch64-darwin";
         };
 
+        type = mkOption {
+          type = types.enum [
+            "desktop"
+            "server"
+          ];
+        };
+
         username = mkOption {type = types.str;};
         useremail = mkOption {
           type = types.str;
           default = "";
-        };
-
-        profiles = mkOption {
-          type = types.listOf types.str;
-          default = [];
         };
 
         features = mkOption {
@@ -88,6 +90,13 @@
           default = "x86_64-linux";
         };
 
+        type = mkOption {
+          type = types.enum [
+            "desktop"
+            "server"
+          ];
+        };
+
         username = mkOption {
           type = types.str;
           default = "mzwing";
@@ -96,11 +105,6 @@
         useremail = mkOption {
           type = types.str;
           default = "";
-        };
-
-        profiles = mkOption {
-          type = types.listOf types.str;
-          default = [];
         };
 
         features = mkOption {
@@ -122,12 +126,6 @@ in {
       type = types.attrsOf featureType;
       default = {};
       description = "The top-level option of my nix config.";
-    };
-
-    profiles = mkOption {
-      type = types.attrsOf (types.listOf types.str);
-      default = {};
-      description = "Reusable lists of feature identifiers.";
     };
 
     hosts = {
