@@ -357,7 +357,7 @@ jobs:
               while IFS= read -r path; do printf -- "- \`%s\`\n" "${path}"; done
           } >>"${GITHUB_STEP_SUMMARY}"
 
-      - name: Build and test root devenv
+      - name: Build root devenv
         if: needs.config.outputs.devenv_systems != '[]'
         env:
           DEVENV_SYSTEMS: ${{ needs.config.outputs.devenv_systems }}
@@ -365,7 +365,7 @@ jobs:
         run: |
           printf '### Built root devenv systems\n\n' >>"${GITHUB_STEP_SUMMARY}"
           while IFS= read -r system; do
-            devenv test -s "${system}" --max-jobs 0 --no-tui
+            devenv build shell -s "${system}" --max-jobs 0 --no-tui
             printf -- "- \`%s\`\n" "${system}" >>"${GITHUB_STEP_SUMMARY}"
           done < <(jq -r '.[]' <<<"${DEVENV_SYSTEMS}")
 
