@@ -156,8 +156,11 @@ jobs:
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:nix-ci-builder
           hostname: ${{ env.BUILDER_PREFIX }}-${{ matrix.id }}
-          args: --ssh
+          args: --ssh --accept-dns=false
           version: latest
+
+      - name: Use runner DNS
+        run: sudo networksetup -setdnsservers Ethernet empty
 
       - name: Wait for distributed builds
         shell: bash

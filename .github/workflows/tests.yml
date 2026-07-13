@@ -14,6 +14,9 @@ jobs:
   tests:
     name: Test flake and workflows
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: devenv shell bash -- -e {0}
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -27,20 +30,21 @@ jobs:
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
 
       - name: Install devenv
+        shell: bash
         run: nix profile add nixpkgs#devenv
 
       - name: Check flake
-        run: devenv shell --no-reload -- just flake-check
+        run: just flake-check
 
       - name: Type-check Nix
-        run: devenv shell --no-reload -- just typecheck
+        run: just typecheck
 
       - name: Lint GitHub Actions
-        run: devenv shell --no-reload -- actionlint
+        run: actionlint
 
       - name: Check formatting
         run: |
-          devenv shell --no-reload -- just fmt
+          just fmt
           if git status --porcelain | grep -q .; then
             git status --short
             exit 1
