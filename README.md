@@ -23,26 +23,13 @@ just darwin # to build and apply nix-darwin config
 just typecheck # to type check the nix config
 ```
 
-## Darwin CI cache
+## CI cache
 
-The trusted `master` workflow builds `ciConfigurations.darwin` on distributed
-GitHub-hosted Apple Silicon runners and publishes newly built paths to the
-public `mzwing` Cachix cache. Features marked with
-`meta.ci.mode = "local-only"` remain in normal host configurations but are
-removed from the CI configurations. In particular, the Android SDK, NDK,
-emulator, and bundled CMake packages are never downloaded by Actions.
+This repo will use GitHub Actions to build and cache the packages which not yet cached in the substituters.
 
-The workflow requires these GitHub Actions secrets:
+Most design is originally from [Misaka13514/flake](https://github.com/Misaka13514/flake).
 
-- `CACHIX_AUTH_TOKEN` with write access to the `mzwing` cache
-- `TS_OAUTH_CLIENT_ID` for a Tailscale OAuth client
-- `TS_OAUTH_SECRET` for the same OAuth client
-
-The OAuth client must be allowed to create `tag:nix-ci-builder` and
-`tag:nix-ci-coordinator` nodes. Tailnet policy must allow the coordinator tag
-to reach the builder tag and use Tailscale SSH as `root`. Pull requests only
-run `.github/workflows/tests.yml`; the build workflow and its secrets are not
-available to them.
+Currently I use Cachix, see <https://mzwing.cachix.org>.
 
 ## Credits
 

@@ -1,4 +1,4 @@
-name: Build Darwin CI configurations
+name: Populate CI cache
 
 on:
   push:
@@ -16,20 +16,21 @@ permissions:
   contents: read
 
 concurrency:
-  group: darwin-cache-${{ github.ref }}
+  group: nix-cache-${{ github.ref }}
   cancel-in-progress: false
 
 env:
   CACHE_NAME: mzwing
-  BUILDER_COUNT: 3
+  DARWIN_BUILDER_COUNT: 3
   BUILDER_PREFIX: nix-b-${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
   config:
-    name: Evaluate CI targets
+    name: Plan CI cache build
     runs-on: ubuntu-latest
     outputs:
-      builder_ids: ${{ steps.evaluate.outputs.builder_ids }}
+      builders: ${{ steps.cache.outputs.builders }}
+      devenv_systems: ${{ steps.cache.outputs.devenv_systems }}
       has_builds: ${{ steps.cache.outputs.has_builds }}
       targets: ${{ steps.cache.outputs.targets }}
     steps:
@@ -50,13 +51,19 @@ jobs:
           name: ${{ env.CACHE_NAME }}
           skipPush: true
 
-      - name: Evaluate CI targets
+      - name: Install devenv
+        run: nix profile add nixpkgs#devenv
+
+      - name: Evaluate host and devenv targets
         id: evaluate
         run: |
-          echo "matrix=$(nix eval --no-write-lock-file --json .#debug.ci.matrix.darwin)" >>"${GITHUB_OUTPUT}"
-          echo "builder_ids=$(jq -nc --argjson count "${BUILDER_COUNT}" '[range(1; $count + 1)]')" >>"${GITHUB_OUTPUT}"
+          {
+            echo "matrix=$(nix eval --no-write-lock-file --json .#debug.ci.matrix)"
+            echo "devenv_x86_64_linux=$(devenv eval -s x86_64-linux packages | jq -c .packages)"
+            echo "devenv_aarch64_darwin=$(devenv eval -s aarch64-darwin packages | jq -c .packages)"
+          } >>"${GITHUB_OUTPUT}"
 
-      - name: Check CI-skipped features
+      - name: Verify CI exclusions
         env:
           MATRIX: ${{ steps.evaluate.outputs.matrix }}
         shell: bash
@@ -79,17 +86,18 @@ jobs:
               printf 'CI-excluded derivation found in target %s.\n' "${name}" >&2
               exit 1
             fi
-          done < <(jq -r 'to_entries[] | [.key, .value.installable] | @tsv' <<<"${MATRIX}")
+          done < <(jq -r '.[] | to_entries[] | [.key, .value.installable] | @tsv' <<<"${MATRIX}")
 
-      - name: Check caches
+      - name: Check caches and generate build matrix
         id: cache
         env:
+          DEVENV_AARCH64_DARWIN: ${{ steps.evaluate.outputs.devenv_aarch64_darwin }}
+          DEVENV_X86_64_LINUX: ${{ steps.evaluate.outputs.devenv_x86_64_linux }}
           MATRIX: ${{ steps.evaluate.outputs.matrix }}
         shell: bash
         run: |
           set -euo pipefail
 
-          targets='[]'
           caches=(
             "https://${CACHE_NAME}.cachix.org"
             "https://cache.nixos.org"
@@ -97,27 +105,107 @@ jobs:
             "https://attic.xuyh0120.win/lantian"
           )
 
-          while IFS=$'\t' read -r installable output_path; do
-            hash="$(basename "${output_path}" | cut -d- -f1)"
-            cached=false
+          is_cached() {
+            hash="$(basename "$1" | cut -d- -f1)"
             for cache in "${caches[@]}"; do
-              if curl --fail --head --silent --max-time 15 "${cache}/${hash}.narinfo" >/dev/null; then
-                cached=true
+              curl --fail --head --silent --max-time 15 "${cache}/${hash}.narinfo" >/dev/null && return 0
+            done
+            return 1
+          }
+
+          while IFS= read -r system; do
+            case "${system}" in
+              aarch64-darwin | x86_64-linux | aarch64-linux) ;;
+              *)
+                printf 'No GitHub Actions builder is configured for %s.\n' "${system}" >&2
+                exit 1
+                ;;
+            esac
+          done < <(jq -r '.[] | .[].system' <<<"${MATRIX}" | sort -u)
+
+          targets='[]'
+          while IFS=$'\t' read -r name system installable output_path; do
+            if ! is_cached "${output_path}"; then
+              targets="$(
+                jq -c \
+                  --arg name "${name}" \
+                  --arg system "${system}" \
+                  --arg installable "${installable}" \
+                  '. + [{name: $name, system: $system, installable: $installable}]' \
+                  <<<"${targets}"
+              )"
+            fi
+          done < <(jq -r '.[] | to_entries[] | [.key, .value.system, .value.installable, .value.outputPath] | @tsv' <<<"${MATRIX}")
+
+          devenv_systems='[]'
+          for system in x86_64-linux aarch64-darwin; do
+            if [[ "${system}" == x86_64-linux ]]; then
+              packages="${DEVENV_X86_64_LINUX}"
+            else
+              packages="${DEVENV_AARCH64_DARWIN}"
+            fi
+
+            while IFS= read -r output_path; do
+              if ! is_cached "${output_path}"; then
+                devenv_systems="$(jq -c --arg system "${system}" '. + [$system]' <<<"${devenv_systems}")"
                 break
               fi
-            done
+            done < <(jq -r '.[]' <<<"${packages}")
+          done
 
-            if [[ "${cached}" == false ]]; then
-              targets="$(jq -c --arg installable "${installable}" ". + [\$installable]" <<<"${targets}")"
-            fi
-          done < <(jq -r '.[] | [.installable, .outputPath] | @tsv' <<<"${MATRIX}")
+          systems="$(
+            jq -cn \
+              --argjson targets "${targets}" \
+              --argjson devenv "${devenv_systems}" \
+              '[$targets[].system, $devenv[]] | unique'
+          )"
+          builders="$(
+            jq -cn \
+              --argjson systems "${systems}" \
+              --argjson darwin_count "${DARWIN_BUILDER_COUNT}" '
+                {
+                  include: [
+                    $systems[] |
+                    if . == "aarch64-darwin" then
+                      . as $system |
+                      range(1; $darwin_count + 1) |
+                      {
+                        id: "darwin-\(.)",
+                        runner: "macos-26",
+                        system: $system,
+                        maxJobs: 3
+                      }
+                    elif . == "x86_64-linux" then
+                      {
+                        id: "linux-x86-64",
+                        runner: "ubuntu-latest",
+                        system: .,
+                        maxJobs: 3
+                      }
+                    elif . == "aarch64-linux" then
+                      {
+                        id: "linux-arm64",
+                        runner: "ubuntu-24.04-arm",
+                        system: .,
+                        maxJobs: 3
+                      }
+                    else
+                      error("unsupported system: \(.)")
+                    end
+                  ]
+                }
+              '
+          )"
 
-          has_builds=false
-          if [[ "${targets}" != '[]' ]]; then
+          if [[ "${systems}" == '[]' ]]; then
+            has_builds=false
+          else
             has_builds=true
           fi
 
           {
+            printf 'builders=%s\n' "${builders}"
+            printf 'devenv_systems=%s\n' "${devenv_systems}"
             printf 'has_builds=%s\n' "${has_builds}"
             printf 'targets=%s\n' "${targets}"
           } >>"${GITHUB_OUTPUT}"
@@ -126,12 +214,11 @@ jobs:
     name: Builder ${{ matrix.id }}
     needs: config
     if: needs.config.outputs.has_builds == 'true'
-    runs-on: macos-26
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 360
     strategy:
       fail-fast: false
-      matrix:
-        id: ${{ fromJSON(needs.config.outputs.builder_ids) }}
+      matrix: ${{ fromJSON(needs.config.outputs.builders) }}
     steps:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -141,7 +228,7 @@ jobs:
             substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
 
-      - name: Push newly built paths to Cachix
+      - name: Configure Cachix build daemon
         uses: cachix/cachix-action@v17
         with:
           name: ${{ env.CACHE_NAME }}
@@ -160,7 +247,8 @@ jobs:
           args: --ssh --accept-dns=false
           version: latest
 
-      - name: Use runner DNS
+      - name: Restore macOS runner DNS
+        if: matrix.system == 'aarch64-darwin'
         run: sudo networksetup -setdnsservers Ethernet empty
 
       - name: Wait for distributed builds
@@ -196,6 +284,7 @@ jobs:
         with:
           extra_nix_config: |
             accept-flake-config = false
+            max-jobs = 0
             substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
 
@@ -204,6 +293,9 @@ jobs:
         with:
           name: ${{ env.CACHE_NAME }}
           skipPush: true
+
+      - name: Install devenv
+        run: nix profile add nixpkgs#devenv
 
       - name: Join coordinator network
         uses: tailscale/github-action@v4
@@ -215,6 +307,8 @@ jobs:
           version: latest
 
       - name: Configure remote builders
+        env:
+          BUILDERS: ${{ needs.config.outputs.builders }}
         shell: bash
         run: |
           sudo mkdir -p /etc/ssh/ssh_config.d
@@ -227,31 +321,33 @@ jobs:
           EOF
           sudo tee /etc/nix/machines </dev/null
 
-          for ((id = 1; id <= BUILDER_COUNT; id++)); do
+          while IFS=$'\t' read -r id system max_jobs; do
             builder="${BUILDER_PREFIX}-${id}"
             for _ in {1..120}; do
-              ssh -o ConnectTimeout=5 "root@${builder}" true 2>/dev/null && break
+              ssh -n -o ConnectTimeout=5 "root@${builder}" true 2>/dev/null && break
               sleep 5
             done
-            ssh "root@${builder}" 'touch /tmp/builder_claimed'
-            printf 'ssh-ng://root@%s aarch64-darwin - 3 1 big-parallel,benchmark\n' "${builder}" |
+            ssh -n "root@${builder}" 'touch /tmp/builder_claimed'
+            printf 'ssh-ng://root@%s %s - %s 1 big-parallel,benchmark\n' "${builder}" "${system}" "${max_jobs}" |
               sudo tee -a /etc/nix/machines >/dev/null
-          done
+          done < <(jq -r '.include[] | [.id, .system, .maxJobs] | @tsv' <<<"${BUILDERS}")
 
           sudo tee -a /etc/nix/nix.conf >/dev/null <<'EOF'
           builders = @/etc/nix/machines
           builders-use-substitutes = true
+          max-jobs = 0
           EOF
           sudo systemctl restart nix-daemon.service
 
       - name: Build CI configurations
+        if: needs.config.outputs.targets != '[]'
         env:
           TARGETS: ${{ needs.config.outputs.targets }}
         shell: bash
         run: |
-          mapfile -t installables < <(jq -r '.[]' <<<"${TARGETS}")
+          mapfile -t installables < <(jq -r '.[].installable' <<<"${TARGETS}")
           {
-            printf '### Built Darwin CI paths\n\n'
+            printf '### Built CI configuration paths\n\n'
             nix build \
               --no-write-lock-file \
               --print-build-logs \
@@ -261,11 +357,24 @@ jobs:
               while IFS= read -r path; do printf -- "- \`%s\`\n" "${path}"; done
           } >>"${GITHUB_STEP_SUMMARY}"
 
-      - name: Release remote builders
-        if: always()
+      - name: Build and test root devenv
+        if: needs.config.outputs.devenv_systems != '[]'
+        env:
+          DEVENV_SYSTEMS: ${{ needs.config.outputs.devenv_systems }}
         shell: bash
         run: |
-          for ((id = 1; id <= BUILDER_COUNT; id++)); do
-            builder="${BUILDER_PREFIX}-${id}"
-            ssh -o ConnectTimeout=5 "root@${builder}" 'touch /tmp/builder_done' || true
-          done
+          printf '### Built root devenv systems\n\n' >>"${GITHUB_STEP_SUMMARY}"
+          while IFS= read -r system; do
+            devenv test -s "${system}" --max-jobs 0 --no-tui
+            printf -- "- \`%s\`\n" "${system}" >>"${GITHUB_STEP_SUMMARY}"
+          done < <(jq -r '.[]' <<<"${DEVENV_SYSTEMS}")
+
+      - name: Release remote builders
+        if: always()
+        env:
+          BUILDERS: ${{ needs.config.outputs.builders }}
+        shell: bash
+        run: |
+          while IFS= read -r id; do
+            ssh -n -o ConnectTimeout=5 "root@${BUILDER_PREFIX}-${id}" 'touch /tmp/builder_done' || true
+          done < <(jq -r '.include[].id' <<<"${BUILDERS}")
