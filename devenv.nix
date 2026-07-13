@@ -23,7 +23,7 @@
     act --version
     actionlint -version
     alejandra --version
-    agenix --version
+    which agenix
     just --version
     nixd --version
     typenix --version
