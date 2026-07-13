@@ -21,7 +21,8 @@ concurrency:
 
 env:
   CACHE_NAME: mzwing
-  DARWIN_BUILDER_COUNT: 3
+  ARM64_DARWIN_BUILDER_COUNT: 3
+  X86_64_LINUX_BUILDER_COUNT: 2
   BUILDER_PREFIX: nix-b-${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
@@ -162,7 +163,8 @@ jobs:
           builders="$(
             jq -cn \
               --argjson systems "${systems}" \
-              --argjson darwin_count "${DARWIN_BUILDER_COUNT}" '
+              --argjson darwin_count "${ARM64_DARWIN_BUILDER_COUNT}" \
+              --argjson x86_64_linux_count "${X86_64_LINUX_BUILDER_COUNT}" '
                 {
                   include: [
                     $systems[] |
@@ -170,16 +172,18 @@ jobs:
                       . as $system |
                       range(1; $darwin_count + 1) |
                       {
-                        id: "darwin-\(.)",
+                        id: "darwin-arm64-\(.)",
                         runner: "macos-26",
                         system: $system,
                         maxJobs: 3
                       }
                     elif . == "x86_64-linux" then
+                      . as $system |
+                      range(1; $x86_64_linux_count + 1) |
                       {
-                        id: "linux-x86-64",
+                        id: "linux-x86-64-\(.)",
                         runner: "ubuntu-latest",
-                        system: .,
+                        system: $system,
                         maxJobs: 3
                       }
                     elif . == "aarch64-linux" then
