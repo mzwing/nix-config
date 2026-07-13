@@ -7,6 +7,13 @@ args: let
         publicKey = "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=";
       };
     };
+    nur.mzwing = {
+      author = "mzwing";
+      attic = {
+        url = "https://mzwing.cachix.org";
+        publicKey = "mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA=";
+      };
+    };
   };
 in
   if args.asData or false

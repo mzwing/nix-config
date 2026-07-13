@@ -9,6 +9,8 @@
   };
 
   packages = with pkgs; [
+    act
+    actionlint
     alejandra
     just
     nixd
@@ -18,6 +20,8 @@
   ];
 
   enterTest = ''
+    act --version
+    actionlint -version
     alejandra --version
     agenix --version
     just --version

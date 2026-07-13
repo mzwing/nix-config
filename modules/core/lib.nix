@@ -16,6 +16,11 @@
 
   selectFeatures = host: map featureByName host.features;
 
+  selectCIFeatures = host:
+    filter
+    (feature: feature.meta.ci.mode != "local-only")
+    (selectFeatures host);
+
   modulesFor = kind: features:
     map (feature: feature.${kind}) (filter (feature: feature.${kind} != null) features);
 
@@ -52,8 +57,8 @@
     };
   };
 
-  mkDarwinHost = host: let
-    features = selectFeatures host;
+  mkDarwinHostWith = featureSelector: host: let
+    features = featureSelector host;
     darwinModules = modulesFor "darwin" features;
     homeModules = modulesFor "home" features;
   in
@@ -66,8 +71,8 @@
         ++ optional (homeModules != []) (homeManagerModule inputs.home-manager-darwin host homeModules);
     };
 
-  mkNixosHost = host: let
-    features = selectFeatures host;
+  mkNixosHostWith = featureSelector: host: let
+    features = featureSelector host;
     nixosModules = modulesFor "nixos" features;
     homeModules = modulesFor "home" features;
   in
@@ -84,14 +89,22 @@
         ++ optional (homeModules != []) inputs.home-manager-nixos.nixosModules.home-manager
         ++ optional (homeModules != []) (homeManagerModule inputs.home-manager-nixos host homeModules);
     };
+
+  mkDarwinHost = mkDarwinHostWith selectFeatures;
+  mkDarwinCIHost = mkDarwinHostWith selectCIFeatures;
+  mkNixosHost = mkNixosHostWith selectFeatures;
+  mkNixosCIHost = mkNixosHostWith selectCIFeatures;
 in {
   config.mzwing.lib = {
     inherit
       selectFeatures
+      selectCIFeatures
       modulesFor
       moduleAttrsFor
       mkDarwinHost
+      mkDarwinCIHost
       mkNixosHost
+      mkNixosCIHost
       ;
   };
 }

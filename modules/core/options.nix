@@ -33,6 +33,15 @@
           default = [];
           description = "Human-readable platform hints for this feature.";
         };
+
+        meta.ci.mode = mkOption {
+          type = types.enum [
+            "build"
+            "local-only"
+          ];
+          default = "build";
+          description = "Whether CI configurations should include this feature.";
+        };
       };
     }
   );

@@ -5,7 +5,7 @@ let
     "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
     "https://mirrors.ustc.edu.cn/nix-channels/store"
     "https://mirror.nju.edu.cn/nix-channels/store"
-    "https://mirrors.cqupt.edu.cn/nix-channels/store"
+    # "https://mirrors.cqupt.edu.cn/nix-channels/store"
   ];
 in {
   mzwing.features."network/china-mirrors" = {
