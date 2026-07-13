@@ -1,7 +1,7 @@
 let
   systemMediaPackages = pkgs:
     with pkgs; [
-      ffmpeg-full
+      ffmpeg
       ffmpegthumbnailer
     ];
 in {
