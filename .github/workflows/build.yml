@@ -239,6 +239,9 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           useDaemon: true
 
+      - name: Enable Cachix uploads for remote builds
+        run: sudo sh -c "cat '${CACHIX_DAEMON_DIR}/nix.conf' >> /etc/nix/nix.conf"
+
       - name: Join builder network
         uses: tailscale/github-action@v4
         env:
@@ -260,8 +263,13 @@ jobs:
         run: |
           for _ in {1..120}; do
             if [[ -e /tmp/builder_claimed ]]; then
-              while [[ ! -e /tmp/builder_done ]]; do sleep 5; done
-              exit 0
+              while true; do
+                echo 'Building...'
+                for _ in {1..12}; do
+                  [[ -e /tmp/builder_done ]] && exit 0
+                  sleep 5
+                done
+              done
             fi
             sleep 5
           done
