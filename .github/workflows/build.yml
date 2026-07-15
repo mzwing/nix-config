@@ -4,12 +4,6 @@ on:
   push:
     branches:
       - master
-    paths:
-      - ".github/workflows/build.yml"
-      - "*.lock"
-      - "*.nix"
-      - "modules/**/*.nix"
-      - "secrets/**/*.age"
   workflow_dispatch:
 
 permissions:

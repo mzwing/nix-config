@@ -1,8 +1,13 @@
 name: Update lock files
 
 on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/update.yml
   schedule:
-    - cron: "0 13 * * *"
+    - cron: "0 12 * * *"
   workflow_dispatch:
 
 permissions:
