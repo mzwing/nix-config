@@ -7,11 +7,12 @@ on:
     paths:
       - .github/workflows/update.yml
   schedule:
-    - cron: "0 12 * * *"
+    - cron: "0 13 * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: update-lockfiles
@@ -66,3 +67,10 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           branch: ${{ github.ref }}
+
+      - name: Trigger build
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run build.yml --ref ${{ github.ref }}
