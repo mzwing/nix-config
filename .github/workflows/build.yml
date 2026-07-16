@@ -4,14 +4,6 @@ on:
   push:
     branches:
       - master
-    paths:
-      - .github/workflows/build.yml
-      - modules/**/*.nix
-      - secrets/*.nix
-      - secrets/**/*.age
-      - ./*.nix
-      - ./*.lock
-      - Justfile
   workflow_dispatch:
 
 permissions:

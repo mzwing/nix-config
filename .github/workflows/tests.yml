@@ -4,11 +4,6 @@ on:
   push:
     branches:
       - master
-    paths-ignore:
-      - ./*.md
-      - ./**/*.md
-      - LICENSE
-      - .vscode/*
   pull_request:
   workflow_dispatch:
 
