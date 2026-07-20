@@ -46,7 +46,10 @@
               maxRetries = 3;
             };
             theme = "dark";
-            npmCommand = ["pnpm"];
+            npmCommand = [
+              "pnpm"
+              "--config.node-linker=hoisted"
+            ];
             packages = [
               "git:github.com/justhil/pi-ace-tool"
               "git:github.com/justhil/pi-fast-context"
