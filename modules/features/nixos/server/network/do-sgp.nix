@@ -5,6 +5,7 @@
     nixos = {
       config,
       lib,
+      inputs,
       ...
     }: {
       networking = {
@@ -16,7 +17,7 @@
 
       age.secrets = {
         do-sgp-private-network = {
-          file = ../../../../../secrets/do-sgp/network/private.age;
+          file = "${inputs.self}/secrets/do-sgp/network/private.age";
           group = "systemd-network";
           mode = "0440";
           owner = "root";
@@ -24,7 +25,7 @@
         };
 
         do-sgp-public-network = {
-          file = ../../../../../secrets/do-sgp/network/public.age;
+          file = "${inputs.self}/secrets/do-sgp/network/public.age";
           group = "systemd-network";
           mode = "0440";
           owner = "root";

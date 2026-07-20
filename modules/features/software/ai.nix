@@ -24,7 +24,6 @@ in {
           "stable-diffusion.cpp"
         ];
         casks = [
-          "chatgpt"
           "kelivo"
         ];
       };

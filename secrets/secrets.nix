@@ -6,6 +6,7 @@ let
     mzwingDoSgp
   ];
 in {
+  "cliproxyapiplus/api-key.age".publicKeys = [mzwing];
   "do-sgp/network/private.age".publicKeys = recipients;
   "do-sgp/network/public.age".publicKeys = recipients;
 }

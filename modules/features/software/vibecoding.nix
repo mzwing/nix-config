@@ -13,6 +13,7 @@
         ];
         casks = [
           "antigravity"
+          "chatgpt"
         ];
       };
     };
@@ -24,10 +25,19 @@
     };
 
     home = {
+      config,
+      inputs,
       lib,
       pkgs,
       ...
     }: {
+      imports = [inputs.agenix.homeManagerModules.default];
+
+      age.identityPaths = [
+        "${config.home.homeDirectory}/.ssh/server_key"
+      ];
+      age.secrets."cliproxyapiplus-api-key".file = "${inputs.self}/secrets/cliproxyapiplus/api-key.age";
+
       programs = {
         antigravity-cli = {
           enable = true;
@@ -40,6 +50,17 @@
             nodejs
             pnpm
           ];
+          models = {
+            providers = {
+              cliproxyapiplus = {
+                api = "openai-completions";
+                apiKey = "!cat ${config.age.secrets."cliproxyapiplus-api-key".path}";
+                baseUrl = "http://localhost:8317/v1";
+                authHeader = true;
+                models = [];
+              };
+            };
+          };
           settings = {
             retry = {
               enabled = true;
@@ -63,9 +84,11 @@
               "npm:@narumitw/pi-plan-mode"
               "npm:@upstash/context7-pi"
               "npm:pi-codex-goal"
+              "npm:pi-effort"
               "npm:pi-markdown-preview"
               "npm:pi-mcp-adapter"
               "npm:pi-nano-context"
+              "npm:pi-openai-api-models-sync"
               "npm:pi-simplify"
               "npm:pi-smart-fetch"
               "npm:pi-tool-display"
