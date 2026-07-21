@@ -43,6 +43,13 @@
           enable = true;
           enableMcpIntegration = true;
         };
+        git.includes = [
+          {
+            # Internal snapshot commits must not inherit the user's signing policy.
+            condition = "gitdir:${config.home.homeDirectory}/.pi/agent/state/workspace-history/";
+            contents.commit.gpgSign = false;
+          }
+        ];
         pi-coding-agent = {
           enable = true;
           extraPackages = with pkgs; [
@@ -84,7 +91,6 @@
               "npm:@gotgenes/pi-subagents-worktrees"
               "npm:@juicesharp/rpiv-ask-user-question"
               "npm:@narumitw/pi-btw"
-              "npm:@narumitw/pi-plan-mode"
               "npm:@upstash/context7-pi"
               "npm:pi-codex-goal"
               "npm:pi-effort"
@@ -92,6 +98,7 @@
               "npm:pi-mcp-adapter"
               "npm:pi-nano-context"
               "npm:pi-openai-api-models-sync"
+              "npm:pi-plan"
               "npm:pi-simplify"
               "npm:pi-smart-fetch"
               "npm:pi-tool-display"
