@@ -90,6 +90,7 @@
               "npm:@gotgenes/pi-subagents"
               "npm:@gotgenes/pi-subagents-worktrees"
               "npm:@juicesharp/rpiv-ask-user-question"
+              "npm:@mzwing/pi-permission-auto-review"
               "npm:@narumitw/pi-btw"
               "npm:@upstash/context7-pi"
               "npm:pi-codex-goal"
