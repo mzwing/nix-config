@@ -1,6 +1,7 @@
 let
   systemAiPackages = pkgs:
     with pkgs; [
+      nur.repos.mzwing.autocli
       defuddle
     ];
 in {

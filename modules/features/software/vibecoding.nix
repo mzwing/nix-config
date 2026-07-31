@@ -31,7 +31,9 @@
       pkgs,
       ...
     }: {
-      imports = [inputs.agenix.homeManagerModules.default];
+      imports = [
+        inputs.agenix.homeManagerModules.default
+      ];
 
       age.identityPaths = [
         "${config.home.homeDirectory}/.ssh/server_key"
@@ -39,6 +41,18 @@
       age.secrets."cliproxyapiplus-api-key".file = "${inputs.self}/secrets/cliproxyapiplus/api-key.age";
 
       programs = {
+        # mcp = {
+        #   enable = true;
+        #   servers = {
+        #     ace-ctx = {
+        #       command = lib.getExe pkgs.nur.repos.mzwing.ace-ctx;
+        #       env = {
+        #         ACE_BASE_URL = "http://localhost:8999";
+        #         ACE_TOKEN = "sk-1145141919810";
+        #       };
+        #     };
+        #   };
+        # };
         antigravity-cli = {
           enable = true;
           enableMcpIntegration = true;
