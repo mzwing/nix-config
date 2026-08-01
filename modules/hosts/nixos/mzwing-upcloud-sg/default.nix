@@ -18,6 +18,7 @@
       "software/git"
       "software/gpg"
       "software/neovim"
+      "software/pumpkin"
       "software/server"
       "software/shell"
       "software/vpn"
