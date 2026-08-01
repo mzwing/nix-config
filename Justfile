@@ -41,8 +41,6 @@ nixos host target action='switch':
   nix copy --to "ssh-ng://{{target}}" "$flake_path"
   ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "{{target}}" nixos-rebuild \
     --flake "path:$flake_path#{{host}}" \
-    --no-reexec \
-    --no-write-lock-file \
     --accept-flake-config \
     --show-trace \
     "{{action}}"
@@ -61,8 +59,6 @@ nixos-debug host target action='switch':
   nix copy --to "ssh-ng://{{target}}" "$flake_path"
   ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "{{target}}" nixos-rebuild \
     --flake "path:$flake_path#{{host}}" \
-    --no-reexec \
-    --no-write-lock-file \
     --accept-flake-config \
     --show-trace \
     --verbose \

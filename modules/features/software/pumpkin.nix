@@ -1,5 +1,5 @@
 let
-  javaPort = 25565;
+  javaPort = 3389;
 in {
   mzwing.features."software/pumpkin" = {
     meta.platforms = [
