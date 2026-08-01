@@ -70,6 +70,7 @@
             git
             nodejs
             pnpm
+            rtk
           ];
           models = {
             providers = {
@@ -115,6 +116,7 @@
               "npm:pi-mcp-adapter"
               "npm:pi-nano-context"
               "npm:pi-openai-api-models-sync"
+              "npm:pi-rtk-optimizer"
               "npm:pi-simplify"
               "npm:pi-smart-fetch"
               "npm:pi-tool-display"
