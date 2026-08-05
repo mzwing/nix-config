@@ -6,12 +6,8 @@
     ];
 
     # TODO: Configure neovim completely.
-    home = {
-      inputs,
-      pkgs,
-      ...
-    }: let
-      typenix = inputs.typenix.packages.${pkgs.stdenv.hostPlatform.system}.default;
+    home = {pkgs, ...}: let
+      typenix = pkgs.nur.repos.mzwing.typenix;
     in {
       programs.neovim = {
         enable = true;

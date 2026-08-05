@@ -3,6 +3,8 @@
   pkgs,
   ...
 }: {
+  overlays = [inputs.nur.overlays.default];
+
   languages.nix = {
     enable = true;
     lsp.enable = true;
@@ -12,7 +14,7 @@
     alejandra
     just
     nixd
-    inputs.typenix.packages.${pkgs.stdenv.hostPlatform.system}.default
+    nur.repos.mzwing.typenix
   ];
 
   enterTest = ''

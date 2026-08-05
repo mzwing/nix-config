@@ -15,9 +15,7 @@
       lib,
       pkgs,
       ...
-    }: let
-      typenix = inputs.typenix.packages.${pkgs.stdenv.hostPlatform.system}.default;
-    in {
+    }: {
       programs.zed-editor = {
         enable = true;
         package =
@@ -27,7 +25,7 @@
         extraPackages = lib.optionals (!pkgs.stdenv.isDarwin) [
           pkgs.alejandra
           pkgs.nixd
-          typenix
+          pkgs.nur.repos.mzwing.typenix
         ];
         extensions = [
           "nix"
