@@ -33,7 +33,7 @@
         userTasks = [
           {
             label = "typenix: check";
-            command = "${typenix}/bin/typenix";
+            command = "typenix";
             args = ["--noEmit"];
           }
         ];
