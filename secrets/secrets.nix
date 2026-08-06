@@ -12,6 +12,7 @@ let
   ];
 in {
   "cliproxyapiplus/api-key.age".publicKeys = [mzwing];
+  "cliproxyapiplus/remote-secret-key.age".publicKeys = [mzwing];
   "do-sgp/network/private.age".publicKeys = doSgpRecipients;
   "do-sgp/network/public.age".publicKeys = doSgpRecipients;
   "upcloud-sg/network/public-ipv4.age".publicKeys = upcloudSgRecipients;

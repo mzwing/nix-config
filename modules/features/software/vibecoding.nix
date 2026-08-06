@@ -1,4 +1,25 @@
-{
+let
+  cliproxyapiplusHost = "localhost";
+  cliproxyapiplusPort = 8317;
+
+  cliproxyapiplusService = {
+    enable = true;
+    settings = {
+      host = cliproxyapiplusHost;
+      port = cliproxyapiplusPort;
+
+      debug = false;
+      logging-to-file = true;
+      logs-max-total-size-mb = 10;
+      codex-instructions-enabled = false;
+
+      remote-management = {
+        allow-remote = false;
+        disable-control-panel = false;
+      };
+    };
+  };
+in {
   mzwing.features."software/vibecoding" = {
     meta.platforms = [
       "darwin"
@@ -6,19 +27,77 @@
     ];
 
     darwin = {
-      homebrew = {
-        brews = [
-          "cliproxyapiplus"
-          "gryph"
-        ];
-        casks = [
-          "antigravity"
-          "chatgpt"
-        ];
+      config,
+      inputs,
+      username,
+      ...
+    }: {
+      imports = [
+        inputs.agenix.darwinModules.default
+        inputs.nur.repos.mzwing.modules.darwin.cliproxyapiplus
+      ];
+
+      # The age recipients match the Home Manager deployment, so the same
+      # user key decrypts them at the system level (as root).
+      age.identityPaths = ["${config.users.users.${username}.home}/.ssh/server_key"];
+      age.secrets = {
+        cliproxyapiplus-api-key = {
+          file = "${inputs.self}/secrets/cliproxyapiplus/api-key.age";
+          owner = "_cliproxyapiplus";
+          group = "_cliproxyapiplus";
+        };
+        cliproxyapiplus-remote-secret-key = {
+          file = "${inputs.self}/secrets/cliproxyapiplus/remote-secret-key.age";
+          owner = "_cliproxyapiplus";
+          group = "_cliproxyapiplus";
+        };
       };
+
+      services.cliproxyapiplus =
+        cliproxyapiplusService
+        // {
+          apiKeysPaths = [config.age.secrets.cliproxyapiplus-api-key.path];
+          remoteSecretKeyPath = config.age.secrets.cliproxyapiplus-remote-secret-key.path;
+        };
+
+      homebrew.casks = [
+        "antigravity"
+        "chatgpt"
+      ];
     };
 
-    nixos = {pkgs, ...}: {
+    nixos = {
+      config,
+      inputs,
+      pkgs,
+      username,
+      ...
+    }: {
+      imports = [
+        inputs.nur.repos.mzwing.modules.nixos.cliproxyapiplus
+      ];
+
+      age.identityPaths = ["${config.users.users.${username}.home}/.ssh/server_key"];
+      age.secrets = {
+        cliproxyapiplus-api-key = {
+          file = "${inputs.self}/secrets/cliproxyapiplus/api-key.age";
+          owner = "cliproxyapiplus";
+          group = "cliproxyapiplus";
+        };
+        cliproxyapiplus-remote-secret-key = {
+          file = "${inputs.self}/secrets/cliproxyapiplus/remote-secret-key.age";
+          owner = "cliproxyapiplus";
+          group = "cliproxyapiplus";
+        };
+      };
+
+      services.cliproxyapiplus =
+        cliproxyapiplusService
+        // {
+          apiKeysPaths = [config.age.secrets.cliproxyapiplus-api-key.path];
+          remoteSecretKeyPath = config.age.secrets.cliproxyapiplus-remote-secret-key.path;
+        };
+
       environment.systemPackages = with pkgs; [
         antigravity
       ];
@@ -77,7 +156,7 @@
               cliproxyapiplus = {
                 api = "openai-completions";
                 apiKey = "!cat ${config.age.secrets."cliproxyapiplus-api-key".path}";
-                baseUrl = "http://localhost:8317/v1";
+                baseUrl = "http://${cliproxyapiplusHost}:${toString cliproxyapiplusPort}/v1";
                 authHeader = true;
                 models = [];
               };
@@ -97,9 +176,6 @@
               "--config.node-linker=hoisted"
             ];
             packages = [
-              # "git:github.com/justhil/pi-ace-tool"
-              # "git:github.com/justhil/pi-fast-context"
-              # "npm:@complexthings/pi-dynamic-context-pruning"
               "npm:@ff-labs/pi-fff"
               "npm:@gotgenes/pi-permission-system"
               "npm:@gotgenes/pi-subagents"
@@ -116,6 +192,7 @@
               "npm:pi-mcp-adapter"
               "npm:pi-nano-context"
               "npm:pi-openai-api-models-sync"
+              "npm:pi-provider-kimi-code"
               "npm:pi-rtk-optimizer"
               "npm:pi-simplify"
               "npm:pi-smart-fetch"
