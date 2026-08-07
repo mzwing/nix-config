@@ -15,8 +15,6 @@ concurrency:
 
 env:
   CACHE_NAME: mzwing
-  ARM64_DARWIN_BUILDER_COUNT: 3
-  X86_64_LINUX_BUILDER_COUNT: 2
   BUILDER_PREFIX: nix-b-${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
@@ -24,189 +22,68 @@ jobs:
     name: Plan CI cache build
     runs-on: ubuntu-latest
     outputs:
-      builders: ${{ steps.cache.outputs.builders }}
-      devenv_systems: ${{ steps.cache.outputs.devenv_systems }}
-      has_builds: ${{ steps.cache.outputs.has_builds }}
-      targets: ${{ steps.cache.outputs.targets }}
+      builders: ${{ steps.plan.outputs.builders }}
+      devenv_systems: ${{ steps.plan.outputs.devenv_systems }}
+      has_builds: ${{ steps.plan.outputs.has_builds }}
+      targets: ${{ steps.plan.outputs.targets }}
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
+    - name: Check out repository
+      uses: actions/checkout@v7
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-        with:
-          extra_nix_config: |
-            accept-flake-config = false
-            substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
+    - name: Install Nix
+      uses: cachix/install-nix-action@v31
+      with:
+        extra_nix_config: |
+          accept-flake-config = false
+          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+          substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
+          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
 
-      - name: Configure Cachix for pulls
-        uses: cachix/cachix-action@v17
-        with:
-          name: ${{ env.CACHE_NAME }}
-          skipPush: true
+    - name: Restore Nix store
+      uses: nix-community/cache-nix-action@v7
+      with:
+        primary-key: nix-config-${{ hashFiles('flake.lock', 'devenv.lock') }}
+        restore-prefixes-first-match: nix-config-
+        gc-max-store-size-linux: 2G
 
-      - name: Install devenv
-        run: nix profile add nixpkgs#devenv
+    - name: Configure Cachix for pulls
+      uses: cachix/cachix-action@v17
+      with:
+        name: ${{ env.CACHE_NAME }}
+        skipPush: true
 
-      - name: Evaluate host and devenv targets
-        id: evaluate
-        run: |
-          {
-            echo "matrix=$(nix eval --no-write-lock-file --json .#debug.ci.matrix)"
-            echo "devenv_x86_64_linux=$(devenv eval -s x86_64-linux packages | jq -c .packages)"
-            echo "devenv_aarch64_darwin=$(devenv eval -s aarch64-darwin packages | jq -c .packages)"
-          } >>"${GITHUB_OUTPUT}"
+    - name: Install devenv
+      run: nix profile add nixpkgs#devenv
 
-      - name: Verify CI exclusions
-        env:
-          MATRIX: ${{ steps.evaluate.outputs.matrix }}
-        shell: bash
-        run: |
-          set -euo pipefail
+    - name: Check flake evaluation
+      run: nix flake check --all-systems --no-build --no-write-lock-file --show-trace
 
-          while IFS=$'\t' read -r name installable; do
-            if nix derivation show --recursive "${installable}" |
-              jq -e '
-                [
-                  .derivations
-                  | to_entries[]
-                  | select(
-                      (.key + " " + (.value.name // "") + " " + (.value.env.name // ""))
-                      | test("androidsdk|android-sdk-(ndk|build-tools|platforms|emulator|cmake)|android-ndk-r[0-9]+.*[.]zip"; "i")
-                    )
-                ]
-                | length > 0
-              ' >/dev/null; then
-              printf 'CI-excluded derivation found in target %s.\n' "${name}" >&2
-              exit 1
-            fi
-          done < <(jq -r '.[] | to_entries[] | [.key, .value.installable] | @tsv' <<<"${MATRIX}")
+    - name: Evaluate CI targets
+      id: evaluate
+      shell: bash
+      run: |
+        set -euo pipefail
+        printf 'targets=%s\n' "$(nix eval --json --file ci/targets.nix)" >>"${GITHUB_OUTPUT}"
 
-      - name: Check caches and generate build matrix
-        id: cache
-        env:
-          DEVENV_AARCH64_DARWIN: ${{ steps.evaluate.outputs.devenv_aarch64_darwin }}
-          DEVENV_X86_64_LINUX: ${{ steps.evaluate.outputs.devenv_x86_64_linux }}
-          MATRIX: ${{ steps.evaluate.outputs.matrix }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          caches=(
-            "https://${CACHE_NAME}.cachix.org"
-            "https://cache.nixos.org"
-            "https://nix-community.cachix.org"
-            "https://attic.xuyh0120.win/lantian"
-          )
-
-          is_cached() {
-            hash="$(basename "$1" | cut -d- -f1)"
-            for cache in "${caches[@]}"; do
-              curl --fail --head --silent --max-time 15 "${cache}/${hash}.narinfo" >/dev/null && return 0
-            done
-            return 1
-          }
-
-          while IFS= read -r system; do
-            case "${system}" in
-              aarch64-darwin | x86_64-linux | aarch64-linux) ;;
-              *)
-                printf 'No GitHub Actions builder is configured for %s.\n' "${system}" >&2
-                exit 1
-                ;;
-            esac
-          done < <(jq -r '.[] | .[].system' <<<"${MATRIX}" | sort -u)
-
-          targets='[]'
-          while IFS=$'\t' read -r name system installable output_path; do
-            if ! is_cached "${output_path}"; then
-              targets="$(
-                jq -c \
-                  --arg name "${name}" \
-                  --arg system "${system}" \
-                  --arg installable "${installable}" \
-                  '. + [{name: $name, system: $system, installable: $installable}]' \
-                  <<<"${targets}"
-              )"
-            fi
-          done < <(jq -r '.[] | to_entries[] | [.key, .value.system, .value.installable, .value.outputPath] | @tsv' <<<"${MATRIX}")
-
-          devenv_systems='[]'
-          for system in x86_64-linux aarch64-darwin; do
-            if [[ "${system}" == x86_64-linux ]]; then
-              packages="${DEVENV_X86_64_LINUX}"
-            else
-              packages="${DEVENV_AARCH64_DARWIN}"
-            fi
-
-            while IFS= read -r output_path; do
-              if ! is_cached "${output_path}"; then
-                devenv_systems="$(jq -c --arg system "${system}" '. + [$system]' <<<"${devenv_systems}")"
-                break
-              fi
-            done < <(jq -r '.[]' <<<"${packages}")
-          done
-
-          systems="$(
-            jq -cn \
-              --argjson targets "${targets}" \
-              --argjson devenv "${devenv_systems}" \
-              '[$targets[].system, $devenv[]] | unique'
+        devenv_outputs='{}'
+        for system in x86_64-linux aarch64-linux aarch64-darwin; do
+          packages="$(devenv eval -s "${system}" packages | jq -c .packages)"
+          devenv_outputs="$(
+            jq -c \
+              --arg system "${system}" \
+              --argjson packages "${packages}" \
+              '. + {($system): $packages}' \
+              <<<"${devenv_outputs}"
           )"
-          builders="$(
-            jq -cn \
-              --argjson systems "${systems}" \
-              --argjson darwin_count "${ARM64_DARWIN_BUILDER_COUNT}" \
-              --argjson x86_64_linux_count "${X86_64_LINUX_BUILDER_COUNT}" '
-                {
-                  include: [
-                    $systems[] |
-                    if . == "aarch64-darwin" then
-                      . as $system |
-                      range(1; $darwin_count + 1) |
-                      {
-                        id: "darwin-arm64-\(.)",
-                        runner: "macos-26",
-                        system: $system,
-                        maxJobs: 3
-                      }
-                    elif . == "x86_64-linux" then
-                      . as $system |
-                      range(1; $x86_64_linux_count + 1) |
-                      {
-                        id: "linux-x86-64-\(.)",
-                        runner: "ubuntu-latest",
-                        system: $system,
-                        maxJobs: 3
-                      }
-                    elif . == "aarch64-linux" then
-                      {
-                        id: "linux-arm64",
-                        runner: "ubuntu-24.04-arm",
-                        system: .,
-                        maxJobs: 3
-                      }
-                    else
-                      error("unsupported system: \(.)")
-                    end
-                  ]
-                }
-              '
-          )"
+        done
+        printf 'devenv_outputs=%s\n' "${devenv_outputs}" >>"${GITHUB_OUTPUT}"
 
-          if [[ "${systems}" == '[]' ]]; then
-            has_builds=false
-          else
-            has_builds=true
-          fi
-
-          {
-            printf 'builders=%s\n' "${builders}"
-            printf 'devenv_systems=%s\n' "${devenv_systems}"
-            printf 'has_builds=%s\n' "${has_builds}"
-            printf 'targets=%s\n' "${targets}"
-          } >>"${GITHUB_OUTPUT}"
+    - name: Check caches and generate build matrix
+      id: plan
+      env:
+        ALL_TARGETS: ${{ steps.evaluate.outputs.targets }}
+        DEVENV_OUTPUTS: ${{ steps.evaluate.outputs.devenv_outputs }}
+      run: python3 scripts/plan-builds.py
 
   builder:
     name: Builder ${{ matrix.id }}
@@ -218,57 +95,57 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.config.outputs.builders) }}
     steps:
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-        with:
-          extra_nix_config: |
-            accept-flake-config = false
-            substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
+    - name: Install Nix
+      uses: cachix/install-nix-action@v31
+      with:
+        extra_nix_config: |
+          accept-flake-config = false
+          substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
+          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
 
-      - name: Configure Cachix build daemon
-        uses: cachix/cachix-action@v17
-        with:
-          name: ${{ env.CACHE_NAME }}
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          useDaemon: true
+    - name: Configure Cachix build daemon
+      uses: cachix/cachix-action@v17
+      with:
+        name: ${{ env.CACHE_NAME }}
+        authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+        useDaemon: true
 
-      - name: Enable Cachix uploads for remote builds
-        run: sudo sh -c "cat '${CACHIX_DAEMON_DIR}/nix.conf' >> /etc/nix/nix.conf"
+    - name: Enable Cachix uploads for remote builds
+      run: sudo sh -c "cat '${CACHIX_DAEMON_DIR}/nix.conf' >> /etc/nix/nix.conf"
 
-      - name: Join builder network
-        uses: tailscale/github-action@v4
-        env:
-          TAILSCALE_SSH_DEFAULT_PATH: /nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:nix-ci-builder
-          hostname: ${{ env.BUILDER_PREFIX }}-${{ matrix.id }}
-          args: --ssh --accept-dns=false
-          version: latest
+    - name: Join builder network
+      uses: tailscale/github-action@v4
+      env:
+        TAILSCALE_SSH_DEFAULT_PATH: /nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+      with:
+        oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+        oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+        tags: tag:nix-ci-builder
+        hostname: ${{ env.BUILDER_PREFIX }}-${{ matrix.id }}
+        args: --ssh --accept-dns=false
+        version: latest
 
-      - name: Restore macOS runner DNS
-        if: matrix.system == 'aarch64-darwin'
-        run: sudo networksetup -setdnsservers Ethernet empty
+    - name: Restore macOS runner DNS
+      if: endsWith(matrix.system, '-darwin')
+      run: sudo networksetup -setdnsservers Ethernet empty
 
-      - name: Wait for distributed builds
-        shell: bash
-        run: |
-          for _ in {1..120}; do
-            if [[ -e /tmp/builder_claimed ]]; then
-              while true; do
-                echo 'Building...'
-                for _ in {1..12}; do
-                  [[ -e /tmp/builder_done ]] && exit 0
-                  sleep 5
-                done
+    - name: Wait for distributed builds
+      shell: bash
+      run: |
+        for _ in {1..120}; do
+          if [[ -e /tmp/builder_claimed ]]; then
+            while true; do
+              echo 'Building...'
+              for _ in {1..12}; do
+                [[ -e /tmp/builder_done ]] && exit 0
+                sleep 5
               done
-            fi
-            sleep 5
-          done
-          echo 'Coordinator did not claim this builder within 10 minutes.' >&2
-          exit 1
+            done
+          fi
+          sleep 5
+        done
+        echo 'Coordinator did not claim this builder within 10 minutes.' >&2
+        exit 1
 
   coordinator:
     name: Distributed build coordinator
@@ -277,110 +154,130 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
+    - name: Check out repository
+      uses: actions/checkout@v7
 
-      - name: Maximize Nix disk space
-        uses: wimpysworld/nothing-but-nix@v10
-        with:
-          hatchet-protocol: cleave
+    - name: Maximize Nix disk space
+      uses: wimpysworld/nothing-but-nix@v10
+      with:
+        hatchet-protocol: cleave
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-        with:
-          extra_nix_config: |
-            accept-flake-config = false
-            max-jobs = 0
-            substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
-
-      - name: Configure Cachix for pulls
-        uses: cachix/cachix-action@v17
-        with:
-          name: ${{ env.CACHE_NAME }}
-          skipPush: true
-
-      - name: Install devenv
-        run: nix profile add nixpkgs#devenv
-
-      - name: Join coordinator network
-        uses: tailscale/github-action@v4
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:nix-ci-coordinator
-          hostname: nix-c-${{ github.run_id }}-${{ github.run_attempt }}
-          version: latest
-
-      - name: Configure remote builders
-        env:
-          BUILDERS: ${{ needs.config.outputs.builders }}
-        shell: bash
-        run: |
-          sudo mkdir -p /etc/ssh/ssh_config.d
-          sudo tee /etc/ssh/ssh_config.d/nix-ci-builders.conf >/dev/null <<'EOF'
-          Host nix-b-*
-            StrictHostKeyChecking no
-            UserKnownHostsFile /dev/null
-            BatchMode yes
-            LogLevel ERROR
-          EOF
-          sudo tee /etc/nix/machines </dev/null
-
-          while IFS=$'\t' read -r id system max_jobs; do
-            builder="${BUILDER_PREFIX}-${id}"
-            for _ in {1..120}; do
-              ssh -n -o ConnectTimeout=5 "root@${builder}" true 2>/dev/null && break
-              sleep 5
-            done
-            ssh -n "root@${builder}" 'touch /tmp/builder_claimed'
-            printf 'ssh-ng://root@%s %s - %s 1 big-parallel,benchmark\n' "${builder}" "${system}" "${max_jobs}" |
-              sudo tee -a /etc/nix/machines >/dev/null
-          done < <(jq -r '.include[] | [.id, .system, .maxJobs] | @tsv' <<<"${BUILDERS}")
-
-          sudo tee -a /etc/nix/nix.conf >/dev/null <<'EOF'
-          builders = @/etc/nix/machines
-          builders-use-substitutes = true
+    - name: Install Nix
+      uses: cachix/install-nix-action@v31
+      with:
+        extra_nix_config: |
+          accept-flake-config = false
+          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
           max-jobs = 0
-          EOF
-          sudo systemctl restart nix-daemon.service
+          substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
+          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
 
-      - name: Build CI configurations
-        if: needs.config.outputs.targets != '[]'
-        env:
-          TARGETS: ${{ needs.config.outputs.targets }}
-        shell: bash
-        run: |
-          mapfile -t installables < <(jq -r '.[].installable' <<<"${TARGETS}")
-          {
-            printf '### Built CI configuration paths\n\n'
-            nix build \
-              --no-write-lock-file \
-              --print-build-logs \
-              --print-out-paths \
-              --max-jobs 0 \
-              "${installables[@]}" |
-              while IFS= read -r path; do printf -- "- \`%s\`\n" "${path}"; done
-          } >>"${GITHUB_STEP_SUMMARY}"
+    - name: Configure Cachix for pulls
+      uses: cachix/cachix-action@v17
+      with:
+        name: ${{ env.CACHE_NAME }}
+        skipPush: true
 
-      - name: Build root devenv
-        if: needs.config.outputs.devenv_systems != '[]'
-        env:
-          DEVENV_SYSTEMS: ${{ needs.config.outputs.devenv_systems }}
-        shell: bash
-        run: |
-          printf '### Built root devenv systems\n\n' >>"${GITHUB_STEP_SUMMARY}"
-          while IFS= read -r system; do
-            devenv build shell -s "${system}" --max-jobs 0 --no-tui
-            printf -- "- \`%s\`\n" "${system}" >>"${GITHUB_STEP_SUMMARY}"
-          done < <(jq -r '.[]' <<<"${DEVENV_SYSTEMS}")
+    - name: Install devenv
+      run: nix profile add nixpkgs#devenv
 
-      - name: Release remote builders
-        if: always()
-        env:
-          BUILDERS: ${{ needs.config.outputs.builders }}
-        shell: bash
-        run: |
-          while IFS= read -r id; do
-            ssh -n -o ConnectTimeout=5 "root@${BUILDER_PREFIX}-${id}" 'touch /tmp/builder_done' || true
-          done < <(jq -r '.include[].id' <<<"${BUILDERS}")
+    - name: Join coordinator network
+      uses: tailscale/github-action@v4
+      with:
+        oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+        oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+        tags: tag:nix-ci-coordinator
+        hostname: nix-c-${{ github.run_id }}-${{ github.run_attempt }}
+        version: latest
+
+    - name: Configure remote builders
+      env:
+        BUILDERS: ${{ needs.config.outputs.builders }}
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        sudo mkdir -p /etc/ssh/ssh_config.d
+        sudo tee /etc/ssh/ssh_config.d/nix-ci-builders.conf >/dev/null <<'EOF'
+        Host nix-b-*
+          StrictHostKeyChecking no
+          UserKnownHostsFile /dev/null
+          BatchMode yes
+          LogLevel ERROR
+        EOF
+        sudo tee /etc/nix/machines </dev/null
+
+        while IFS=$'\t' read -r id system max_jobs; do
+          builder="${BUILDER_PREFIX}-${id}"
+          connected=false
+          for _ in {1..120}; do
+            if ssh -n -o ConnectTimeout=5 "root@${builder}" true 2>/dev/null; then
+              connected=true
+              break
+            fi
+            sleep 5
+          done
+          if [[ "${connected}" != true ]]; then
+            printf 'Builder %s did not become reachable within 10 minutes.\n' "${builder}" >&2
+            exit 1
+          fi
+
+          ssh -n "root@${builder}" 'touch /tmp/builder_claimed'
+          printf 'ssh-ng://root@%s %s - %s 1 big-parallel,benchmark\n' \
+            "${builder}" "${system}" "${max_jobs}" |
+            sudo tee -a /etc/nix/machines >/dev/null
+        done < <(jq -r '.include[] | [.id, .system, .maxJobs] | @tsv' <<<"${BUILDERS}")
+
+        sudo tee -a /etc/nix/nix.conf >/dev/null <<'EOF'
+        builders = @/etc/nix/machines
+        builders-use-substitutes = true
+        max-jobs = 0
+        EOF
+        sudo systemctl restart nix-daemon.service
+
+    - name: Build CI configurations
+      if: needs.config.outputs.targets != '[]'
+      env:
+        TARGETS: ${{ needs.config.outputs.targets }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        build_systems="$(jq -c '[.[].system] | unique' <<<"${TARGETS}")"
+        {
+          printf '### Built CI configuration paths\n\n'
+          BUILD_SYSTEMS="${build_systems}" nix build \
+            --impure \
+            --file ci/outputs.nix \
+            --no-link \
+            --no-write-lock-file \
+            --print-build-logs \
+            --print-out-paths \
+            --max-jobs 0 |
+            while IFS= read -r path; do
+              printf -- "- \`%s\`\n" "${path}"
+            done
+        } >>"${GITHUB_STEP_SUMMARY}"
+
+    - name: Build root devenv
+      if: needs.config.outputs.devenv_systems != '[]'
+      env:
+        DEVENV_SYSTEMS: ${{ needs.config.outputs.devenv_systems }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        printf '### Built root devenv systems\n\n' >>"${GITHUB_STEP_SUMMARY}"
+        while IFS= read -r system; do
+          devenv build shell -s "${system}" --max-jobs 0 --no-tui
+          printf -- "- \`%s\`\n" "${system}" >>"${GITHUB_STEP_SUMMARY}"
+        done < <(jq -r '.[]' <<<"${DEVENV_SYSTEMS}")
+
+    - name: Release remote builders
+      if: always()
+      env:
+        BUILDERS: ${{ needs.config.outputs.builders }}
+      shell: bash
+      run: |
+        while IFS= read -r id; do
+          ssh -n -o ConnectTimeout=5 "root@${BUILDER_PREFIX}-${id}" \
+            'touch /tmp/builder_done' || true
+        done < <(jq -r '.include[].id' <<<"${BUILDERS}")

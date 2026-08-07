@@ -29,6 +29,13 @@ jobs:
             substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
 
+      - name: Restore Nix store
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-tests-${{ hashFiles('flake.lock', 'devenv.lock') }}
+          restore-prefixes-first-match: nix-tests-
+          gc-max-store-size-linux: 2G
+
       - name: Install devenv
         shell: bash
         run: nix profile add nixpkgs#devenv
@@ -41,6 +48,12 @@ jobs:
 
       - name: Lint GitHub Actions
         run: actionlint
+
+      - name: Lint Python scripts
+        run: |
+          ruff format --check scripts/
+          ruff check scripts/
+          ty check scripts/
 
       - name: Check formatting
         run: |

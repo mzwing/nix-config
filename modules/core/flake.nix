@@ -8,22 +8,6 @@
     lib.mapAttrs (_: host: config.mzwing.lib.mkDarwinCIHost host) config.mzwing.hosts.darwin;
   ciNixosConfigurations =
     lib.mapAttrs (_: host: config.mzwing.lib.mkNixosCIHost host) config.mzwing.hosts.nixos;
-
-  ciDarwinMatrix =
-    lib.mapAttrs (name: host: {
-      inherit (host) system;
-      installable = ".#ciConfigurations.darwin.${name}.system";
-      outputPath = ciDarwinConfigurations.${name}.system.outPath;
-    })
-    config.mzwing.hosts.darwin;
-
-  ciNixosMatrix =
-    lib.mapAttrs (name: host: {
-      inherit (host) system;
-      installable = ".#ciConfigurations.nixos.${name}.config.system.build.toplevel";
-      outputPath = ciNixosConfigurations.${name}.config.system.build.toplevel.outPath;
-    })
-    config.mzwing.hosts.nixos;
 in {
   systems = [
     "aarch64-darwin"
@@ -38,11 +22,6 @@ in {
     ciConfigurations = {
       darwin = ciDarwinConfigurations;
       nixos = ciNixosConfigurations;
-    };
-
-    debug.ci.matrix = {
-      darwin = ciDarwinMatrix;
-      nixos = ciNixosMatrix;
     };
 
     darwinModules = config.mzwing.lib.moduleAttrsFor "darwin";
