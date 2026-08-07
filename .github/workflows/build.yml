@@ -37,7 +37,7 @@ jobs:
           accept-flake-config = false
           access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
           substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
-          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
+          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
 
     - name: Restore Nix store
       uses: nix-community/cache-nix-action@v7
@@ -67,6 +67,14 @@ jobs:
 
         devenv_outputs='{}'
         for system in x86_64-linux aarch64-linux aarch64-darwin; do
+          # devenv-nixpkgs-patched has allowSubstitutes = false, so nix
+          # will not substitute it mid-evaluation and would try to build
+          # it locally, which cannot work for foreign systems. Pre-seed
+          # it from devenv.cachix.org instead.
+          patched_src="$(DEVENV_SYSTEM="${system}" nix eval --raw --impure --file ci/devenv-patched-src.nix)"
+          if ! nix copy --from https://devenv.cachix.org "${patched_src}"; then
+            printf '::warning::Could not pre-seed %s from devenv.cachix.org; foreign-system devenv evaluation may fail.\n' "${patched_src}"
+          fi
           packages="$(devenv eval -s "${system}" packages | jq -c .packages)"
           devenv_outputs="$(
             jq -c \
@@ -170,7 +178,7 @@ jobs:
           access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
           max-jobs = 0
           substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
-          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
+          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
 
     - name: Configure Cachix for pulls
       uses: cachix/cachix-action@v17
@@ -267,6 +275,11 @@ jobs:
         set -euo pipefail
         printf '### Built root devenv systems\n\n' >>"${GITHUB_STEP_SUMMARY}"
         while IFS= read -r system; do
+          # See "Evaluate CI targets" for why this pre-seed is needed.
+          patched_src="$(DEVENV_SYSTEM="${system}" nix eval --raw --impure --file ci/devenv-patched-src.nix)"
+          if ! nix copy --from https://devenv.cachix.org "${patched_src}"; then
+            printf '::warning::Could not pre-seed %s from devenv.cachix.org; foreign-system devenv build may fail.\n' "${patched_src}"
+          fi
           devenv build shell -s "${system}" --max-jobs 0 --no-tui
           printf -- "- \`%s\`\n" "${system}" >>"${GITHUB_STEP_SUMMARY}"
         done < <(jq -r '.[]' <<<"${DEVENV_SYSTEMS}")
