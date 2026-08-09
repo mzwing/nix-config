@@ -1,0 +1,39 @@
+name: Pin tailnet peer address
+description: >-
+  Discover a tailnet peer's IP from the local tailscaled and pin it in
+  /etc/hosts. Needed on runners where MagicDNS is unavailable — e.g.
+  macOS, where the join action restores the system DNS to DHCP after
+  joining (which also drops MagicDNS); Linux runners resolve tailnet
+  hostnames via split DNS instead.
+
+inputs:
+  hostname:
+    description: Tailnet hostname of the peer to pin.
+    required: true
+  attempts:
+    description: Number of 5-second polls before failing.
+    required: false
+    default: '36'
+
+runs:
+  using: composite
+  steps:
+    - name: Pin tailnet peer address
+      shell: bash
+      env:
+        PEER_HOSTNAME: ${{ inputs.hostname }}
+        ATTEMPTS: ${{ inputs.attempts }}
+      run: |
+        set -euo pipefail
+        peer_ip=""
+        for ((i = 0; i < ATTEMPTS; i++)); do
+          peer_ip="$(sudo tailscale status --json | jq -r --arg host "${PEER_HOSTNAME}" \
+            '[.Peer[]? | select(.HostName == $host) | .TailscaleIPs[0]] | first // empty')"
+          [[ -n "${peer_ip}" ]] && break
+          sleep 5
+        done
+        if [[ -z "${peer_ip}" ]]; then
+          echo "::error::The tailnet peer ${PEER_HOSTNAME} did not appear within $((ATTEMPTS * 5)) seconds."
+          exit 1
+        fi
+        printf '%s %s\n' "${peer_ip}" "${PEER_HOSTNAME}" | sudo tee -a /etc/hosts

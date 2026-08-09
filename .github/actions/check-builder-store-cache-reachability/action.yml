@@ -1,0 +1,57 @@
+name: Check builder store cache reachability
+description: >-
+  Fail fast unless the builder store cache is reachable via SSH both
+  from this machine (the coordinator substitutes from it when assembling
+  the Cachix push closure) and from the first builder in the matrix (the
+  exact path the builds use). Nix marks a substituter as failed for the
+  rest of the session after one failed connection, and the cache joins
+  the tailnet in parallel with the coordinator, so this must pass before
+  building starts.
+
+inputs:
+  cache-host:
+    description: Hostname of the builder store cache node on the tailnet.
+    required: true
+  builders-json:
+    description: 'Builder matrix JSON ({"include": [{"id", ...}, ...]}).'
+    required: true
+  builder-prefix:
+    description: Hostname prefix of the builders (e.g. nix-b-<run_id>-<attempt>).
+    required: true
+  attempts:
+    description: Number of 5-second polls before failing.
+    required: false
+    default: '24'
+
+runs:
+  using: composite
+  steps:
+    - name: Check builder store cache reachability
+      shell: bash
+      env:
+        CACHE_HOST: ${{ inputs.cache-host }}
+        BUILDERS: ${{ inputs.builders-json }}
+        BUILDER_PREFIX: ${{ inputs.builder-prefix }}
+        ATTEMPTS: ${{ inputs.attempts }}
+      run: |
+        set -euo pipefail
+        first_builder="${BUILDER_PREFIX}-$(jq -r '.include[0].id' <<<"${BUILDERS}")"
+        cache_ok=false
+        for ((i = 0; i < ATTEMPTS; i++)); do
+          if ssh -n -o ConnectTimeout=5 "root@${CACHE_HOST}" true 2>/dev/null && \
+            ssh -n "root@${first_builder}" \
+              "ssh -o ConnectTimeout=5 root@${CACHE_HOST} true" 2>/dev/null; then
+            cache_ok=true
+            break
+          fi
+          sleep 5
+        done
+        if [[ "${cache_ok}" != true ]]; then
+          # Surface the underlying ssh errors (DNS / timeout / ACL / ...)
+          # so the failure is diagnosable from the log alone.
+          err_direct="$(ssh -n -o ConnectTimeout=5 "root@${CACHE_HOST}" true 2>&1 || true)"
+          err_builder="$(ssh -n "root@${first_builder}" \
+            "ssh -o ConnectTimeout=5 root@${CACHE_HOST} true" 2>&1 || true)"
+          echo "::error::The builder store cache is not reachable via SSH. Direct: ${err_direct} / via builder: ${err_builder}"
+          exit 1
+        fi

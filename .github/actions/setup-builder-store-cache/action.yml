@@ -1,0 +1,76 @@
+name: Set up builder store cache
+description: >-
+  Configure this machine as a client of the central builder store cache
+  (a plain ssh-ng store on the tailnet): validate the signing public key
+  and add the cache as a substituter. In post-build-hook mode (builders)
+  every locally built path is additionally pushed to the cache; once the
+  cache machine has signed it (within about a minute) the other builders
+  can substitute it. Remote builds via ssh-ng read /etc/nix/nix.conf per
+  session, so no daemon restart is needed on builders. In substituter-only
+  mode (coordinator) the nix-daemon must be (re)started afterwards to pick
+  up the new substituter.
+
+inputs:
+  cache-host:
+    description: Hostname of the builder store cache node on the tailnet.
+    required: true
+  signing-public-key:
+    description: >-
+      Public key (name:base64=) used to verify paths served by the cache.
+      The cache is mandatory: a missing/misconfigured key fails fast
+      instead of degrading to cache-less builds.
+    required: true
+  post-build-hook:
+    description: >-
+      Whether to push every locally built path to the cache via a
+      post-build hook (builders). "false" configures only the
+      substituter side (coordinator).
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Configure builder store cache
+      shell: bash
+      env:
+        CACHE_HOST: ${{ inputs.cache-host }}
+        SIGNING_PUBLIC_KEY: ${{ inputs.signing-public-key }}
+        POST_BUILD_HOOK: ${{ inputs.post-build-hook }}
+      run: |
+        set -euo pipefail
+        if [[ ! "${SIGNING_PUBLIC_KEY}" =~ ^[a-z0-9-]+:[A-Za-z0-9+/]{43}=$ ]]; then
+          echo '::error::The builder store cache signing public key is not configured.'
+          exit 1
+        fi
+        if [[ "${POST_BUILD_HOOK}" == 'true' ]]; then
+          sudo tee /etc/nix/push-to-builder-cache >/dev/null <<EOF
+        #!/bin/sh
+        # Push every locally built path to the central builder store
+        # cache. Only the exact outputs are exported (not their closure):
+        # upstream dependencies stay fetchable from the upstream caches.
+        export PATH=/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+        nix-store --export \$OUT_PATHS |
+          ssh root@${CACHE_HOST} nix-store --import ||
+          true
+        EOF
+          sudo chmod 755 /etc/nix/push-to-builder-cache
+          sudo tee -a /etc/ssh/ssh_config >/dev/null <<EOF
+
+        Host ${CACHE_HOST}
+          StrictHostKeyChecking no
+          UserKnownHostsFile /dev/null
+          ConnectTimeout 10
+          BatchMode yes
+          LogLevel ERROR
+        EOF
+        fi
+        {
+          echo
+          echo "extra-substituters = ssh-ng://root@${CACHE_HOST}"
+          echo "extra-trusted-public-keys = ${SIGNING_PUBLIC_KEY}"
+          if [[ "${POST_BUILD_HOOK}" == 'true' ]]; then
+            echo 'post-build-hook = /etc/nix/push-to-builder-cache'
+          fi
+          echo 'connect-timeout = 5'
+        } | sudo tee -a /etc/nix/nix.conf >/dev/null

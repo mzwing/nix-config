@@ -1,0 +1,79 @@
+name: Serve builder store cache
+description: >-
+  Run the central builder store cache loop: validate the signing key
+  pair (mandatory — without it the builders cannot trust paths from the
+  cache, so fail fast instead of degrading to cache-less builds),
+  install the secret key, then periodically sign all store paths pushed
+  by the builders to make them substitutable for the other builders. The
+  coordinator touches the done file when the run is over (its
+  release-remote-builders step runs with `if: always()`); the deadline
+  is only a backstop for a cancelled or crashed coordinator.
+
+inputs:
+  signing-key:
+    description: Secret signing key (repository secret).
+    required: true
+  signing-public-key:
+    description: Matching public key (name:base64=), validated fail-fast.
+    required: true
+  key-file:
+    description: Where to install the secret key.
+    required: false
+    default: /etc/nix/cache-key.pem
+  done-file:
+    description: File whose creation ends the signing loop.
+    required: false
+    default: /tmp/cache_done
+  deadline-minutes:
+    description: Backstop deadline for the signing loop.
+    required: false
+    default: '350'
+  sign-interval-seconds:
+    description: Interval between signing passes.
+    required: false
+    default: '60'
+
+runs:
+  using: composite
+  steps:
+    - name: Serve builders and sign pushed paths
+      shell: bash
+      env:
+        SIGNING_KEY: ${{ inputs.signing-key }}
+        SIGNING_PUBLIC_KEY: ${{ inputs.signing-public-key }}
+        KEY_FILE: ${{ inputs.key-file }}
+        DONE_FILE: ${{ inputs.done-file }}
+        DEADLINE_MINUTES: ${{ inputs.deadline-minutes }}
+        SIGN_INTERVAL: ${{ inputs.sign-interval-seconds }}
+      run: |
+        set -euo pipefail
+        if [[ -z "${SIGNING_KEY}" ]]; then
+          echo '::error::The builder store cache signing key secret is not set.'
+          exit 1
+        fi
+        if [[ ! "${SIGNING_PUBLIC_KEY}" =~ ^[a-z0-9-]+:[A-Za-z0-9+/]{43}=$ ]]; then
+          echo '::error::The builder store cache signing public key is not configured.'
+          exit 1
+        fi
+
+        printf '%s\n' "${SIGNING_KEY}" | sudo tee "${KEY_FILE}" >/dev/null
+        sudo chmod 600 "${KEY_FILE}"
+
+        # sudo resets PATH to secure_path, which does not contain the Nix
+        # profile; resolve absolute paths before elevating.
+        nix_bin="$(command -v nix)"
+        deadline=$(( $(date +%s) + DEADLINE_MINUTES * 60 ))
+        sign_due=0
+        until [[ -e "${DONE_FILE}" ]]; do
+          now="$(date +%s)"
+          if (( now >= sign_due )); then
+            sudo "$nix_bin" store sign --all --key-file "${KEY_FILE}"
+            sign_due=$(( now + SIGN_INTERVAL ))
+          fi
+          if (( now >= deadline )); then
+            echo 'Timed out waiting for the coordinator to signal completion; continuing anyway.'
+            break
+          fi
+          sleep 15
+        done
+        sudo "$nix_bin" store sign --all --key-file "${KEY_FILE}"

@@ -1,0 +1,58 @@
+name: Garbage-collect store to build closure
+description: >-
+  Keep only store paths related to the current lock: register the
+  build-time closure of the given derivations (plus optional extra
+  paths) as GC roots, then collect everything else — stale
+  intermediates from previous locks. `nix-store --query --requisites`
+  lists closure paths that are not present locally, so only existing
+  paths are rooted.
+
+inputs:
+  drvs-file:
+    description: Nix file evaluating to a JSON list of .drv paths.
+    required: false
+    default: ci/drvs.nix
+  extra-paths-json:
+    description: >-
+      Optional JSON value whose nested strings are additional paths to
+      root (e.g. a map of devenv shell outputs, for targets whose drvs
+      cannot be evaluated on this machine).
+    required: false
+    default: ''
+  gcroots-name:
+    description: Directory name under /nix/var/nix/gcroots for the roots.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Garbage-collect stale store paths
+      shell: bash
+      env:
+        DRVS_FILE: ${{ inputs.drvs-file }}
+        EXTRA_PATHS_JSON: ${{ inputs.extra-paths-json }}
+        GCROOTS_NAME: ${{ inputs.gcroots-name }}
+      run: |
+        set -euo pipefail
+        echo "Store size before GC: $(du -sh /nix/store | cut -f1)"
+        nix eval --json --impure --file "${DRVS_FILE}" | jq -r '.[]' > /tmp/gc-drvs.txt
+        {
+          xargs nix-store --query --requisites --include-outputs < /tmp/gc-drvs.txt
+          if [[ -n "${EXTRA_PATHS_JSON}" ]]; then
+            jq -r '.. | strings' <<<"${EXTRA_PATHS_JSON}"
+          fi
+        } | sort --unique > /tmp/gc-keep-set.txt
+        gcroots="/nix/var/nix/gcroots/${GCROOTS_NAME}"
+        sudo rm -rf "${gcroots}"
+        sudo install -d "${gcroots}"
+        while IFS= read -r path; do
+          [[ -e "${path}" ]] && printf '%s\n' "${path}"
+        done < /tmp/gc-keep-set.txt > /tmp/gc-root-set.txt
+        echo "Rooting $(wc -l < /tmp/gc-root-set.txt) of $(wc -l < /tmp/gc-keep-set.txt) closure paths."
+        sudo xargs -a /tmp/gc-root-set.txt -r -n 100 ln -sfn -t "${gcroots}" --
+        echo 'Paths that will be deleted:'
+        # sudo resets PATH to secure_path, which does not contain the Nix
+        # profile; resolve the absolute path before elevating.
+        sudo "$(command -v nix-collect-garbage)" --dry-run
+        sudo "$(command -v nix-collect-garbage)"
+        echo "Store size after GC: $(du -sh /nix/store | cut -f1)"
