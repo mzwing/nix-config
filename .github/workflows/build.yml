@@ -69,9 +69,6 @@ jobs:
         restore-prefix: nix-ci-
         gc-max-store-size-linux: 4G
 
-    - name: Check flake evaluation
-      run: nix flake check --all-systems --no-build --no-write-lock-file --show-trace
-
     - name: Evaluate CI targets
       id: evaluate
       shell: bash

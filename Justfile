@@ -99,7 +99,7 @@ nixos-anywhere host target no_reboot='':
 
 [group('nix')]
 flake-check:
-  nix flake check --no-build --show-trace {{flake_ref}} --all-systems
+  nix flake check --show-trace {{flake_ref}} --all-systems
 
 [group('nix')]
 typecheck:
