@@ -46,6 +46,14 @@ jobs:
         restore-prefixes-first-match: nix-config-
         gc-max-store-size-linux: 2G
 
+    # Interrupted builds or substitutions from earlier runs leave
+    # root-owned <path>.lock files in /nix/store; they ride along in the
+    # restored store cache and break the unprivileged tar of the
+    # post-run store save. No nix process is running at this point, so
+    # any lock file present is stale by definition.
+    - name: Remove stale Nix store lock files
+      run: sudo find /nix/store -maxdepth 1 -name '*.lock' -delete
+
     - name: Configure Cachix for pulls
       uses: cachix/cachix-action@v17
       with:
@@ -260,7 +268,8 @@ jobs:
             --no-write-lock-file \
             --print-build-logs \
             --print-out-paths \
-            --max-jobs 0 |
+            --max-jobs 0 \
+            --keep-going |
             while IFS= read -r path; do
               printf -- "- \`%s\`\n" "${path}"
             done
@@ -274,15 +283,26 @@ jobs:
       run: |
         set -euo pipefail
         printf '### Built root devenv systems\n\n' >>"${GITHUB_STEP_SUMMARY}"
+        failed_systems=()
         while IFS= read -r system; do
           # See "Evaluate CI targets" for why this pre-seed is needed.
           patched_src="$(DEVENV_SYSTEM="${system}" nix eval --raw --impure --file ci/devenv-patched-src.nix)"
           if ! nix copy --from https://devenv.cachix.org "${patched_src}"; then
             printf '::warning::Could not pre-seed %s from devenv.cachix.org; foreign-system devenv build may fail.\n' "${patched_src}"
           fi
-          devenv build shell -s "${system}" --max-jobs 0 --no-tui
-          printf -- "- \`%s\`\n" "${system}" >>"${GITHUB_STEP_SUMMARY}"
+          # devenv build has no --keep-going; try every system and
+          # report all failures at the end instead of stopping at the
+          # first one.
+          if devenv build shell -s "${system}" --max-jobs 0 --no-tui; then
+            printf -- "- \`%s\`\n" "${system}" >>"${GITHUB_STEP_SUMMARY}"
+          else
+            failed_systems+=("${system}")
+          fi
         done < <(jq -r '.[]' <<<"${DEVENV_SYSTEMS}")
+        if ((${#failed_systems[@]} > 0)); then
+          printf '::error::devenv build failed for: %s\n' "${failed_systems[*]}"
+          exit 1
+        fi
 
     - name: Release remote builders
       if: always()

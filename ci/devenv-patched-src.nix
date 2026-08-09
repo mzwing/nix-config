@@ -28,8 +28,8 @@ let
   srcLock = builtins.fromJSON (builtins.readFile (devenvNixpkgs + "/flake.lock"));
   nixpkgsSrc = builtins.fetchTree srcLock.nodes.nixpkgs-src.locked;
 
-  pkgs = import nixpkgsSrc {inherit system;};
-  patchDefs = pkgs.callPackage (devenvNixpkgs + "/patches") {};
+  pkgs = import "${nixpkgsSrc}" {inherit system;};
+  patchDefs = pkgs.callPackage "${devenvNixpkgs}/patches" {};
 in
   (pkgs.applyPatches {
     name = "devenv-nixpkgs-patched";
