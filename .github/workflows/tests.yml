@@ -14,6 +14,10 @@ jobs:
   tests:
     name: Test flake and workflows
     runs-on: ubuntu-latest
+    permissions:
+      # actions: write is required to purge stale store cache entries.
+      actions: write
+      contents: read
     defaults:
       run:
         shell: devenv shell bash -- -e {0}

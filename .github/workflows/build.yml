@@ -21,6 +21,10 @@ jobs:
   config:
     name: Plan CI cache build
     runs-on: ubuntu-latest
+    permissions:
+      # actions: write is required to purge stale store cache entries.
+      actions: write
+      contents: read
     outputs:
       builders: ${{ steps.plan.outputs.builders }}
       devenv_systems: ${{ steps.plan.outputs.devenv_systems }}
