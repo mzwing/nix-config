@@ -16,6 +16,15 @@ concurrency:
 env:
   CACHE_NAME: mzwing
   BUILDER_PREFIX: nix-b-${{ github.run_id }}-${{ github.run_attempt }}
+  CACHE_HOST: nix-cache-${{ github.run_id }}-${{ github.run_attempt }}
+  # Public key matching the NIX_CI_CACHE_SIGNING_KEY repository secret
+  # (`nix key generate-secret --key-name nix-ci-cache-1` for the secret,
+  # `nix key convert-secret-to-public` for this value). Builders use it to
+  # verify paths served by the central builder store cache (the "cache"
+  # job). The cache is mandatory: if the secret or this public key is
+  # missing/misconfigured, the run fails fast instead of degrading to
+  # cache-less builds.
+  NIX_CI_CACHE_SIGNING_PUBLIC_KEY: nix-ci-cache-1:y7GWPJEVNbQYpX+qGvV0ZqH3DpZLBmnarazYlg8ntHA=
 
 jobs:
   config:
@@ -27,6 +36,7 @@ jobs:
       contents: read
     outputs:
       builders: ${{ steps.plan.outputs.builders }}
+      devenv_outputs: ${{ steps.evaluate.outputs.devenv_outputs }}
       devenv_systems: ${{ steps.plan.outputs.devenv_systems }}
       has_builds: ${{ steps.plan.outputs.has_builds }}
       targets: ${{ steps.plan.outputs.targets }}
@@ -41,11 +51,23 @@ jobs:
         extra-trusted-public-keys: devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
         install-devenv: 'true'
 
+    # Shared with the "Restore Nix store" steps of update.yml and
+    # tests.yml: one cache family (nix-ci-) for all jobs, so this job
+    # restores the warm cache saved by the daily update run (which always
+    # precedes the builds it triggers). The key must hash the union of
+    # all jobs' lock inputs and use the same gc size. The action also
+    # removes stale root-owned store lock files (left behind by
+    # interrupted builds or substitutions of earlier runs; they break the
+    # unprivileged tar of the post-run store save) and purges stale cache
+    # entries in the post (save) phase: keep at most the entry just saved
+    # (protected by purge-primary-key: never) and the one it was restored
+    # from.
     - name: Restore Nix store
       uses: ./.github/actions/restore-nix-store
       with:
-        primary-key: nix-config-${{ hashFiles('flake.lock', 'devenv.lock') }}
-        restore-prefix: nix-config-
+        primary-key: nix-ci-${{ hashFiles('flake.lock', 'devenv.lock', 'devenv.nix', 'devenv.yaml') }}
+        restore-prefix: nix-ci-
+        gc-max-store-size-linux: 4G
 
     - name: Check flake evaluation
       run: nix flake check --all-systems --no-build --no-write-lock-file --show-trace
@@ -98,20 +120,58 @@ jobs:
     - name: Check out repository
       uses: actions/checkout@v7
 
+    # Cachix is pull-only on builders: only final outputs (host
+    # configurations and devenv shells) are pushed there, by the
+    # coordinator. Locally built paths (config-specific intermediate
+    # derivations, ...) go to the central builder store cache instead
+    # (see the "cache" job), which also keeps the Cachix write token off
+    # the unsandboxed macOS builders.
     - name: Set up Nix
       uses: ./.github/actions/setup-nix
       with:
-        cachix-pull: 'false'
+        cachix-pull: 'true'
 
-    - name: Configure Cachix build daemon
-      uses: cachix/cachix-action@v17
-      with:
-        name: ${{ env.CACHE_NAME }}
-        authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        useDaemon: true
+    # The builder store cache is a plain ssh-ng store on the tailnet (no
+    # server software needed). Every locally built path is exported there
+    # by the post-build hook; once the cache machine has signed it (within
+    # about a minute) the other builders can substitute it. Remote builds
+    # via ssh-ng read /etc/nix/nix.conf per session, so no daemon restart
+    # is needed.
+    - name: Configure builder store cache
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ ! "${NIX_CI_CACHE_SIGNING_PUBLIC_KEY}" =~ ^nix-ci-cache-1:[A-Za-z0-9+/]{43}=$ ]]; then
+          echo '::error::NIX_CI_CACHE_SIGNING_PUBLIC_KEY is not configured.'
+          exit 1
+        fi
+        sudo tee /etc/nix/push-to-builder-cache >/dev/null <<EOF
+        #!/bin/sh
+        # Push every locally built path to the central builder store
+        # cache. Only the exact outputs are exported (not their closure):
+        # upstream dependencies stay fetchable from the upstream caches.
+        export PATH=/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+        nix-store --export \$OUT_PATHS |
+          ssh root@${CACHE_HOST} nix-store --import ||
+          true
+        EOF
+        sudo chmod 755 /etc/nix/push-to-builder-cache
+        sudo tee -a /etc/ssh/ssh_config >/dev/null <<EOF
 
-    - name: Enable Cachix uploads for remote builds
-      run: sudo sh -c "cat '${CACHIX_DAEMON_DIR}/nix.conf' >> /etc/nix/nix.conf"
+        Host ${CACHE_HOST}
+          StrictHostKeyChecking no
+          UserKnownHostsFile /dev/null
+          ConnectTimeout 10
+          BatchMode yes
+          LogLevel ERROR
+        EOF
+        sudo tee -a /etc/nix/nix.conf >/dev/null <<EOF
+
+        extra-substituters = ssh-ng://root@${CACHE_HOST}
+        extra-trusted-public-keys = ${NIX_CI_CACHE_SIGNING_PUBLIC_KEY}
+        post-build-hook = /etc/nix/push-to-builder-cache
+        connect-timeout = 5
+        EOF
 
     - name: Join builder network
       uses: ./.github/actions/join-ci-tailnet
@@ -120,10 +180,193 @@ jobs:
         oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
         tags: tag:nix-ci-builder
         hostname: ${{ env.BUILDER_PREFIX }}-${{ matrix.id }}
-        args: --ssh --accept-dns=false
+        args: --ssh
+
+    # macOS only: the join action restores the runner's DNS after joining
+    # (with DNS accepted, the tailscale action replaces the system DNS
+    # with quad100 and the runner loses public internet access, so it is
+    # reset back to DHCP). This also drops MagicDNS, hence the /etc/hosts
+    # pin below; Linux builders resolve ${CACHE_HOST} via split DNS.
+    # Discover the cache node's tailnet IP from the local tailscaled and
+    # pin it in /etc/hosts for the substituter and the post-build hook.
+    - name: Resolve builder store cache address
+      if: endsWith(matrix.system, '-darwin')
+      shell: bash
+      run: |
+        set -euo pipefail
+        cache_ip=""
+        for _ in {1..36}; do
+          cache_ip="$(sudo tailscale status --json | jq -r --arg host "${CACHE_HOST}" \
+            '[.Peer[]? | select(.HostName == $host) | .TailscaleIPs[0]] | first // empty')"
+          [[ -n "${cache_ip}" ]] && break
+          sleep 5
+        done
+        if [[ -z "${cache_ip}" ]]; then
+          echo '::error::The builder store cache node did not appear on the tailnet within 3 minutes.'
+          exit 1
+        fi
+        printf '%s %s\n' "${cache_ip}" "${CACHE_HOST}" | sudo tee -a /etc/hosts
 
     - name: Wait for distributed builds
       uses: ./.github/actions/wait-for-distributed-builds
+
+  # Central store cache for the builders: a plain ssh-ng store on the
+  # tailnet. Builders push every locally built path here via their
+  # post-build hook (see the "Configure builder store cache" step of the
+  # builder job) and use it as a substituter. At the end of the run the
+  # store is garbage-collected down to the build closure of the current
+  # lock and saved as a single GitHub Actions cache entry, so the next
+  # run's builders start with warm intermediate caches without each
+  # builder saving its own copy (the Actions cache is limited to 10GB
+  # per repo).
+  cache:
+    name: Builder store cache
+    needs: config
+    if: needs.config.outputs.has_builds == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 420
+    permissions:
+      # actions: write is required to purge expired cache entries.
+      actions: write
+      contents: read
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v7
+
+    # The signing key pair is mandatory: without it the builders cannot
+    # trust paths from the cache, so fail fast instead of degrading to
+    # cache-less builds.
+    - name: Check builder cache prerequisites
+      env:
+        SIGNING_KEY: ${{ secrets.NIX_CI_CACHE_SIGNING_KEY }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ -z "${SIGNING_KEY}" ]]; then
+          echo '::error::Secret NIX_CI_CACHE_SIGNING_KEY is not set.'
+          exit 1
+        fi
+        if [[ ! "${NIX_CI_CACHE_SIGNING_PUBLIC_KEY}" =~ ^nix-ci-cache-1:[A-Za-z0-9+/]{43}=$ ]]; then
+          echo '::error::NIX_CI_CACHE_SIGNING_PUBLIC_KEY is not configured.'
+          exit 1
+        fi
+
+    - name: Maximize Nix disk space
+      uses: wimpysworld/nothing-but-nix@v10
+      with:
+        hatchet-protocol: cleave
+
+    - name: Set up Nix
+      uses: ./.github/actions/setup-nix
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        cachix-name: ${{ env.CACHE_NAME }}
+
+    # The key is unique per run so saves never race and a bad cache can
+    # never block a recurring slot; restores pick the most recent cache.
+    - name: Restore builder store cache
+      uses: nix-community/cache-nix-action/restore@v7
+      with:
+        primary-key: nix-builder-store-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-prefixes-first-match: nix-builder-store-
+
+    # Same as the step of the config job: keep stale root-owned lock files
+    # out of the tarball written by the "Save builder store cache" step.
+    - name: Remove stale Nix store lock files
+      run: sudo find /nix/store -maxdepth 1 -name '*.lock' -delete
+
+    - name: Write cache signing key
+      env:
+        SIGNING_KEY: ${{ secrets.NIX_CI_CACHE_SIGNING_KEY }}
+      run: |
+        printf '%s\n' "${SIGNING_KEY}" | sudo tee /etc/nix/cache-key.pem >/dev/null
+        sudo chmod 600 /etc/nix/cache-key.pem
+
+    - name: Join cache network
+      uses: ./.github/actions/join-ci-tailnet
+      with:
+        oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+        oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+        tags: tag:nix-ci-cache
+        hostname: ${{ env.CACHE_HOST }}
+        args: --ssh
+
+    # Paths pushed by builders arrive unsigned, so sign them periodically
+    # to make them substitutable for the other builders. The coordinator
+    # touches /tmp/cache_done when the run is over (its "Signal builder
+    # store cache shutdown" step has `if: always()`); the deadline is
+    # only a backstop for a cancelled or crashed coordinator.
+    - name: Serve builders and sign pushed paths
+      shell: bash
+      run: |
+        set -euo pipefail
+        # sudo resets PATH to secure_path, which does not contain the Nix
+        # profile; resolve absolute paths before elevating.
+        nix_bin="$(command -v nix)"
+        deadline=$(( $(date +%s) + 350 * 60 ))
+        sign_due=0
+        until [[ -e /tmp/cache_done ]]; do
+          now="$(date +%s)"
+          if (( now >= sign_due )); then
+            sudo "$nix_bin" store sign --all --key-file /etc/nix/cache-key.pem
+            sign_due=$(( now + 60 ))
+          fi
+          if (( now >= deadline )); then
+            echo 'Timed out waiting for the coordinator to signal completion; continuing anyway.'
+            break
+          fi
+          sleep 15
+        done
+        sudo "$nix_bin" store sign --all --key-file /etc/nix/cache-key.pem
+
+    # Keep only store paths related to the current lock: register the
+    # build-time closure of every CI target (all systems) plus the devenv
+    # shell outputs as GC roots, then collect everything else — stale
+    # intermediates from previous locks. `nix-store --query --requisites`
+    # lists closure paths that are not present locally, so only existing
+    # paths are rooted. The devenv outputs are rooted directly (their
+    # drvs cannot be evaluated here for foreign systems; their heavy
+    # dependencies are substituted from devenv.cachix.org anyway, so only
+    # the small locally built pieces need protection).
+    - name: Garbage-collect stale store paths
+      shell: bash
+      env:
+        DEVENV_OUTPUTS: ${{ needs.config.outputs.devenv_outputs }}
+      run: |
+        set -euo pipefail
+        echo "Store size before GC: $(du -sh /nix/store | cut -f1)"
+        nix eval --json --impure --file ci/drvs.nix | jq -r '.[]' > /tmp/nix-ci-drvs.txt
+        {
+          xargs nix-store --query --requisites --include-outputs < /tmp/nix-ci-drvs.txt
+          jq -r '.[][]' <<<"${DEVENV_OUTPUTS}"
+        } | sort --unique > /tmp/nix-ci-keep-set.txt
+        sudo rm -rf /nix/var/nix/gcroots/nix-ci-cache
+        sudo install -d /nix/var/nix/gcroots/nix-ci-cache
+        while IFS= read -r path; do
+          [[ -e "${path}" ]] && printf '%s\n' "${path}"
+        done < /tmp/nix-ci-keep-set.txt > /tmp/nix-ci-root-set.txt
+        echo "Rooting $(wc -l < /tmp/nix-ci-root-set.txt) of $(wc -l < /tmp/nix-ci-keep-set.txt) closure paths."
+        sudo xargs -a /tmp/nix-ci-root-set.txt -r -n 100 ln -sfn -t /nix/var/nix/gcroots/nix-ci-cache --
+        echo 'Paths that will be deleted:'
+        # Same sudo/secure_path caveat as the signing step above.
+        sudo "$(command -v nix-collect-garbage)" --dry-run
+        sudo "$(command -v nix-collect-garbage)"
+        echo "Store size after GC: $(du -sh /nix/store | cut -f1)"
+
+    # Save even when the build failed: paths pushed by builders before
+    # the failure are still valid cache entries. Purging keeps at most
+    # two entries around: the one just saved (protected by
+    # purge-primary-key) and the one it was restored from (restoring
+    # refreshes its last-accessed time).
+    - name: Save builder store cache
+      if: always()
+      uses: nix-community/cache-nix-action/save@v7
+      with:
+        primary-key: nix-builder-store-${{ github.run_id }}-${{ github.run_attempt }}
+        purge: true
+        purge-prefixes: nix-builder-store-
+        purge-last-accessed: P1D
+        purge-primary-key: never
 
   coordinator:
     name: Distributed build coordinator
@@ -156,12 +399,62 @@ jobs:
         tags: tag:nix-ci-coordinator
         hostname: nix-c-${{ github.run_id }}-${{ github.run_attempt }}
 
+    # The coordinator substitutes locally built runtime dependencies
+    # from the builder store cache when assembling the Cachix push
+    # closure (they are no longer uploaded to Cachix by the builders).
+    # Written before the nix-daemon restart in "Configure remote
+    # builders" so the daemon picks it up.
+    - name: Configure builder store cache substituter
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo tee -a /etc/nix/nix.conf >/dev/null <<EOF
+
+        extra-substituters = ssh-ng://root@${CACHE_HOST}
+        extra-trusted-public-keys = ${NIX_CI_CACHE_SIGNING_PUBLIC_KEY}
+        connect-timeout = 5
+        EOF
+
     - name: Configure remote builders
       uses: ./.github/actions/setup-remote-builders
       with:
         builders-json: ${{ needs.config.outputs.builders }}
         builder-prefix: ${{ env.BUILDER_PREFIX }}
-        ssh-host-pattern: nix-b-*
+        ssh-host-pattern: "nix-b-* nix-cache-*"
+
+    # The builder store cache joins the tailnet in parallel (cache job).
+    # Nix marks a substituter as failed for the rest of the session after
+    # one failed connection, so make sure the cache is reachable before
+    # building starts: probe it directly (the coordinator substitutes
+    # from it when assembling the push closure) and probe the exact path
+    # the builds use — a builder SSHing to the cache — through the first
+    # builder. Fail fast if either never comes up.
+    - name: Check builder store cache reachability
+      env:
+        BUILDERS: ${{ needs.config.outputs.builders }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        first_builder="${BUILDER_PREFIX}-$(jq -r '.include[0].id' <<<"${BUILDERS}")"
+        cache_ok=false
+        for _ in {1..24}; do
+          if ssh -n -o ConnectTimeout=5 "root@${CACHE_HOST}" true 2>/dev/null && \
+            ssh -n "root@${first_builder}" \
+              "ssh -o ConnectTimeout=5 root@${CACHE_HOST} true" 2>/dev/null; then
+            cache_ok=true
+            break
+          fi
+          sleep 5
+        done
+        if [[ "${cache_ok}" != true ]]; then
+          # Surface the underlying ssh errors (DNS / timeout / ACL / ...)
+          # so the failure is diagnosable from the log alone.
+          err_direct="$(ssh -n -o ConnectTimeout=5 "root@${CACHE_HOST}" true 2>&1 || true)"
+          err_builder="$(ssh -n "root@${first_builder}" \
+            "ssh -o ConnectTimeout=5 root@${CACHE_HOST} true" 2>&1 || true)"
+          echo "::error::The builder store cache is not reachable via SSH. Direct: ${err_direct} / via builder: ${err_builder}"
+          exit 1
+        fi
 
     - name: Build CI configurations
       if: needs.config.outputs.targets != '[]'
@@ -182,6 +475,7 @@ jobs:
             --print-out-paths \
             --max-jobs 0 \
             --keep-going |
+            tee /tmp/built-outputs.txt |
             while IFS= read -r path; do
               printf -- "- \`%s\`\n" "${path}"
             done
@@ -191,10 +485,14 @@ jobs:
       if: needs.config.outputs.devenv_systems != '[]'
       env:
         DEVENV_SYSTEMS: ${{ needs.config.outputs.devenv_systems }}
+        DEVENV_OUTPUTS: ${{ needs.config.outputs.devenv_outputs }}
       shell: bash
       run: |
         set -euo pipefail
         printf '### Built root devenv systems\n\n' >>"${GITHUB_STEP_SUMMARY}"
+        # Outputs of the successfully built systems, for the Cachix push
+        # step below.
+        : > /tmp/devenv-outputs.txt
         failed_systems=()
         while IFS= read -r system; do
           # See "Evaluate CI targets" for why this pre-seed is needed.
@@ -207,6 +505,8 @@ jobs:
           # first one.
           if devenv build shell -s "${system}" --max-jobs 0 --no-tui; then
             printf -- "- \`%s\`\n" "${system}" >>"${GITHUB_STEP_SUMMARY}"
+            jq -r --arg system "${system}" '.[$system][]' <<<"${DEVENV_OUTPUTS}" \
+              >> /tmp/devenv-outputs.txt
           else
             failed_systems+=("${system}")
           fi
@@ -216,9 +516,69 @@ jobs:
           exit 1
         fi
 
+    # Only the final outputs are pushed to Cachix: the built host
+    # configuration paths and the devenv shell outputs of successfully
+    # built systems. Everything else built locally on the builders
+    # (config-specific intermediate derivations, ...) stays in the
+    # builder store cache and never lands in the public cache. Thanks to
+    # --keep-going the build steps above also produce the succeeded
+    # outputs when other targets fail, so this runs on red builds too
+    # (!cancelled) and publishes the partial result. `cachix push`
+    # always uploads the runtime closure of the given paths, so runtime
+    # dependencies that are not already present in the cache are
+    # uploaded the first time.
+    - name: Push final outputs to Cachix
+      if: '!cancelled()'
+      env:
+        CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+        TARGETS: ${{ needs.config.outputs.targets }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        jq -r '.[].outputPath' <<<"${TARGETS}" > /tmp/target-outputs.txt
+        grep '^/nix/store/' /tmp/built-outputs.txt 2>/dev/null \
+          | grep -Fxf /tmp/target-outputs.txt > /tmp/push-outputs.txt || true
+        if [[ -s /tmp/devenv-outputs.txt ]]; then
+          cat /tmp/devenv-outputs.txt >> /tmp/push-outputs.txt
+        fi
+        sort --unique -o /tmp/push-outputs.txt /tmp/push-outputs.txt
+        if [[ ! -s /tmp/push-outputs.txt ]]; then
+          echo 'Nothing to push.'
+          exit 0
+        fi
+        # Remote builds copy back only the outputs, while `cachix push`
+        # needs every closure path locally to be able to upload it.
+        # Substitute the missing runtime dependencies from the upstream
+        # caches and the builder store cache; iterate because the
+        # references of a path become known only once the path itself
+        # has been realised.
+        mapfile -t outputs < /tmp/push-outputs.txt
+        previous=-1
+        while true; do
+          nix-store --query --requisites "${outputs[@]}" | sort --unique > /tmp/push-closure.txt
+          count="$(wc -l < /tmp/push-closure.txt)"
+          [[ "${count}" == "${previous}" ]] && break
+          # --add-root keeps the realised closure alive until the push
+          # below finishes (one root per path: /tmp/nix-push-root,
+          # /tmp/nix-push-root-2, ...). Without it a concurrent GC could
+          # collect paths between realise and push.
+          xargs nix-store --realise --add-root /tmp/nix-push-root < /tmp/push-closure.txt >/dev/null
+          previous="${count}"
+        done
+        echo "Pushing ${#outputs[@]} outputs (closure: ${count} paths) to ${CACHE_NAME}."
+        xargs cachix push "${CACHE_NAME}" < /tmp/push-outputs.txt
+        rm -f /tmp/nix-push-root*
+
     - name: Release remote builders
       if: always()
       uses: ./.github/actions/release-remote-builders
       with:
         builders-json: ${{ needs.config.outputs.builders }}
         builder-prefix: ${{ env.BUILDER_PREFIX }}
+
+    # Signal the builder store cache machine that the run is over.
+    - name: Signal builder store cache shutdown
+      if: always() && needs.config.outputs.has_builds == 'true'
+      shell: bash
+      run: |
+        ssh -n -o ConnectTimeout=5 "root@${CACHE_HOST}" 'touch /tmp/cache_done' || true

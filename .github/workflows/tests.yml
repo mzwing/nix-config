@@ -31,11 +31,16 @@ jobs:
           cachix-pull: 'false'
           install-devenv: 'true'
 
+      # Shared with the "Restore Nix store" steps of build.yml and
+      # update.yml: one cache family (nix-ci-) for all jobs. The key
+      # must hash the union of all jobs' lock inputs and use the same gc
+      # size.
       - name: Restore Nix store
         uses: ./.github/actions/restore-nix-store
         with:
-          primary-key: nix-tests-${{ hashFiles('flake.lock', 'devenv.lock') }}
-          restore-prefix: nix-tests-
+          primary-key: nix-ci-${{ hashFiles('flake.lock', 'devenv.lock', 'devenv.nix', 'devenv.yaml') }}
+          restore-prefix: nix-ci-
+          gc-max-store-size-linux: 4G
 
       - name: Check flake
         run: just flake-check
