@@ -17,7 +17,7 @@
 
       age.secrets = {
         do-sgp-private-network = {
-          file = "${inputs.self}/secrets/do-sgp/network/private.age";
+          file = ../../../../../secrets/do-sgp/network/private.age;
           group = "systemd-network";
           mode = "0440";
           owner = "root";
@@ -25,7 +25,7 @@
         };
 
         do-sgp-public-network = {
-          file = "${inputs.self}/secrets/do-sgp/network/public.age";
+          file = ../../../../../secrets/do-sgp/network/public.age;
           group = "systemd-network";
           mode = "0440";
           owner = "root";

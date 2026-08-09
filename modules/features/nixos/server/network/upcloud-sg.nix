@@ -36,7 +36,7 @@
 
       age.secrets = {
         upcloud-sg-public-ipv4-network = {
-          file = "${inputs.self}/secrets/upcloud-sg/network/public-ipv4.age";
+          file = ../../../../../secrets/upcloud-sg/network/public-ipv4.age;
           group = "systemd-network";
           mode = "0440";
           owner = "root";
@@ -44,7 +44,7 @@
         };
 
         upcloud-sg-public-ipv6-network = {
-          file = "${inputs.self}/secrets/upcloud-sg/network/public-ipv6.age";
+          file = ../../../../../secrets/upcloud-sg/network/public-ipv6.age;
           group = "systemd-network";
           mode = "0440";
           owner = "root";
@@ -52,7 +52,7 @@
         };
 
         upcloud-sg-utility-ipv4-network = {
-          file = "${inputs.self}/secrets/upcloud-sg/network/utility-ipv4.age";
+          file = ../../../../../secrets/upcloud-sg/network/utility-ipv4.age;
           group = "systemd-network";
           mode = "0440";
           owner = "root";

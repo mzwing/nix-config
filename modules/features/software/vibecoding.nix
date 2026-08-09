@@ -42,12 +42,12 @@ in {
       age.identityPaths = ["${config.users.users.${username}.home}/.ssh/server_key"];
       age.secrets = {
         cliproxyapiplus-api-key = {
-          file = "${inputs.self}/secrets/cliproxyapiplus/api-key.age";
+          file = ../../../secrets/cliproxyapiplus/api-key.age;
           owner = "_cliproxyapiplus";
           group = "_cliproxyapiplus";
         };
         cliproxyapiplus-remote-secret-key = {
-          file = "${inputs.self}/secrets/cliproxyapiplus/remote-secret-key.age";
+          file = ../../../secrets/cliproxyapiplus/remote-secret-key.age;
           owner = "_cliproxyapiplus";
           group = "_cliproxyapiplus";
         };
@@ -80,12 +80,12 @@ in {
       age.identityPaths = ["${config.users.users.${username}.home}/.ssh/server_key"];
       age.secrets = {
         cliproxyapiplus-api-key = {
-          file = "${inputs.self}/secrets/cliproxyapiplus/api-key.age";
+          file = ../../../secrets/cliproxyapiplus/api-key.age;
           owner = "cliproxyapiplus";
           group = "cliproxyapiplus";
         };
         cliproxyapiplus-remote-secret-key = {
-          file = "${inputs.self}/secrets/cliproxyapiplus/remote-secret-key.age";
+          file = ../../../secrets/cliproxyapiplus/remote-secret-key.age;
           owner = "cliproxyapiplus";
           group = "cliproxyapiplus";
         };
@@ -117,7 +117,7 @@ in {
       age.identityPaths = [
         "${config.home.homeDirectory}/.ssh/server_key"
       ];
-      age.secrets."cliproxyapiplus-api-key".file = "${inputs.self}/secrets/cliproxyapiplus/api-key.age";
+      age.secrets."cliproxyapiplus-api-key".file = ../../../secrets/cliproxyapiplus/api-key.age;
 
       programs = {
         # mcp = {

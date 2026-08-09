@@ -2,9 +2,16 @@
 # {name, system, installable, outputPath} entries. Evaluated by the
 # "Evaluate CI targets" step of .github/workflows/build.yml:
 #
-#   nix eval --json --file ci/targets.nix
+#   nix eval --impure --json --file ci/targets.nix
+#
+# The flake is fetched via git+file: (i.e. from the committed git tree,
+# exactly like `nix eval .#...`) rather than path:, because the path:
+# fetcher hashes the whole working directory including .git, which
+# differs between checkouts and would make every evaluation produce
+# different outputPaths. --impure is required for the unlocked ref; CI
+# checkouts are clean, so evaluation stays deterministic per commit.
 let
-  flake = builtins.getFlake "path:${toString ../.}";
+  flake = builtins.getFlake "git+file://${toString ../.}";
   inherit (flake.inputs.nixpkgs) lib;
   inherit (flake) ciConfigurations;
 

@@ -5,9 +5,11 @@
 }: let
   defaultSubstituters = [
     "https://cache.nixos.org"
+    "https://cache.nixos-cuda.org"
     "https://nix-community.cachix.org"
   ];
   nixCommunityKey = "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=";
+  nixosCudaKey = "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M=";
   nurAtticCaches = map (entry: entry.attic) (builtins.attrValues config.mzwing.registry.nur);
   nurAtticSubstituters = map (cache: cache.url) nurAtticCaches;
   nurAtticPublicKeys = map (cache: cache.publicKey) nurAtticCaches;
@@ -50,7 +52,7 @@ in {
               ++ defaultSubstituters
               ++ nurAtticSubstituters
             );
-            extra-trusted-public-keys = lib.unique ([nixCommunityKey] ++ nurAtticPublicKeys);
+            extra-trusted-public-keys = lib.unique ([nixCommunityKey nixosCudaKey] ++ nurAtticPublicKeys);
             builders-use-substitutes = true;
             auto-optimise-store = false;
           };
@@ -94,7 +96,7 @@ in {
               ++ nurAtticSubstituters
               ++ defaultSubstituters
             );
-            extra-trusted-public-keys = lib.unique ([nixCommunityKey] ++ nurAtticPublicKeys);
+            extra-trusted-public-keys = lib.unique ([nixCommunityKey nixosCudaKey] ++ nurAtticPublicKeys);
             builders-use-substitutes = true;
           };
 

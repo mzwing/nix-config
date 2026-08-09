@@ -55,7 +55,7 @@ jobs:
       shell: bash
       run: |
         set -euo pipefail
-        printf 'targets=%s\n' "$(nix eval --json --file ci/targets.nix)" >>"${GITHUB_OUTPUT}"
+        printf 'targets=%s\n' "$(nix eval --impure --json --file ci/targets.nix)" >>"${GITHUB_OUTPUT}"
 
         devenv_outputs='{}'
         for system in x86_64-linux aarch64-linux aarch64-darwin; do

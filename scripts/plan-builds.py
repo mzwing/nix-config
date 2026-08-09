@@ -39,6 +39,7 @@ def cache_urls() -> list[str]:
     return [
         f"https://{cache_name}.cachix.org",
         "https://cache.nixos.org",
+        "https://cache.nixos-cuda.org",
         "https://nix-community.cachix.org",
         "https://attic.xuyh0120.win/lantian",
     ]

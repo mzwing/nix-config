@@ -62,8 +62,8 @@ runs:
           if [[ -n "${MAX_JOBS}" ]]; then
             echo "max-jobs = ${MAX_JOBS}"
           fi
-          echo "substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian ${EXTRA_SUBSTITUTERS}"
-          echo "trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= ${EXTRA_TRUSTED_PUBLIC_KEYS}"
+          echo "substituters = https://mzwing.cachix.org https://cache.nixos.org https://cache.nixos-cuda.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian ${EXTRA_SUBSTITUTERS}"
+          echo "trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= ${EXTRA_TRUSTED_PUBLIC_KEYS}"
           echo 'NIX_CONFIG_EOF'
         } >>"${GITHUB_OUTPUT}"
 
