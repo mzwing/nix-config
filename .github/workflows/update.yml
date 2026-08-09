@@ -31,32 +31,19 @@ jobs:
         with:
           hatchet-protocol: cleave
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
+      - name: Set up Nix
+        uses: ./.github/actions/setup-nix
         with:
-          extra_nix_config: |
-            accept-flake-config = false
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-            substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cachix-pull: 'false'
+          install-devenv: 'true'
 
       - name: Restore Nix store
-        uses: nix-community/cache-nix-action@v7
+        uses: ./.github/actions/restore-nix-store
         with:
           primary-key: nix-update-${{ hashFiles('devenv.lock', 'flake.lock', 'devenv.nix', 'devenv.yaml') }}
-          restore-prefixes-first-match: nix-update-
+          restore-prefix: nix-update-
           gc-max-store-size-linux: 4G
-
-      # Interrupted builds or substitutions from earlier runs leave
-      # root-owned <path>.lock files in /nix/store; they ride along in
-      # the restored store cache and break the unprivileged tar of the
-      # post-run store save. No nix process is running at this point, so
-      # any lock file present is stale by definition.
-      - name: Remove stale Nix store lock files
-        run: sudo find /nix/store -maxdepth 1 -name '*.lock' -delete
-
-      - name: Install devenv
-        run: nix profile add nixpkgs#devenv
 
       - name: Update devenv inputs
         run: devenv update
@@ -65,33 +52,11 @@ jobs:
         shell: devenv shell bash -- -e {0}
         run: just up
 
-      - name: Commit changes
+      - name: Commit and push changes
         id: commit
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- devenv.lock flake.lock
-
-          if git diff --cached --quiet; then
-            echo "changed=false" >>"${GITHUB_OUTPUT}"
-            exit 0
-          fi
-
-          git commit -m "chore: update lockfile"
-          echo "changed=true" >>"${GITHUB_OUTPUT}"
-
-      - name: Push changes
-        if: steps.commit.outputs.changed == 'true'
-        uses: ad-m/github-push-action@master
+        uses: ./.github/actions/commit-and-push
         with:
-          branch: ${{ github.ref }}
-
-      - name: Trigger build
-        if: steps.commit.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh workflow run build.yml --ref ${{ github.ref }}
+          paths: devenv.lock flake.lock
+          message: "chore: update lockfile"
+          trigger-workflow: build.yml
+          github-token: ${{ github.token }}

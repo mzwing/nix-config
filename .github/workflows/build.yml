@@ -30,38 +30,18 @@ jobs:
     - name: Check out repository
       uses: actions/checkout@v7
 
-    - name: Install Nix
-      uses: cachix/install-nix-action@v31
+    - name: Set up Nix
+      uses: ./.github/actions/setup-nix
       with:
-        extra_nix_config: |
-          accept-flake-config = false
-          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-          substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
-          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        extra-trusted-public-keys: devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
+        install-devenv: 'true'
 
     - name: Restore Nix store
-      uses: nix-community/cache-nix-action@v7
+      uses: ./.github/actions/restore-nix-store
       with:
         primary-key: nix-config-${{ hashFiles('flake.lock', 'devenv.lock') }}
-        restore-prefixes-first-match: nix-config-
-        gc-max-store-size-linux: 2G
-
-    # Interrupted builds or substitutions from earlier runs leave
-    # root-owned <path>.lock files in /nix/store; they ride along in the
-    # restored store cache and break the unprivileged tar of the
-    # post-run store save. No nix process is running at this point, so
-    # any lock file present is stale by definition.
-    - name: Remove stale Nix store lock files
-      run: sudo find /nix/store -maxdepth 1 -name '*.lock' -delete
-
-    - name: Configure Cachix for pulls
-      uses: cachix/cachix-action@v17
-      with:
-        name: ${{ env.CACHE_NAME }}
-        skipPush: true
-
-    - name: Install devenv
-      run: nix profile add nixpkgs#devenv
+        restore-prefix: nix-config-
 
     - name: Check flake evaluation
       run: nix flake check --all-systems --no-build --no-write-lock-file --show-trace
@@ -111,13 +91,13 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.config.outputs.builders) }}
     steps:
-    - name: Install Nix
-      uses: cachix/install-nix-action@v31
+    - name: Check out repository
+      uses: actions/checkout@v7
+
+    - name: Set up Nix
+      uses: ./.github/actions/setup-nix
       with:
-        extra_nix_config: |
-          accept-flake-config = false
-          substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
-          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
+        cachix-pull: 'false'
 
     - name: Configure Cachix build daemon
       uses: cachix/cachix-action@v17
@@ -130,38 +110,16 @@ jobs:
       run: sudo sh -c "cat '${CACHIX_DAEMON_DIR}/nix.conf' >> /etc/nix/nix.conf"
 
     - name: Join builder network
-      uses: tailscale/github-action@v4
-      env:
-        TAILSCALE_SSH_DEFAULT_PATH: /nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+      uses: ./.github/actions/join-ci-tailnet
       with:
         oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
         oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
         tags: tag:nix-ci-builder
         hostname: ${{ env.BUILDER_PREFIX }}-${{ matrix.id }}
         args: --ssh --accept-dns=false
-        version: latest
-
-    - name: Restore macOS runner DNS
-      if: endsWith(matrix.system, '-darwin')
-      run: sudo networksetup -setdnsservers Ethernet empty
 
     - name: Wait for distributed builds
-      shell: bash
-      run: |
-        for _ in {1..120}; do
-          if [[ -e /tmp/builder_claimed ]]; then
-            while true; do
-              echo 'Building...'
-              for _ in {1..12}; do
-                [[ -e /tmp/builder_done ]] && exit 0
-                sleep 5
-              done
-            done
-          fi
-          sleep 5
-        done
-        echo 'Coordinator did not claim this builder within 10 minutes.' >&2
-        exit 1
+      uses: ./.github/actions/wait-for-distributed-builds
 
   coordinator:
     name: Distributed build coordinator
@@ -178,78 +136,28 @@ jobs:
       with:
         hatchet-protocol: cleave
 
-    - name: Install Nix
-      uses: cachix/install-nix-action@v31
+    - name: Set up Nix
+      uses: ./.github/actions/setup-nix
       with:
-        extra_nix_config: |
-          accept-flake-config = false
-          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-          max-jobs = 0
-          substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
-          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
-
-    - name: Configure Cachix for pulls
-      uses: cachix/cachix-action@v17
-      with:
-        name: ${{ env.CACHE_NAME }}
-        skipPush: true
-
-    - name: Install devenv
-      run: nix profile add nixpkgs#devenv
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        extra-trusted-public-keys: devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
+        max-jobs: '0'
+        install-devenv: 'true'
 
     - name: Join coordinator network
-      uses: tailscale/github-action@v4
+      uses: ./.github/actions/join-ci-tailnet
       with:
         oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
         oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
         tags: tag:nix-ci-coordinator
         hostname: nix-c-${{ github.run_id }}-${{ github.run_attempt }}
-        version: latest
 
     - name: Configure remote builders
-      env:
-        BUILDERS: ${{ needs.config.outputs.builders }}
-      shell: bash
-      run: |
-        set -euo pipefail
-
-        sudo mkdir -p /etc/ssh/ssh_config.d
-        sudo tee /etc/ssh/ssh_config.d/nix-ci-builders.conf >/dev/null <<'EOF'
-        Host nix-b-*
-          StrictHostKeyChecking no
-          UserKnownHostsFile /dev/null
-          BatchMode yes
-          LogLevel ERROR
-        EOF
-        sudo tee /etc/nix/machines </dev/null
-
-        while IFS=$'\t' read -r id system max_jobs; do
-          builder="${BUILDER_PREFIX}-${id}"
-          connected=false
-          for _ in {1..120}; do
-            if ssh -n -o ConnectTimeout=5 "root@${builder}" true 2>/dev/null; then
-              connected=true
-              break
-            fi
-            sleep 5
-          done
-          if [[ "${connected}" != true ]]; then
-            printf 'Builder %s did not become reachable within 10 minutes.\n' "${builder}" >&2
-            exit 1
-          fi
-
-          ssh -n "root@${builder}" 'touch /tmp/builder_claimed'
-          printf 'ssh-ng://root@%s %s - %s 1 big-parallel,benchmark\n' \
-            "${builder}" "${system}" "${max_jobs}" |
-            sudo tee -a /etc/nix/machines >/dev/null
-        done < <(jq -r '.include[] | [.id, .system, .maxJobs] | @tsv' <<<"${BUILDERS}")
-
-        sudo tee -a /etc/nix/nix.conf >/dev/null <<'EOF'
-        builders = @/etc/nix/machines
-        builders-use-substitutes = true
-        max-jobs = 0
-        EOF
-        sudo systemctl restart nix-daemon.service
+      uses: ./.github/actions/setup-remote-builders
+      with:
+        builders-json: ${{ needs.config.outputs.builders }}
+        builder-prefix: ${{ env.BUILDER_PREFIX }}
+        ssh-host-pattern: nix-b-*
 
     - name: Build CI configurations
       if: needs.config.outputs.targets != '[]'
@@ -306,11 +214,7 @@ jobs:
 
     - name: Release remote builders
       if: always()
-      env:
-        BUILDERS: ${{ needs.config.outputs.builders }}
-      shell: bash
-      run: |
-        while IFS= read -r id; do
-          ssh -n -o ConnectTimeout=5 "root@${BUILDER_PREFIX}-${id}" \
-            'touch /tmp/builder_done' || true
-        done < <(jq -r '.include[].id' <<<"${BUILDERS}")
+      uses: ./.github/actions/release-remote-builders
+      with:
+        builders-json: ${{ needs.config.outputs.builders }}
+        builder-prefix: ${{ env.BUILDER_PREFIX }}

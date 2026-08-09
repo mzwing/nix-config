@@ -1,0 +1,72 @@
+name: Set up remote builders
+description: >-
+  Coordinator-side remote builder setup: passwordless SSH config for the
+  builder hosts, then wait for every builder in the matrix to become
+  reachable (10 minutes per builder), claim it (/tmp/builder_claimed) and
+  register it in /etc/nix/machines. Finally point nix at the machines
+  file and restart nix-daemon.
+
+inputs:
+  builders-json:
+    description: >-
+      Builder matrix JSON ({"include": [{"id", "runner", "system",
+      "maxJobs"}, ...]}) as produced by the plan job.
+    required: true
+  builder-prefix:
+    description: Hostname prefix of the builders (e.g. nix-b-<run_id>-<attempt>).
+    required: true
+  ssh-host-pattern:
+    description: >-
+      Host pattern(s) for the passwordless SSH config (e.g. "nix-b-*" or
+      "nur-b-* nur-cache-*").
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Configure remote builders
+      shell: bash
+      env:
+        BUILDERS_JSON: ${{ inputs.builders-json }}
+        BUILDER_PREFIX: ${{ inputs.builder-prefix }}
+        SSH_HOST_PATTERN: ${{ inputs.ssh-host-pattern }}
+      run: |
+        set -euo pipefail
+
+        sudo mkdir -p /etc/ssh/ssh_config.d
+        sudo tee /etc/ssh/ssh_config.d/nix-ci-builders.conf >/dev/null <<EOF
+        Host ${SSH_HOST_PATTERN}
+          StrictHostKeyChecking no
+          UserKnownHostsFile /dev/null
+          BatchMode yes
+          LogLevel ERROR
+        EOF
+        sudo tee /etc/nix/machines </dev/null
+
+        while IFS=$'\t' read -r id system max_jobs; do
+          builder="${BUILDER_PREFIX}-${id}"
+          connected=false
+          for _ in {1..120}; do
+            if ssh -n -o ConnectTimeout=5 "root@${builder}" true 2>/dev/null; then
+              connected=true
+              break
+            fi
+            sleep 5
+          done
+          if [[ "${connected}" != true ]]; then
+            printf 'Builder %s did not become reachable within 10 minutes.\n' "${builder}" >&2
+            exit 1
+          fi
+
+          ssh -n "root@${builder}" 'touch /tmp/builder_claimed'
+          printf 'ssh-ng://root@%s %s - %s 1 big-parallel,benchmark\n' \
+            "${builder}" "${system}" "${max_jobs}" |
+            sudo tee -a /etc/nix/machines >/dev/null
+        done < <(jq -r '.include[] | [.id, .system, .maxJobs] | @tsv' <<<"${BUILDERS_JSON}")
+
+        sudo tee -a /etc/nix/nix.conf >/dev/null <<'EOF'
+        builders = @/etc/nix/machines
+        builders-use-substitutes = true
+        max-jobs = 0
+        EOF
+        sudo systemctl restart nix-daemon.service

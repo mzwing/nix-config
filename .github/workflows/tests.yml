@@ -21,32 +21,17 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
+      - name: Set up Nix
+        uses: ./.github/actions/setup-nix
         with:
-          extra_nix_config: |
-            accept-flake-config = false
-            substituters = https://mzwing.cachix.org https://cache.nixos.org https://nix-community.cachix.org https://attic.xuyh0120.win/lantian
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=
+          cachix-pull: 'false'
+          install-devenv: 'true'
 
       - name: Restore Nix store
-        uses: nix-community/cache-nix-action@v7
+        uses: ./.github/actions/restore-nix-store
         with:
           primary-key: nix-tests-${{ hashFiles('flake.lock', 'devenv.lock') }}
-          restore-prefixes-first-match: nix-tests-
-          gc-max-store-size-linux: 2G
-
-      # Interrupted builds or substitutions from earlier runs leave
-      # root-owned <path>.lock files in /nix/store; they ride along in
-      # the restored store cache and break the unprivileged tar of the
-      # post-run store save. No nix process is running at this point, so
-      # any lock file present is stale by definition.
-      - name: Remove stale Nix store lock files
-        run: sudo find /nix/store -maxdepth 1 -name '*.lock' -delete
-
-      - name: Install devenv
-        shell: bash
-        run: nix profile add nixpkgs#devenv
+          restore-prefix: nix-tests-
 
       - name: Check flake
         run: just flake-check

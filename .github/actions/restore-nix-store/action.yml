@@ -1,0 +1,34 @@
+name: Restore Nix store
+description: >-
+  Restore the Nix store from the GitHub Actions cache (saved again
+  post-run), then remove stale root-owned lock files left behind by
+  interrupted builds or substitutions of earlier runs. The lock files ride
+  along in the restored store cache and break the unprivileged tar of the
+  post-run store save; no nix process is running at this point, so any
+  lock file present is stale by definition.
+
+inputs:
+  primary-key:
+    description: Primary cache key for the store cache entry.
+    required: true
+  restore-prefix:
+    description: Restore prefix (restore-prefixes-first-match).
+    required: true
+  gc-max-store-size-linux:
+    description: Maximum store size before the cache is garbage-collected (Linux).
+    required: false
+    default: 2G
+
+runs:
+  using: composite
+  steps:
+    - name: Restore Nix store
+      uses: nix-community/cache-nix-action@v7
+      with:
+        primary-key: ${{ inputs.primary-key }}
+        restore-prefixes-first-match: ${{ inputs.restore-prefix }}
+        gc-max-store-size-linux: ${{ inputs.gc-max-store-size-linux }}
+
+    - name: Remove stale Nix store lock files
+      shell: bash
+      run: sudo find /nix/store -maxdepth 1 -name '*.lock' -delete
