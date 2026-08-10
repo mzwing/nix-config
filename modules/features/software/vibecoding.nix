@@ -209,6 +209,7 @@ in {
               "npm:@narumitw/pi-plan-mode"
               "npm:@narumitw/pi-usage"
               "npm:@upstash/context7-pi"
+              "npm:tau-mirror"
               "npm:pi-codex-goal"
               "npm:pi-effort"
               "npm:pi-markdown-preview"
