@@ -15,7 +15,7 @@
 let
   flake = builtins.getFlake "git+file://${toString ../.}";
   inherit (flake.inputs.nixpkgs) lib;
-  inherit (flake) ciConfigurations;
+  ciConfigurations = import ./configurations.nix;
 
   systems = builtins.fromJSON (builtins.getEnv "BUILD_SYSTEMS");
 

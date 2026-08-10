@@ -11,7 +11,7 @@
 let
   flake = builtins.getFlake "git+file://${toString ../.}";
   inherit (flake.inputs.nixpkgs) lib;
-  inherit (flake) ciConfigurations;
+  ciConfigurations = import ./configurations.nix;
 in
   lib.mapAttrsToList (_: cfg: cfg.system.drvPath) ciConfigurations.darwin
   ++ lib.mapAttrsToList (_: cfg: cfg.config.system.build.toplevel.drvPath) ciConfigurations.nixos

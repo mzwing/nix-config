@@ -112,6 +112,7 @@ in {
     }: {
       imports = [
         inputs.agenix.homeManagerModules.default
+        inputs.nur.repos.mzwing.modules.homeManager.gryph
       ];
 
       age.identityPaths = [
@@ -119,22 +120,44 @@ in {
       ];
       age.secrets."cliproxyapiplus-api-key".file = ../../../secrets/cliproxyapiplus/api-key.age;
 
+      home.packages = [
+        pkgs.nur.repos.mzwing.codegraph
+      ];
+
       programs = {
-        # mcp = {
-        #   enable = true;
-        #   servers = {
-        #     ace-ctx = {
-        #       command = lib.getExe pkgs.nur.repos.mzwing.ace-ctx;
-        #       env = {
-        #         ACE_BASE_URL = "http://localhost:8999";
-        #         ACE_TOKEN = "sk-1145141919810";
-        #       };
-        #     };
-        #   };
-        # };
+        # Written to the standard MCP config location; pi picks it up via
+        # the pi-mcp-adapter extension.
+        mcp = {
+          enable = true;
+          servers = {
+            # ace-ctx = {
+            #   command = lib.getExe pkgs.nur.repos.mzwing.ace-ctx;
+            #   env = {
+            #     ACE_BASE_URL = "http://localhost:8999";
+            #     ACE_TOKEN = "sk-1145141919810";
+            #   };
+            # };
+            codegraph = {
+              command = lib.getExe pkgs.nur.repos.mzwing.codegraph;
+              args = [
+                "serve"
+                "--mcp"
+              ];
+              env = {
+                CODEGRAPH_TELEMETRY = "0";
+                CODEGRAPH_NO_UPDATE_CHECK = "1";
+              };
+            };
+          };
+        };
         antigravity-cli = {
           enable = true;
           enableMcpIntegration = true;
+        };
+        gryph = {
+          enable = true;
+          enableIntegration.pi-agent = true;
+          settings.storage.retention_days = 30;
         };
         git.includes = [
           {

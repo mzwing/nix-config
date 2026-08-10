@@ -3,12 +3,7 @@
   inputs,
   lib,
   ...
-}: let
-  ciDarwinConfigurations =
-    lib.mapAttrs (_: host: config.mzwing.lib.mkDarwinCIHost host) config.mzwing.hosts.darwin;
-  ciNixosConfigurations =
-    lib.mapAttrs (_: host: config.mzwing.lib.mkNixosCIHost host) config.mzwing.hosts.nixos;
-in {
+}: {
   systems = [
     "aarch64-darwin"
     "x86_64-linux"
@@ -18,11 +13,6 @@ in {
   flake = {
     darwinConfigurations = lib.mapAttrs (_: host: config.mzwing.lib.mkDarwinHost host) config.mzwing.hosts.darwin;
     nixosConfigurations = lib.mapAttrs (_: host: config.mzwing.lib.mkNixosHost host) config.mzwing.hosts.nixos;
-
-    ciConfigurations = {
-      darwin = ciDarwinConfigurations;
-      nixos = ciNixosConfigurations;
-    };
 
     darwinModules = config.mzwing.lib.moduleAttrsFor "darwin";
     nixosModules = config.mzwing.lib.moduleAttrsFor "nixos";

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Plan distributed CI builds for .github/workflows/build.yml.
 
-Reads ALL_TARGETS (a JSON array of {name, system, installable, outputPath}
+Reads ALL_TARGETS (a JSON array of {name, system, outputPath}
 from ci/targets.nix) and DEVENV_OUTPUTS (a JSON object mapping systems to
 devenv package output paths) from the environment, probes the binary caches
 for each output path, validates .github/builders.json, and writes these
