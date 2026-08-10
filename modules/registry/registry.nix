@@ -14,6 +14,13 @@ args: let
         publicKey = "mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA=";
       };
     };
+    nur.so1ve = {
+      author = "so1ve";
+      attic = {
+        url = "https://so1ve.cachix.org";
+        publicKey = "so1ve.cachix.org-1:51jcW4FkJhiLcqPsiUx3nglRP469les8F9zjFxio1nw=";
+      };
+    };
   };
 in
   if args.asData or false
