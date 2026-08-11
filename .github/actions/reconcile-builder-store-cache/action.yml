@@ -64,18 +64,41 @@ runs:
         echo "Build closure has $(wc -l < /tmp/reconcile-expected.txt) output paths."
 
         # Print the subset of $2 that is valid in the store on host $1.
-        # Dumps the remote database over plain ssh in a single session:
-        # `nix path-info --store ssh-ng://...` tries to REALISE missing
-        # paths and aborts the whole batch on the first one, and per-path
-        # narinfo lookups are slow; a DB dump is one round-trip and a
-        # pure query. Reference lines in the dump are valid paths too
-        # (referential integrity), so keeping them is correct. $2 is
-        # sorted, and so is the comm output.
+        # Dump the remote database over plain ssh in a single session:
+        # this is a pure query and avoids per-path narinfo lookups. A
+        # validity-registration record is:
+        #
+        #   path, narHash, narSize, deriver, referenceCount, references...
+        #
+        # Parse that structure instead of grepping every store path: an
+        # imported valid path may have dangling references, so reference
+        # lines are NOT proof that those paths are valid on this host.
         probe() {
-          # The dump can legitimately come back empty (unreachable host,
-          # fresh store): grep then exits 1, which must not kill the step.
-          ssh -n "root@$1" nix-store --dump-db 2>/dev/null \
-            | grep '^/nix/store/' | sort --unique > /tmp/reconcile-host-paths.txt || true
+          if ! ssh -n "root@$1" nix-store --dump-db \
+            > /tmp/reconcile-host-db.txt 2> /tmp/reconcile-probe-error.txt; then
+            printf '::warning::Could not dump the Nix store DB on %s: %s\n' \
+              "$1" "$(tr '\n' ' ' < /tmp/reconcile-probe-error.txt)" >&2
+            : > /tmp/reconcile-host-paths.txt
+          else
+            awk '
+              state == 0 { print; state = 1; next }
+              state == 1 { state = 2; next } # narHash
+              state == 2 { state = 3; next } # narSize
+              state == 3 { state = 4; next } # deriver
+              state == 4 {
+                refs = $0 + 0
+                state = refs == 0 ? 0 : 5
+                next
+              }
+              state == 5 {
+                refs--
+                if (refs == 0) state = 0
+              }
+            ' /tmp/reconcile-host-db.txt \
+              | sort --unique > /tmp/reconcile-host-paths.txt
+          fi
+          printf 'Probe %s: %s valid store paths.\n' \
+            "$1" "$(wc -l < /tmp/reconcile-host-paths.txt)" >&2
           comm -12 "$2" /tmp/reconcile-host-paths.txt
         }
 
@@ -99,15 +122,21 @@ runs:
             > /tmp/reconcile-found.txt
           [[ -s /tmp/reconcile-found.txt ]] || continue
           echo "Copying $(wc -l < /tmp/reconcile-found.txt) outputs from ${builder}."
-          # BUILDER is placed in xargs's environment and inherited by the
-          # inner sh, like CACHE_HOST from the step env.
-          if ! BUILDER="${builder}" xargs -a /tmp/reconcile-found.txt -n 100 -r sh -c '
-            ssh root@"${BUILDER}" nix-store --export "$@" |
-              ssh root@"${CACHE_HOST}" nix-store --import >/dev/null
-          ' sh; then
+          # Record only chunks whose export/import pipeline actually
+          # succeeded. A failed chunk remains in the set and can be
+          # retried against a later builder that also has those paths.
+          : > /tmp/reconcile-copied.txt
+          if ! BUILDER="${builder}" COPIED_FILE=/tmp/reconcile-copied.txt \
+            xargs -a /tmp/reconcile-found.txt -n 100 -r bash -e -o pipefail -c '
+              ssh root@"${BUILDER}" nix-store --export "$@" |
+                ssh root@"${CACHE_HOST}" nix-store --import >/dev/null
+              printf "%s\n" "$@" >>"${COPIED_FILE}"
+            ' bash; then
             echo "::warning::Failed to copy some outputs from ${builder}; continuing."
           fi
-          comm -23 /tmp/reconcile-remaining.txt /tmp/reconcile-found.txt \
+          sort --unique --output=/tmp/reconcile-copied.txt /tmp/reconcile-copied.txt
+          echo "Copied $(wc -l < /tmp/reconcile-copied.txt) outputs from ${builder}."
+          comm -23 /tmp/reconcile-remaining.txt /tmp/reconcile-copied.txt \
             > /tmp/reconcile-remaining.next
           mv /tmp/reconcile-remaining.next /tmp/reconcile-remaining.txt
         done < <(jq -r '.include[].id' <<<"${BUILDERS_JSON}")
