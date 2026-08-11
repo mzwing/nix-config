@@ -2,6 +2,7 @@ let
   systemShellPackages = pkgs:
     with pkgs; [
       any-nix-shell
+      haru
     ];
 in {
   mzwing.features."software/shell" = {

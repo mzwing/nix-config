@@ -2,6 +2,7 @@ let
   systemVpnPackages = pkgs:
     with pkgs; [
       wgcf
+      nur.repos.mzwing.sing-box-alpha
     ];
 in {
   mzwing.features."software/vpn" = {
@@ -14,10 +15,6 @@ in {
       environment.systemPackages = systemVpnPackages pkgs;
       homebrew.brews = [
         "cloudflarewarpspeedtest"
-        {
-          name = "sing-box@alpha";
-          link = true;
-        }
       ];
       homebrew.casks = [
         "sfm@alpha"
@@ -29,7 +26,6 @@ in {
       environment.systemPackages =
         systemVpnPackages pkgs
         ++ (with pkgs; [
-          sing-box
           tailscale
         ]);
     };
