@@ -23,26 +23,15 @@ in {
         enable = true;
         generateCompletions = true;
         plugins =
-          [
-            {
-              name = "replay-fish";
-              src = pkgs.fetchFromGitHub {
-                owner = "jorgebucaran";
-                repo = "replay.fish";
-                rev = "d2ecacd3fe7126e822ce8918389f3ad93b14c86c";
-                sha256 = "TzQ97h9tBRUg+A7DSKeTBWLQuThicbu19DHMwkmUXdg=";
-              };
-            }
-            {
-              name = "getopts-fish";
-              src = pkgs.fetchFromGitHub {
-                owner = "jorgebucaran";
-                repo = "getopts.fish";
-                rev = "e6f87012692088a0a9fea426f08e83001668ce66";
-                sha256 = "vlIXBWCQrz2ZlxPhi2/+gweKnT6pcMQQ2NYlysqn7ig=";
-              };
-            }
-          ]
+          map (x: {
+            name = x.pname;
+            src = x;
+          }) (
+            with pkgs.nur.repos.mzwing; [
+              replay-fish
+              getopts-fish
+            ]
+          )
           ++ map (x: {inherit (x) name src;}) (
             with pkgs.fishPlugins; [
               async-prompt

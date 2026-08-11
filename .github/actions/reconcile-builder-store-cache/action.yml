@@ -57,14 +57,23 @@ runs:
           | sort --unique > /tmp/reconcile-expected.txt
         echo "Build closure has $(wc -l < /tmp/reconcile-expected.txt) output paths."
 
-        # Print the subset of $2 that is valid in store $1. nix path-info
-        # prints valid paths and exits non-zero on invalid ones; both are
-        # expected here.
+        # Print the subset of $2 that is valid in the store on host $1.
+        # Dumps the remote database over plain ssh in a single session:
+        # `nix path-info --store ssh-ng://...` tries to REALISE missing
+        # paths and aborts the whole batch on the first one, and per-path
+        # narinfo lookups are slow; a DB dump is one round-trip and a
+        # pure query. Reference lines in the dump are valid paths too
+        # (referential integrity), so keeping them is correct. $2 is
+        # sorted, and so is the comm output.
         probe() {
-          xargs -a "$2" -n 500 nix path-info --store "$1" 2>/dev/null | sort --unique || true
+          # The dump can legitimately come back empty (unreachable host,
+          # fresh store): grep then exits 1, which must not kill the step.
+          ssh -n "root@$1" nix-store --dump-db 2>/dev/null \
+            | grep '^/nix/store/' | sort --unique > /tmp/reconcile-host-paths.txt || true
+          comm -12 "$2" /tmp/reconcile-host-paths.txt
         }
 
-        probe "ssh-ng://root@${CACHE_HOST}" /tmp/reconcile-expected.txt \
+        probe "${CACHE_HOST}" /tmp/reconcile-expected.txt \
           > /tmp/reconcile-on-cache.txt
         comm -23 /tmp/reconcile-expected.txt /tmp/reconcile-on-cache.txt \
           > /tmp/reconcile-missing.txt
@@ -80,7 +89,7 @@ runs:
         while IFS= read -r id; do
           [[ -s /tmp/reconcile-remaining.txt ]] || break
           builder="${BUILDER_PREFIX}-${id}"
-          probe "ssh-ng://root@${builder}" /tmp/reconcile-remaining.txt \
+          probe "${builder}" /tmp/reconcile-remaining.txt \
             > /tmp/reconcile-found.txt
           [[ -s /tmp/reconcile-found.txt ]] || continue
           echo "Copying $(wc -l < /tmp/reconcile-found.txt) outputs from ${builder}."
