@@ -51,9 +51,15 @@ runs:
         xargs -a /tmp/reconcile-top-drvs.txt nix-store --query --requisites \
           | grep '\.drv$' | sort --unique > /tmp/reconcile-drvs.txt
         # `nix derivation show` wraps its output in {"derivations": ...}
-        # since nix 2.30; the jq fallback keeps both shapes working.
+        # since nix 2.30; the jq fallback keeps both shapes working. The
+        # wrapped shape also reports output paths RELATIVE to the store
+        # directory, so prepend it when missing — the probes compare
+        # against absolute paths from nix-store --dump-db.
+        store_dir="$(nix eval --raw --expr 'builtins.storeDir')"
         xargs -a /tmp/reconcile-drvs.txt -n 100 nix derivation show \
-          | jq -r '(.derivations // .) | to_entries[].value.outputs[].path // empty' \
+          | jq -r --arg store "${store_dir}" '
+            (.derivations // .) | to_entries[].value.outputs[].path // empty
+            | if startswith("/") then . else "\($store)/\(.)" end' \
           | sort --unique > /tmp/reconcile-expected.txt
         echo "Build closure has $(wc -l < /tmp/reconcile-expected.txt) output paths."
 
