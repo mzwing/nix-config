@@ -30,6 +30,12 @@ inputs:
     description: Nix file evaluating to a JSON list of .drv paths.
     required: false
     default: ci/drvs.nix
+  transfer-jobs:
+    description: >-
+      Number of direct builder-to-cache export/import streams to run in
+      parallel while reconciling one builder.
+    required: false
+    default: '6'
 
 runs:
   using: composite
@@ -41,8 +47,13 @@ runs:
         BUILDER_PREFIX: ${{ inputs.builder-prefix }}
         CACHE_HOST: ${{ inputs.cache-host }}
         DRVS_FILE: ${{ inputs.drvs-file }}
+        TRANSFER_JOBS: ${{ inputs.transfer-jobs }}
       run: |
         set -euo pipefail
+        if [[ ! "${TRANSFER_JOBS}" =~ ^[1-9][0-9]*$ ]]; then
+          echo "::error::transfer-jobs must be a positive integer, got ${TRANSFER_JOBS}."
+          exit 1
+        fi
 
         # Every output of every derivation in the build closure. CA
         # derivations have no resolvable output paths; those are skipped.
@@ -109,11 +120,25 @@ runs:
         echo "$(wc -l < /tmp/reconcile-missing.txt) outputs are missing from the cache machine."
 
         # Copy each missing output from the first builder that has it.
-        # export | import is the same mechanism the post-build hook uses;
-        # here it runs synchronously with visible errors instead of
-        # fire-and-forget. Outputs found on no builder were never built
-        # (failed packages, systems without targets this run) and are
-        # left for the next run.
+        # The coordinator only launches the transfer: NAR data flows
+        # directly from builder to cache (the same route as the post-build
+        # hook), avoiding a builder -> coordinator -> cache double hop.
+        # Several independent chunks run in parallel; only successful
+        # chunks are removed from the remaining set, so failures can be
+        # retried against a later builder.
+        cat >/tmp/reconcile-copy-chunk <<'EOF'
+        #!/usr/bin/env bash
+        set -euo pipefail
+        # Send the path list over the control connection's stdin. The
+        # remote builder exports it directly into the cache machine;
+        # /bin/bash is present on both Linux and macOS builders.
+        printf '%s\n' "$@" |
+          ssh root@"${BUILDER}" \
+            "/bin/bash -e -o pipefail -c 'xargs nix-store --export | ssh root@${CACHE_HOST} nix-store --import >/dev/null'"
+        printf '%s\n' "$@" >"${SUCCESS_DIR}/$$"
+        EOF
+        chmod 755 /tmp/reconcile-copy-chunk
+
         cp /tmp/reconcile-missing.txt /tmp/reconcile-remaining.txt
         while IFS= read -r id; do
           [[ -s /tmp/reconcile-remaining.txt ]] || break
@@ -121,20 +146,17 @@ runs:
           probe "${builder}" /tmp/reconcile-remaining.txt \
             > /tmp/reconcile-found.txt
           [[ -s /tmp/reconcile-found.txt ]] || continue
-          echo "Copying $(wc -l < /tmp/reconcile-found.txt) outputs from ${builder}."
-          # Record only chunks whose export/import pipeline actually
-          # succeeded. A failed chunk remains in the set and can be
-          # retried against a later builder that also has those paths.
-          : > /tmp/reconcile-copied.txt
-          if ! BUILDER="${builder}" COPIED_FILE=/tmp/reconcile-copied.txt \
-            xargs -a /tmp/reconcile-found.txt -n 100 -r bash -e -o pipefail -c '
-              ssh root@"${BUILDER}" nix-store --export "$@" |
-                ssh root@"${CACHE_HOST}" nix-store --import >/dev/null
-              printf "%s\n" "$@" >>"${COPIED_FILE}"
-            ' bash; then
+          echo "Copying $(wc -l < /tmp/reconcile-found.txt) outputs from ${builder} with ${TRANSFER_JOBS} parallel streams."
+          success_dir=/tmp/reconcile-copied.d
+          rm -rf "${success_dir}"
+          mkdir -p "${success_dir}"
+          if ! BUILDER="${builder}" CACHE_HOST="${CACHE_HOST}" SUCCESS_DIR="${success_dir}" \
+            xargs -a /tmp/reconcile-found.txt -n 100 -P "${TRANSFER_JOBS}" -r \
+              /tmp/reconcile-copy-chunk; then
             echo "::warning::Failed to copy some outputs from ${builder}; continuing."
           fi
-          sort --unique --output=/tmp/reconcile-copied.txt /tmp/reconcile-copied.txt
+          find "${success_dir}" -type f -exec cat {} + \
+            | sort --unique > /tmp/reconcile-copied.txt
           echo "Copied $(wc -l < /tmp/reconcile-copied.txt) outputs from ${builder}."
           comm -23 /tmp/reconcile-remaining.txt /tmp/reconcile-copied.txt \
             > /tmp/reconcile-remaining.next
