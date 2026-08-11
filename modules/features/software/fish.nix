@@ -42,18 +42,10 @@ in {
                 sha256 = "vlIXBWCQrz2ZlxPhi2/+gweKnT6pcMQQ2NYlysqn7ig=";
               };
             }
-            {
-              name = "fish-async-prompt";
-              src = pkgs.fetchFromGitHub {
-                owner = "acomagu";
-                repo = "fish-async-prompt";
-                rev = "b90e8a8c6d1634d8f04f1532b164b99530445159";
-                sha256 = "HWW9191RP//48HkAHOZ7kAAAPSBKZ+BW2FfCZB36Y+g=";
-              };
-            }
           ]
           ++ map (x: {inherit (x) name src;}) (
             with pkgs.fishPlugins; [
+              async-prompt
               autopair
               done
               fzf-fish

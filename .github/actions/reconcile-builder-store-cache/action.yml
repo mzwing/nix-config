@@ -50,8 +50,10 @@ runs:
           > /tmp/reconcile-top-drvs.txt
         xargs -a /tmp/reconcile-top-drvs.txt nix-store --query --requisites \
           | grep '\.drv$' | sort --unique > /tmp/reconcile-drvs.txt
-        xargs -a /tmp/reconcile-drvs.txt -n 100 nix show-derivation \
-          | jq -r 'to_entries[].value.outputs[].path // empty' \
+        # `nix derivation show` wraps its output in {"derivations": ...}
+        # since nix 2.30; the jq fallback keeps both shapes working.
+        xargs -a /tmp/reconcile-drvs.txt -n 100 nix derivation show \
+          | jq -r '(.derivations // .) | to_entries[].value.outputs[].path // empty' \
           | sort --unique > /tmp/reconcile-expected.txt
         echo "Build closure has $(wc -l < /tmp/reconcile-expected.txt) output paths."
 
