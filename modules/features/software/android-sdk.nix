@@ -11,7 +11,7 @@ let
       platformVersions = [
         "34"
         "35"
-        "36.1"
+        "36"
       ];
       includeEmulator = "if-supported";
       includeCmake = true;

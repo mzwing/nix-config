@@ -2,6 +2,7 @@ let
   systemAiPackages = pkgs:
     with pkgs; [
       nur.repos.mzwing.autocli
+      nur.repos.mzwing.hfd
       defuddle
     ];
 in {
@@ -16,7 +17,6 @@ in {
         systemAiPackages pkgs;
       homebrew = {
         brews = [
-          "hfd"
           "llama.cpp"
           {
             name = "manboster@rc";
@@ -30,7 +30,6 @@ in {
       };
     };
 
-    # TODO: sync hfd & manboster & kelivo, add custom llama.cpp build
     nixos = {pkgs, ...}: {
       environment.systemPackages =
         systemAiPackages pkgs

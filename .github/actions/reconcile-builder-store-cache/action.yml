@@ -1,0 +1,101 @@
+name: Reconcile builder store cache
+description: >-
+  Close the persistence gap of the post-build hook before the run ends.
+  The hook (setup-builder-store-cache) pushes every locally built path
+  to the central cache fire-and-forget: a failed push is invisible, and
+  the cache machine's GC keep-set (nix-store -qR --include-outputs) only
+  covers outputs that are VALID there — a path that never arrived is
+  collected before the store is saved, forcing a rebuild of it and its
+  entire dependent subtree on the next run. This action computes every
+  output of every derivation in the build closure WITHOUT a validity
+  filter, finds the ones missing from the cache machine, and copies them
+  over from whichever builder still holds them. Run it on the
+  coordinator AFTER the builds (and the Cachix push) but BEFORE
+  release-remote-builders signals the builders and the cache machine:
+  the builders must still be alive to serve as copy sources, and the
+  cache machine's final signing pass (on /tmp/cache_done) signs the
+  imported paths before the GC keep-set is computed.
+
+inputs:
+  builders-json:
+    description: 'Builder matrix JSON ({"include": [{"id", ...}, ...]}).'
+    required: true
+  builder-prefix:
+    description: Hostname prefix of the builders (e.g. nix-b-<run_id>-<attempt>).
+    required: true
+  cache-host:
+    description: Hostname of the builder store cache node on the tailnet.
+    required: true
+  drvs-file:
+    description: Nix file evaluating to a JSON list of .drv paths.
+    required: false
+    default: ci/drvs.nix
+
+runs:
+  using: composite
+  steps:
+    - name: Reconcile builder store cache
+      shell: bash
+      env:
+        BUILDERS_JSON: ${{ inputs.builders-json }}
+        BUILDER_PREFIX: ${{ inputs.builder-prefix }}
+        CACHE_HOST: ${{ inputs.cache-host }}
+        DRVS_FILE: ${{ inputs.drvs-file }}
+      run: |
+        set -euo pipefail
+
+        # Every output of every derivation in the build closure. CA
+        # derivations have no resolvable output paths; those are skipped.
+        nix eval --json --impure --file "${DRVS_FILE}" | jq -r '.[]' \
+          > /tmp/reconcile-top-drvs.txt
+        xargs -a /tmp/reconcile-top-drvs.txt nix-store --query --requisites \
+          | grep '\.drv$' | sort --unique > /tmp/reconcile-drvs.txt
+        xargs -a /tmp/reconcile-drvs.txt -n 100 nix show-derivation \
+          | jq -r 'to_entries[].value.outputs[].path // empty' \
+          | sort --unique > /tmp/reconcile-expected.txt
+        echo "Build closure has $(wc -l < /tmp/reconcile-expected.txt) output paths."
+
+        # Print the subset of $2 that is valid in store $1. nix path-info
+        # prints valid paths and exits non-zero on invalid ones; both are
+        # expected here.
+        probe() {
+          xargs -a "$2" -n 500 nix path-info --store "$1" 2>/dev/null | sort --unique || true
+        }
+
+        probe "ssh-ng://root@${CACHE_HOST}" /tmp/reconcile-expected.txt \
+          > /tmp/reconcile-on-cache.txt
+        comm -23 /tmp/reconcile-expected.txt /tmp/reconcile-on-cache.txt \
+          > /tmp/reconcile-missing.txt
+        echo "$(wc -l < /tmp/reconcile-missing.txt) outputs are missing from the cache machine."
+
+        # Copy each missing output from the first builder that has it.
+        # export | import is the same mechanism the post-build hook uses;
+        # here it runs synchronously with visible errors instead of
+        # fire-and-forget. Outputs found on no builder were never built
+        # (failed packages, systems without targets this run) and are
+        # left for the next run.
+        cp /tmp/reconcile-missing.txt /tmp/reconcile-remaining.txt
+        while IFS= read -r id; do
+          [[ -s /tmp/reconcile-remaining.txt ]] || break
+          builder="${BUILDER_PREFIX}-${id}"
+          probe "ssh-ng://root@${builder}" /tmp/reconcile-remaining.txt \
+            > /tmp/reconcile-found.txt
+          [[ -s /tmp/reconcile-found.txt ]] || continue
+          echo "Copying $(wc -l < /tmp/reconcile-found.txt) outputs from ${builder}."
+          # BUILDER is placed in xargs's environment and inherited by the
+          # inner sh, like CACHE_HOST from the step env.
+          if ! BUILDER="${builder}" xargs -a /tmp/reconcile-found.txt -n 100 -r sh -c '
+            ssh root@"${BUILDER}" nix-store --export "$@" |
+              ssh root@"${CACHE_HOST}" nix-store --import >/dev/null
+          ' sh; then
+            echo "::warning::Failed to copy some outputs from ${builder}; continuing."
+          fi
+          comm -23 /tmp/reconcile-remaining.txt /tmp/reconcile-found.txt \
+            > /tmp/reconcile-remaining.next
+          mv /tmp/reconcile-remaining.next /tmp/reconcile-remaining.txt
+        done < <(jq -r '.include[].id' <<<"${BUILDERS_JSON}")
+
+        left="$(wc -l < /tmp/reconcile-remaining.txt)"
+        if (( left > 0 )); then
+          echo "${left} outputs exist on no builder (never built this run); skipping."
+        fi

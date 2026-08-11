@@ -49,10 +49,17 @@ runs:
         # Push every locally built path to the central builder store
         # cache. Only the exact outputs are exported (not their closure):
         # upstream dependencies stay fetchable from the upstream caches.
+        # The push must never fail the build (nix ignores the hook exit
+        # code anyway); whatever is still lost after the retries is
+        # healed by the coordinator's reconcile-builder-store-cache step
+        # at the end of the run.
         export PATH=/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-        nix-store --export \$OUT_PATHS |
-          ssh root@${CACHE_HOST} nix-store --import ||
-          true
+        for _ in 1 2 3; do
+          nix-store --export \$OUT_PATHS |
+            ssh root@${CACHE_HOST} nix-store --import && exit 0
+          sleep 2
+        done
+        echo "warning: failed to push \$OUT_PATHS to the builder store cache" >&2
         EOF
           sudo chmod 755 /etc/nix/push-to-builder-cache
           sudo tee -a /etc/ssh/ssh_config >/dev/null <<EOF
