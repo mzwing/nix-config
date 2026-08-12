@@ -2,6 +2,7 @@ let
   systemShellPackages = pkgs:
     with pkgs; [
       any-nix-shell
+      bind
       nur.repos.mzwing.haru
     ];
 in {

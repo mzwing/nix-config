@@ -12,6 +12,7 @@ let
         "34"
         "35"
         "36"
+        "37"
       ];
       includeEmulator = "if-supported";
       includeCmake = true;
