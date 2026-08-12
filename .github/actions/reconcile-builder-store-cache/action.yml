@@ -51,7 +51,7 @@ inputs:
     required: false
     default: ''
   transfer-jobs:
-    description: Number of concurrent Attic uploads during reconciliation.
+    description: Number of concurrent Attic uploads per builder.
     required: false
     default: '6'
 
@@ -84,6 +84,7 @@ runs:
         # top-level derivations selected by the cache probe, not every target
         # sharing an active system. This only reads derivations; max-jobs=0
         # prevents local compilation.
+        echo 'Evaluating the full current-lock derivation set...'
         nix eval --json --impure --file "${DRVS_FILE}" \
           | jq -r '.[]' > /tmp/reconcile-top-drvs.txt
         if [[ ! -e "${ACTIVE_DRVS_FILE}" ]]; then
@@ -99,6 +100,7 @@ runs:
           echo '::error::Active derivations are not a subset of the full retention set.'
           exit 1
         fi
+        echo "Retention roots: $(wc -l < /tmp/reconcile-top-drvs.txt); scheduled roots: $(wc -l < /tmp/reconcile-active-top-drvs.txt)."
         store_dir="$(nix eval --raw --expr 'builtins.storeDir')"
 
         # Extra realised outputs may not be represented by DRVS_FILE (for
@@ -196,45 +198,59 @@ runs:
             > /tmp/reconcile-extra-expected.txt
         fi
 
-        : > /tmp/reconcile-drvs.txt
-        while IFS= read -r top_drv; do
-          nix-store --query --requisites "${top_drv}" 2>/dev/null || true
-        done < /tmp/reconcile-top-drvs.txt \
-          | grep '\.drv$' | sort --unique > /tmp/reconcile-drvs.txt || true
-        : > /tmp/reconcile-active-drvs.txt
-        while IFS= read -r top_drv; do
-          nix-store --query --requisites "${top_drv}" 2>/dev/null || true
-        done < /tmp/reconcile-active-top-drvs.txt \
-          | grep '\.drv$' | sort --unique \
-          > /tmp/reconcile-active-drvs.txt || true
+        expand_drv_closure() {
+          local roots="$1" output="$2" raw="${2}.raw"
+          : >"${output}"
+          [[ -s "${roots}" ]] || return 0
+          # Batch roots to avoid one Nix process per top-level derivation.
+          xargs -n 128 nix-store --query --requisites <"${roots}" >"${raw}"
+          grep '\.drv$' "${raw}" | sort --unique >"${output}" || true
+          rm -f "${raw}"
+        }
+
+        echo 'Expanding full and scheduled derivation closures...'
+        expand_drv_closure /tmp/reconcile-top-drvs.txt \
+          /tmp/reconcile-drvs.txt
+        expand_drv_closure /tmp/reconcile-active-top-drvs.txt \
+          /tmp/reconcile-active-drvs.txt
+        echo "Derivation closure: $(wc -l < /tmp/reconcile-drvs.txt) total; $(wc -l < /tmp/reconcile-active-drvs.txt) scheduled."
 
         : > /tmp/reconcile-static.fragments
         : > /tmp/reconcile-active-static.fragments
         : > /tmp/reconcile-ca-outputs.txt
         if [[ -s /tmp/reconcile-drvs.txt ]]; then
-          while IFS= read -r drv; do
-            json="$(nix derivation show "${drv}" 2>/dev/null || true)"
-            if [[ -z "${json}" ]]; then
-              echo "::error::Could not read derivation metadata for ${drv}." >&2
-              exit 1
-            fi
-            outputs="$(jq -r --arg store "${store_dir}" '
-              (.derivations // .) | to_entries[].value.outputs[].path // empty
-              | if startswith("/") then . else "\($store)/\(.)" end' \
-              <<<"${json}")"
-            if [[ -n "${outputs}" ]]; then
-              printf '%s\n' "${outputs}" >> /tmp/reconcile-static.fragments
-              if grep -Fxq "${drv}" /tmp/reconcile-active-drvs.txt; then
-                printf '%s\n' "${outputs}" \
-                  >> /tmp/reconcile-active-static.fragments
-              fi
-            fi
-            jq -r --arg drv "${drv}" '
-              (.derivations // .) | to_entries[].value.outputs
-              | to_entries[] | select(.value.path == null)
-              | [$drv, .key] | @tsv' <<<"${json}" \
-              >> /tmp/reconcile-ca-outputs.txt
-          done < /tmp/reconcile-drvs.txt
+          echo 'Reading derivation metadata in batches...'
+          xargs -n 128 nix derivation show < /tmp/reconcile-drvs.txt \
+            > /tmp/reconcile-derivations.jsons
+          jq -r --arg store "${store_dir}" '
+            (.derivations // .) | to_entries[] as $drv
+            | ($drv.key
+              | if startswith("/") then . else "\($store)/\(.)" end) as $drvPath
+            | $drv.value.outputs | to_entries[]
+            | select(.value.path != null)
+            | (.value.path
+              | if startswith("/") then . else "\($store)/\(.)" end) as $path
+            | [$drvPath, $path] | @tsv' \
+            /tmp/reconcile-derivations.jsons \
+            > /tmp/reconcile-static-map.txt
+          cut -f2 /tmp/reconcile-static-map.txt \
+            > /tmp/reconcile-static.fragments
+          awk -F '\t' '
+            NR == FNR { active[$0] = 1; next }
+            $1 in active { print $2 }
+          ' /tmp/reconcile-active-drvs.txt \
+            /tmp/reconcile-static-map.txt \
+            > /tmp/reconcile-active-static.fragments
+          jq -r --arg store "${store_dir}" '
+            (.derivations // .) | to_entries[] as $drv
+            | ($drv.key
+              | if startswith("/") then . else "\($store)/\(.)" end) as $drvPath
+            | $drv.value.outputs | to_entries[]
+            | select(.value.path == null)
+            | [$drvPath, .key] | @tsv' \
+            /tmp/reconcile-derivations.jsons \
+            > /tmp/reconcile-ca-outputs.txt
+          echo "Metadata ready: $(wc -l < /tmp/reconcile-static.fragments) static outputs and $(wc -l < /tmp/reconcile-ca-outputs.txt) dynamic outputs."
         fi
 
         # Floating content-addressed outputs have no static .path. Ask every
@@ -364,85 +380,150 @@ runs:
           > /tmp/reconcile-required.txt
         echo "Retention set has $(wc -l < /tmp/reconcile-expected.txt) current private paths; active builders must supply $(wc -l < /tmp/reconcile-required.txt) of them."
 
-        # Print the subset of $2 that is valid in the Nix store on host $1.
-        # Dump and parse the validity database once per builder instead of
-        # starting one nix-store process for every expected path. The format
-        # is Nix's portable registration stream: path, narHash, narSize,
-        # deriver, referenceCount, then that many reference lines.
-        probe() {
-          if ! ssh -n "root@$1" nix-store --dump-db \
-            > /tmp/reconcile-host-db.txt 2> /tmp/reconcile-probe-error.txt; then
-            printf '::warning::Could not dump the Nix store DB on %s: %s\n' \
-              "$1" "$(tr '\n' ' ' < /tmp/reconcile-probe-error.txt)" >&2
-            : > /tmp/reconcile-host-paths.txt
-          else
-            awk '
-              state == 0 { print; state = 1; next }
-              state == 1 { state = 2; next }
-              state == 2 { state = 3; next }
-              state == 3 { state = 4; next }
-              state == 4 {
-                refs = $0 + 0
-                state = refs == 0 ? 0 : 5
-                next
-              }
-              state == 5 {
-                refs--
-                if (refs == 0) state = 0
-              }
-            ' /tmp/reconcile-host-db.txt \
-              | sort --unique > /tmp/reconcile-host-paths.txt
-          fi
-          printf 'Probe %s: %s valid store paths.\n' \
-            "$1" "$(wc -l < /tmp/reconcile-host-paths.txt)" >&2
-          comm -12 "$2" /tmp/reconcile-host-paths.txt
-        }
-
         # Do not require an already-cached active path to remain on a live
         # builder. Transfer only active paths absent from the restored cache.
         comm -23 /tmp/reconcile-required.txt /tmp/reconcile-attic-paths.txt \
           > /tmp/reconcile-remaining.txt
         echo "Attic already has $(( $(wc -l < /tmp/reconcile-required.txt) - $(wc -l < /tmp/reconcile-remaining.txt) )) required active paths; $(wc -l < /tmp/reconcile-remaining.txt) need upload."
 
-        while IFS= read -r id; do
-          [[ -s /tmp/reconcile-remaining.txt ]] || break
-          builder="${BUILDER_PREFIX}-${id}"
-          probe "${builder}" /tmp/reconcile-remaining.txt \
-            > /tmp/reconcile-found.txt
-          [[ -s /tmp/reconcile-found.txt ]] || continue
-          count="$(wc -l < /tmp/reconcile-found.txt)"
-          echo "Offering ${count} outputs from ${builder} to Attic with ${TRANSFER_JOBS} concurrent uploads."
-
-          # Attic's --no-closure mode intentionally permits narinfos whose
-          # references live in another substituter. Its bulk missing-path
-          # query skips objects already present, while upstream signing-key
-          # filters skip public-cache objects before upload.
-          scp -q /tmp/reconcile-found.txt \
-            "root@${builder}:/tmp/reconcile-push-input.txt"
-          if ssh "root@${builder}" /bin/bash -s -- \
-            "${TRANSFER_JOBS}" "ci:${CACHE_NAME}" <<'REMOTE_PUSH'
-        set -euo pipefail
-        jobs="$1"
-        cache="$2"
-        input=/tmp/reconcile-push-input.txt
-        attic_bin="$(cat /etc/attic/attic-bin)"
-        export XDG_CONFIG_HOME=/etc
-        # Detached post-build uploads use distinct input files and Attic's
-        # missing-path protocol is idempotent, so reconciliation can safely
-        # overlap with the final background upload.
-        trap 'rm -f "${input}"' EXIT INT TERM
-        "${attic_bin}" push --stdin --no-closure \
-          --jobs "${jobs}" "${cache}" <"${input}"
-        REMOTE_PUSH
-          then
-            comm -23 /tmp/reconcile-remaining.txt /tmp/reconcile-found.txt \
-              > /tmp/reconcile-remaining.next
-            mv /tmp/reconcile-remaining.next /tmp/reconcile-remaining.txt
-          else
-            echo "::warning::Attic upload from ${builder} failed; a later builder will retry overlapping paths."
+        # Run one streaming pipeline per builder. Python reads Nix's portable
+        # registration stream (path, hash, size, deriver, reference count,
+        # references) and queues a required path as soon as its path line is
+        # seen. Six workers on that builder upload queued paths immediately;
+        # builders run independently, giving transfer-jobs × builders total
+        # concurrency without waiting for any complete store probe.
+        pipeline_builder() {
+          local id="$1" builder="${BUILDER_PREFIX}-$1"
+          local succeeded="/tmp/reconcile-succeeded-${id}.txt"
+          : >"${succeeded}"
+          if ! scp -q /tmp/reconcile-remaining.txt \
+            "root@${builder}:/tmp/reconcile-expected-paths.txt"; then
+            echo "::warning::Could not send the expected path set to ${builder}."
+            return 0
           fi
-        done < <(jq -r '.include[].id' <<<"${BUILDERS_JSON}")
+          echo "Streaming store probe and up to ${TRANSFER_JOBS} uploads from ${builder}."
+          if ! ssh "root@${builder}" python3 - \
+            "${TRANSFER_JOBS}" "ci:${CACHE_NAME}" \
+            /tmp/reconcile-expected-paths.txt \
+            >"${succeeded}" <<'REMOTE_PIPELINE'
+        import os
+        import queue
+        import subprocess
+        import sys
+        import threading
 
+        jobs = int(sys.argv[1])
+        cache = sys.argv[2]
+        expected_file = sys.argv[3]
+        with open(expected_file, encoding="utf-8") as file:
+            expected = {line.rstrip("\n") for line in file if line.strip()}
+
+        attic_bin = open("/etc/attic/attic-bin", encoding="utf-8").read().strip()
+        environment = os.environ.copy()
+        environment["XDG_CONFIG_HOME"] = "/etc"
+        paths = queue.Queue()
+        output_lock = threading.Lock()
+        counts = {"found": 0, "uploaded": 0}
+
+        def upload_worker():
+            while True:
+                path = paths.get()
+                try:
+                    if path is None:
+                        return
+                    result = subprocess.run(
+                        [attic_bin, "push", "--no-closure", "--jobs", "1", cache, path],
+                        env=environment,
+                        stdout=sys.stderr,
+                        stderr=sys.stderr,
+                        check=False,
+                    )
+                    if result.returncode == 0:
+                        with output_lock:
+                            print(path, flush=True)
+                            counts["uploaded"] += 1
+                    else:
+                        print(f"warning: failed to upload {path}", file=sys.stderr, flush=True)
+                finally:
+                    paths.task_done()
+
+        workers = [threading.Thread(target=upload_worker) for _ in range(jobs)]
+        for worker in workers:
+            worker.start()
+
+        dump = subprocess.Popen(
+            ["nix-store", "--dump-db"],
+            stdout=subprocess.PIPE,
+            stderr=sys.stderr,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        dump_ok = True
+        try:
+            assert dump.stdout is not None
+            while True:
+                path = dump.stdout.readline()
+                if path == "":
+                    break
+                path = path.rstrip("\n")
+                if path in expected:
+                    counts["found"] += 1
+                    paths.put(path)
+                for field in range(4):
+                    line = dump.stdout.readline()
+                    if line == "":
+                        raise EOFError(f"truncated dump-db record for {path} at field {field}")
+                    if field == 3:
+                        references = int(line.strip())
+                for _ in range(references):
+                    if dump.stdout.readline() == "":
+                        raise EOFError(f"truncated references for {path}")
+            dump_ok = dump.wait() == 0
+        except Exception as error:
+            dump_ok = False
+            print(f"error: could not parse nix-store --dump-db: {error}", file=sys.stderr)
+            dump.terminate()
+            dump.wait()
+        finally:
+            for _ in workers:
+                paths.put(None)
+            paths.join()
+            for worker in workers:
+                worker.join()
+            try:
+                os.unlink(expected_file)
+            except FileNotFoundError:
+                pass
+
+        print(
+            f"Streaming probe found {counts['found']} required paths; "
+            f"{counts['uploaded']} uploads succeeded.",
+            file=sys.stderr,
+            flush=True,
+        )
+        if not dump_ok:
+            sys.exit(1)
+        REMOTE_PIPELINE
+          then
+            echo "::warning::Streaming reconcile pipeline failed on ${builder}."
+          fi
+        }
+
+        pipeline_pids=()
+        while IFS= read -r id; do
+          pipeline_builder "${id}" &
+          pipeline_pids+=("$!")
+        done < <(jq -r '.include[].id' <<<"${BUILDERS_JSON}")
+        for pid in "${pipeline_pids[@]}"; do
+          wait "${pid}" || true
+        done
+
+        cat /tmp/reconcile-succeeded-*.txt 2>/dev/null \
+          | sort --unique > /tmp/reconcile-succeeded.txt || true
+        comm -23 /tmp/reconcile-remaining.txt /tmp/reconcile-succeeded.txt \
+          > /tmp/reconcile-remaining.next
+        mv /tmp/reconcile-remaining.next /tmp/reconcile-remaining.txt
         left="$(wc -l < /tmp/reconcile-remaining.txt)"
         if (( left > 0 )); then
           echo "${left} private outputs were unavailable on builders or could not be uploaded."

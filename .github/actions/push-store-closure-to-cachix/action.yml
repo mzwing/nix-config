@@ -63,7 +63,7 @@ runs:
         echo "Pushing ${#outputs[@]} outputs (closure: ${count} paths) to ${CACHE_NAME}."
         xargs cachix push "${CACHE_NAME}" < "${PATHS_FILE}"
         if [[ -n "${CLOSURE_PATHS_FILE}" ]]; then
-          install -d "$(dirname "${CLOSURE_PATHS_FILE}")"
+          mkdir -p "$(dirname "${CLOSURE_PATHS_FILE}")"
           cp /tmp/push-closure.txt "${CLOSURE_PATHS_FILE}.tmp"
           mv "${CLOSURE_PATHS_FILE}.tmp" "${CLOSURE_PATHS_FILE}"
         fi
