@@ -23,6 +23,12 @@ inputs:
       alive between realise and push.
     required: false
     default: /tmp/ci-push-root
+  closure-paths-file:
+    description: >-
+      Optional file to atomically write with the complete closure after a
+      successful Cachix push. Left absent when pushing fails.
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -33,8 +39,12 @@ runs:
         CACHE_NAME: ${{ inputs.cachix-name }}
         PATHS_FILE: ${{ inputs.paths-file }}
         ROOT_PREFIX: ${{ inputs.root-prefix }}
+        CLOSURE_PATHS_FILE: ${{ inputs.closure-paths-file }}
       run: |
         set -euo pipefail
+        if [[ -n "${CLOSURE_PATHS_FILE}" ]]; then
+          rm -f "${CLOSURE_PATHS_FILE}" "${CLOSURE_PATHS_FILE}.tmp"
+        fi
         if [[ ! -s "${PATHS_FILE}" ]]; then
           echo 'Nothing to push.'
           exit 0
@@ -52,4 +62,9 @@ runs:
         done
         echo "Pushing ${#outputs[@]} outputs (closure: ${count} paths) to ${CACHE_NAME}."
         xargs cachix push "${CACHE_NAME}" < "${PATHS_FILE}"
+        if [[ -n "${CLOSURE_PATHS_FILE}" ]]; then
+          install -d "$(dirname "${CLOSURE_PATHS_FILE}")"
+          cp /tmp/push-closure.txt "${CLOSURE_PATHS_FILE}.tmp"
+          mv "${CLOSURE_PATHS_FILE}.tmp" "${CLOSURE_PATHS_FILE}"
+        fi
         rm -f "${ROOT_PREFIX}"*

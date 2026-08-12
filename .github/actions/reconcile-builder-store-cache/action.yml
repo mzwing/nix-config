@@ -1,20 +1,14 @@
 name: Reconcile builder store cache
 description: >-
-  Close the persistence gap of the post-build hook before the run ends.
-  The hook (setup-builder-store-cache) pushes every locally built path
-  to the central cache fire-and-forget: a failed push is invisible, and
-  the cache machine's GC keep-set (nix-store -qR --include-outputs) only
-  covers outputs that are VALID there — a path that never arrived is
-  collected before the store is saved, forcing a rebuild of it and its
-  entire dependent subtree on the next run. This action computes every
-  output of every derivation in the build closure WITHOUT a validity
-  filter, finds the ones missing from the cache machine, and copies them
-  over from whichever builder still holds them. Run it on the
-  coordinator AFTER the builds (and the Cachix push) but BEFORE
-  release-remote-builders signals the builders and the cache machine:
-  the builders must still be alive to serve as copy sources, and the
-  cache machine's final signing pass (on /tmp/cache_done) signs the
-  imported paths before the GC keep-set is computed.
+  Close the persistence gap of the best-effort Attic post-build hook.
+  This action computes a full current-lock retention set and an exact
+  scheduled-target transfer set, finds required outputs on the still-live
+  builders, and asks
+  Attic to upload sparse paths it does not already have. Attic skips paths
+  signed by configured public upstream caches. The deterministic keep-set
+  retains current inactive-system objects by deriver while pruning stale
+  locks. Run after builds and the Cachix push, before releasing the builders
+  and cache machine.
 
 inputs:
   builders-json:
@@ -24,16 +18,40 @@ inputs:
     description: Hostname prefix of the builders (e.g. nix-b-<run_id>-<attempt>).
     required: true
   cache-host:
-    description: Hostname of the builder store cache node on the tailnet.
+    description: Hostname of the Attic cache node on the tailnet.
     required: true
+  cache-name:
+    description: Attic cache name configured on every builder.
+    required: false
+    default: builder
+  cache-data-dir:
+    description: Attic data directory on the cache host.
+    required: false
+    default: /nix/attic-data
   drvs-file:
-    description: Nix file evaluating to a JSON list of .drv paths.
+    description: Nix file evaluating to every current .drv path to retain.
     required: false
     default: ci/drvs.nix
-  transfer-jobs:
+  active-drvs-file:
     description: >-
-      Number of direct builder-to-cache export/import streams to run in
-      parallel while reconciling one builder.
+      Newline-separated top-level .drv paths actually scheduled in this run.
+      The file must exist but may be empty when only extra outputs are active.
+    required: false
+    default: /tmp/active-drvs.txt
+  public-paths-file:
+    description: >-
+      Optional newline-separated paths already published to a public cache;
+      these are neither uploaded nor persisted privately.
+    required: false
+    default: /tmp/push-outputs.txt
+  extra-paths-file:
+    description: >-
+      Optional newline-separated realised outputs without a static derivation
+      path (for example devenv outputs) to include in reconciliation/retention.
+    required: false
+    default: ''
+  transfer-jobs:
+    description: Number of concurrent Attic uploads during reconciliation.
     required: false
     default: '6'
 
@@ -46,44 +64,311 @@ runs:
         BUILDERS_JSON: ${{ inputs.builders-json }}
         BUILDER_PREFIX: ${{ inputs.builder-prefix }}
         CACHE_HOST: ${{ inputs.cache-host }}
+        CACHE_NAME: ${{ inputs.cache-name }}
+        CACHE_DATA_DIR: ${{ inputs.cache-data-dir }}
         DRVS_FILE: ${{ inputs.drvs-file }}
+        ACTIVE_DRVS_FILE: ${{ inputs.active-drvs-file }}
+        PUBLIC_PATHS_FILE: ${{ inputs.public-paths-file }}
+        EXTRA_PATHS_FILE: ${{ inputs.extra-paths-file }}
         TRANSFER_JOBS: ${{ inputs.transfer-jobs }}
       run: |
         set -euo pipefail
+        export LC_ALL=C
         if [[ ! "${TRANSFER_JOBS}" =~ ^[1-9][0-9]*$ ]]; then
           echo "::error::transfer-jobs must be a positive integer, got ${TRANSFER_JOBS}."
           exit 1
         fi
 
-        # Every output of every derivation in the build closure. CA
-        # derivations have no resolvable output paths; those are skipped.
-        nix eval --json --impure --file "${DRVS_FILE}" | jq -r '.[]' \
-          > /tmp/reconcile-top-drvs.txt
-        xargs -a /tmp/reconcile-top-drvs.txt nix-store --query --requisites \
-          | grep '\.drv$' | sort --unique > /tmp/reconcile-drvs.txt
-        # `nix derivation show` wraps its output in {"derivations": ...}
-        # since nix 2.30; the jq fallback keeps both shapes working. The
-        # wrapped shape also reports output paths RELATIVE to the store
-        # directory, so prepend it when missing — the probes compare
-        # against absolute paths from nix-store --dump-db.
+        # Evaluation materialises all current derivation metadata on the
+        # coordinator for retention. Transfer requirements use the exact
+        # top-level derivations selected by the cache probe, not every target
+        # sharing an active system. This only reads derivations; max-jobs=0
+        # prevents local compilation.
+        nix eval --json --impure --file "${DRVS_FILE}" \
+          | jq -r '.[]' > /tmp/reconcile-top-drvs.txt
+        if [[ ! -e "${ACTIVE_DRVS_FILE}" ]]; then
+          echo "::error::Active derivation file does not exist: ${ACTIVE_DRVS_FILE}"
+          exit 1
+        fi
+        sort --unique "${ACTIVE_DRVS_FILE}" \
+          > /tmp/reconcile-active-top-drvs.txt
+        sort --unique -o /tmp/reconcile-top-drvs.txt \
+          /tmp/reconcile-top-drvs.txt
+        if [[ -n "$(comm -23 /tmp/reconcile-active-top-drvs.txt \
+          /tmp/reconcile-top-drvs.txt)" ]]; then
+          echo '::error::Active derivations are not a subset of the full retention set.'
+          exit 1
+        fi
         store_dir="$(nix eval --raw --expr 'builtins.storeDir')"
-        xargs -a /tmp/reconcile-drvs.txt -n 100 nix derivation show \
-          | jq -r --arg store "${store_dir}" '
-            (.derivations // .) | to_entries[].value.outputs[].path // empty
-            | if startswith("/") then . else "\($store)/\(.)" end' \
-          | sort --unique > /tmp/reconcile-expected.txt
-        echo "Build closure has $(wc -l < /tmp/reconcile-expected.txt) output paths."
 
-        # Print the subset of $2 that is valid in the store on host $1.
-        # Dump the remote database over plain ssh in a single session:
-        # this is a pure query and avoids per-path narinfo lookups. A
-        # validity-registration record is:
-        #
-        #   path, narHash, narSize, deriver, referenceCount, references...
-        #
-        # Parse that structure instead of grepping every store path: an
-        # imported valid path may have dangling references, so reference
-        # lines are NOT proof that those paths are valid on this host.
+        # Extra realised outputs may not be represented by DRVS_FILE (for
+        # example root devenv packages). Expand each output's producing
+        # derivation closure on the builder that actually holds it; this keeps
+        # private build-time intermediates as well as the final output.
+        : > /tmp/reconcile-extra.fragments
+        : > /tmp/reconcile-extra-expected.txt
+        if [[ -n "${EXTRA_PATHS_FILE}" && -s "${EXTRA_PATHS_FILE}" ]]; then
+          while IFS= read -r id; do
+            builder="${BUILDER_PREFIX}-${id}"
+            scp -q "${EXTRA_PATHS_FILE}" \
+              "root@${builder}:/tmp/reconcile-extra-paths.txt" || continue
+            ssh "root@${builder}" /bin/bash -s -- "${store_dir}" \
+              >> /tmp/reconcile-extra.fragments <<'REMOTE_EXTRA' || true
+        set -euo pipefail
+        store_dir="$1"
+        input=/tmp/reconcile-extra-paths.txt
+        top_drvs=/tmp/reconcile-extra-top-drvs.$$
+        drvs=/tmp/reconcile-extra-drvs.$$
+        cleanup() { rm -f "${input}" "${top_drvs}" "${drvs}"; }
+        trap cleanup EXIT
+        : >"${top_drvs}"
+        while IFS= read -r path; do
+          drv="$(nix-store --query --deriver "${path}" 2>/dev/null || true)"
+          if [[ "${drv}" == /nix/store/*.drv ]] &&
+            nix-store --check-validity "${drv}" 2>/dev/null; then
+            printf 'FOUND\t%s\n' "${path}"
+            printf '%s\n' "${drv}" >>"${top_drvs}"
+          fi
+        done <"${input}"
+        sort --unique -o "${top_drvs}" "${top_drvs}"
+        [[ -s "${top_drvs}" ]] || exit 3
+        while IFS= read -r top_drv; do
+          nix-store --query --requisites "${top_drv}" 2>/dev/null || true
+        done <"${top_drvs}" \
+          | grep '\.drv$' | sort --unique >"${drvs}" || true
+        while IFS= read -r drv; do
+          json="$(nix derivation show "${drv}" 2>/dev/null || true)"
+          [[ -n "${json}" ]] || continue
+          jq -r --arg store "${store_dir}" '
+            (.derivations // .) | to_entries[].value.outputs[].path // empty
+            | if startswith("/") then . else "\($store)/\(.)" end
+            | "PATH\t\(.)"' <<<"${json}"
+          dynamic_outputs="$(jq -r '
+            (.derivations // .) | to_entries[].value.outputs
+            | to_entries[] | select(.value.path == null) | .key' \
+            <<<"${json}")"
+          if [[ -n "${dynamic_outputs}" ]]; then
+            while IFS= read -r output; do
+              printf 'CA_REQUIRED\t%s\t%s\n' "${drv}" "${output}"
+            done <<<"${dynamic_outputs}"
+            realised="$(nix realisation info --json "${drv}" 2>/dev/null || true)"
+            if [[ -n "${realised}" ]]; then
+              jq -r --arg drv "${drv}" --arg store "${store_dir}" '
+                .[] | select((.id? | type) == "string" and
+                  (.outPath? | type) == "string")
+                | (.id | split("!") | last) as $output
+                | (.outPath
+                  | if startswith("/") then . else "\($store)/\(.)" end) as $path
+                | ["CA_FOUND", $drv, $output] | @tsv,
+                  ["PATH", $path] | @tsv' <<<"${realised}"
+            fi
+          fi
+        done <"${drvs}"
+        REMOTE_EXTRA
+          done < <(jq -r '.include[].id' <<<"${BUILDERS_JSON}")
+          awk -F '\t' '$1 == "FOUND" {print $2}' \
+            /tmp/reconcile-extra.fragments | sort --unique \
+            > /tmp/reconcile-extra-found.txt
+          sort --unique "${EXTRA_PATHS_FILE}" \
+            > /tmp/reconcile-extra-required.txt
+          if ! cmp -s /tmp/reconcile-extra-required.txt \
+            /tmp/reconcile-extra-found.txt; then
+            echo '::error::Not every extra realised output had a deriver on a live builder.'
+            comm -23 /tmp/reconcile-extra-required.txt \
+              /tmp/reconcile-extra-found.txt >&2
+            exit 1
+          fi
+          awk -F '\t' '$1 == "CA_REQUIRED" {print $2 "\t" $3}' \
+            /tmp/reconcile-extra.fragments | sort --unique \
+            > /tmp/reconcile-extra-ca-required.txt
+          awk -F '\t' '$1 == "CA_FOUND" {print $2 "\t" $3}' \
+            /tmp/reconcile-extra.fragments | sort --unique \
+            > /tmp/reconcile-extra-ca-found.txt
+          if ! cmp -s /tmp/reconcile-extra-ca-required.txt \
+            /tmp/reconcile-extra-ca-found.txt; then
+            echo '::error::Not every content-addressed derivation in an extra output closure had a realisation on a live builder.'
+            comm -23 /tmp/reconcile-extra-ca-required.txt \
+              /tmp/reconcile-extra-ca-found.txt >&2
+            exit 1
+          fi
+          awk -F '\t' '$1 == "PATH" {print $2}' \
+            /tmp/reconcile-extra.fragments | sort --unique \
+            > /tmp/reconcile-extra-expected.txt
+        fi
+
+        : > /tmp/reconcile-drvs.txt
+        while IFS= read -r top_drv; do
+          nix-store --query --requisites "${top_drv}" 2>/dev/null || true
+        done < /tmp/reconcile-top-drvs.txt \
+          | grep '\.drv$' | sort --unique > /tmp/reconcile-drvs.txt || true
+        : > /tmp/reconcile-active-drvs.txt
+        while IFS= read -r top_drv; do
+          nix-store --query --requisites "${top_drv}" 2>/dev/null || true
+        done < /tmp/reconcile-active-top-drvs.txt \
+          | grep '\.drv$' | sort --unique \
+          > /tmp/reconcile-active-drvs.txt || true
+
+        : > /tmp/reconcile-static.fragments
+        : > /tmp/reconcile-active-static.fragments
+        : > /tmp/reconcile-ca-outputs.txt
+        if [[ -s /tmp/reconcile-drvs.txt ]]; then
+          while IFS= read -r drv; do
+            json="$(nix derivation show "${drv}" 2>/dev/null || true)"
+            if [[ -z "${json}" ]]; then
+              echo "::error::Could not read derivation metadata for ${drv}." >&2
+              exit 1
+            fi
+            outputs="$(jq -r --arg store "${store_dir}" '
+              (.derivations // .) | to_entries[].value.outputs[].path // empty
+              | if startswith("/") then . else "\($store)/\(.)" end' \
+              <<<"${json}")"
+            if [[ -n "${outputs}" ]]; then
+              printf '%s\n' "${outputs}" >> /tmp/reconcile-static.fragments
+              if grep -Fxq "${drv}" /tmp/reconcile-active-drvs.txt; then
+                printf '%s\n' "${outputs}" \
+                  >> /tmp/reconcile-active-static.fragments
+              fi
+            fi
+            jq -r --arg drv "${drv}" '
+              (.derivations // .) | to_entries[].value.outputs
+              | to_entries[] | select(.value.path == null)
+              | [$drv, .key] | @tsv' <<<"${json}" \
+              >> /tmp/reconcile-ca-outputs.txt
+          done < /tmp/reconcile-drvs.txt
+        fi
+
+        # Floating content-addressed outputs have no static .path. Ask every
+        # live builder's realisation database and require a result for each
+        # dynamic output name, including all outputs of multi-output CA drvs.
+        # Any uncertainty aborts reconciliation, so shutdown keeps the
+        # previous generation instead of pruning a valid object.
+        awk -F '\t' '
+          NR == FNR { active[$0] = 1; next }
+          $1 in active { print }
+        ' /tmp/reconcile-active-drvs.txt /tmp/reconcile-ca-outputs.txt \
+          | sort --unique > /tmp/reconcile-active-ca-outputs.txt
+        : > /tmp/reconcile-ca.fragments
+        if [[ -s /tmp/reconcile-active-ca-outputs.txt ]]; then
+          while IFS= read -r id; do
+            builder="${BUILDER_PREFIX}-${id}"
+            scp -q /tmp/reconcile-active-ca-outputs.txt \
+              "root@${builder}:/tmp/reconcile-ca-outputs.txt" || continue
+            ssh "root@${builder}" /bin/bash -s -- "${store_dir}" \
+              >> /tmp/reconcile-ca.fragments <<'REMOTE_CA' || true
+        set -euo pipefail
+        store_dir="$1"
+        input=/tmp/reconcile-ca-outputs.txt
+        drvs=/tmp/reconcile-ca-drvs.$$
+        cleanup() { rm -f "${input}" "${drvs}"; }
+        trap cleanup EXIT
+        cut -f1 "${input}" | sort --unique >"${drvs}"
+        while IFS= read -r drv; do
+          json="$(nix realisation info --json "${drv}" 2>/dev/null || true)"
+          [[ -n "${json}" ]] || continue
+          jq -r --arg drv "${drv}" --arg store "${store_dir}" '
+            .[] | select((.id? | type) == "string" and
+              (.outPath? | type) == "string")
+            | (.id | split("!") | last) as $output
+            | (.outPath
+              | if startswith("/") then . else "\($store)/\(.)" end) as $path
+            | ["FOUND", $drv, $output, $path] | @tsv' <<<"${json}"
+        done <"${drvs}"
+        REMOTE_CA
+          done < <(jq -r '.include[].id' <<<"${BUILDERS_JSON}")
+          awk -F '\t' '$1 == "FOUND" {print $2 "\t" $3}' \
+            /tmp/reconcile-ca.fragments | sort --unique \
+            > /tmp/reconcile-ca-found.txt
+          sort --unique /tmp/reconcile-active-ca-outputs.txt \
+            > /tmp/reconcile-ca-required.txt
+          if ! cmp -s /tmp/reconcile-ca-required.txt \
+            /tmp/reconcile-ca-found.txt; then
+            echo '::error::Not every content-addressed output had a realisation on a live builder.'
+            comm -23 /tmp/reconcile-ca-required.txt \
+              /tmp/reconcile-ca-found.txt >&2
+            exit 1
+          fi
+        fi
+        awk -F '\t' '$1 == "FOUND" {print $4}' \
+          /tmp/reconcile-ca.fragments > /tmp/reconcile-ca-paths.txt
+
+        missing_top_drvs=0
+        while IFS= read -r top_drv; do
+          if ! grep -Fxq "${top_drv}" /tmp/reconcile-drvs.txt; then
+            echo "::error::Could not expand top-level derivation ${top_drv}."
+            missing_top_drvs=$((missing_top_drvs + 1))
+          fi
+        done < /tmp/reconcile-top-drvs.txt
+        while IFS= read -r top_drv; do
+          if ! grep -Fxq "${top_drv}" /tmp/reconcile-active-drvs.txt; then
+            echo "::error::Could not expand active derivation ${top_drv}."
+            missing_top_drvs=$((missing_top_drvs + 1))
+          fi
+        done < /tmp/reconcile-active-top-drvs.txt
+        if (( missing_top_drvs > 0 )); then
+          exit 1
+        fi
+
+        # Existing sparse objects record their producing derivation. Retain
+        # objects belonging to the full current-lock derivation closure even
+        # when their targets were already public this run; only scheduled
+        # targets are required transfer sources.
+        if ! ssh -n "root@${CACHE_HOST}" \
+          "sqlite3 '${CACHE_DATA_DIR}/server.db' \"SELECT store_path || char(9) || COALESCE(deriver, '') FROM object;\"" \
+          > /tmp/reconcile-attic-objects.txt; then
+          echo '::error::Could not read Attic object metadata from the cache host.'
+          exit 1
+        fi
+        cut -f1 /tmp/reconcile-attic-objects.txt | sort --unique \
+          > /tmp/reconcile-attic-paths.txt
+        awk -F '\t' '
+          NR == FNR {
+            current[$0] = 1
+            basename = $0
+            sub(/^.*\//, "", basename)
+            current[basename] = 1
+            next
+          }
+          $2 in current { print $1 }
+        ' /tmp/reconcile-drvs.txt /tmp/reconcile-attic-objects.txt \
+          | sort --unique > /tmp/reconcile-current-attic-paths.txt
+
+        cat /tmp/reconcile-static.fragments /tmp/reconcile-ca-paths.txt \
+          /tmp/reconcile-extra-expected.txt \
+          /tmp/reconcile-current-attic-paths.txt \
+          > /tmp/reconcile-expected.fragments
+        cat /tmp/reconcile-active-static.fragments /tmp/reconcile-ca-paths.txt \
+          /tmp/reconcile-extra-expected.txt \
+          > /tmp/reconcile-required.fragments
+        if [[ -n "${EXTRA_PATHS_FILE}" && -s "${EXTRA_PATHS_FILE}" ]]; then
+          cat "${EXTRA_PATHS_FILE}" \
+            >> /tmp/reconcile-expected.fragments
+          cat "${EXTRA_PATHS_FILE}" \
+            >> /tmp/reconcile-required.fragments
+        fi
+        sort --unique /tmp/reconcile-expected.fragments \
+          > /tmp/reconcile-expected.all.txt
+        sort --unique /tmp/reconcile-required.fragments \
+          > /tmp/reconcile-required.all.txt
+        if [[ -s /tmp/reconcile-active-top-drvs.txt && \
+          ! -s /tmp/reconcile-required.all.txt ]]; then
+          echo '::error::The non-empty active build closure produced no realised output paths.'
+          exit 1
+        fi
+        : > /tmp/reconcile-public.txt
+        if [[ -s "${PUBLIC_PATHS_FILE}" ]]; then
+          sort --unique "${PUBLIC_PATHS_FILE}" > /tmp/reconcile-public.txt
+        fi
+        comm -23 /tmp/reconcile-expected.all.txt /tmp/reconcile-public.txt \
+          > /tmp/reconcile-expected.txt
+        comm -23 /tmp/reconcile-required.all.txt /tmp/reconcile-public.txt \
+          > /tmp/reconcile-required.txt
+        echo "Retention set has $(wc -l < /tmp/reconcile-expected.txt) current private paths; active builders must supply $(wc -l < /tmp/reconcile-required.txt) of them."
+
+        # Print the subset of $2 that is valid in the Nix store on host $1.
+        # Dump and parse the validity database once per builder instead of
+        # starting one nix-store process for every expected path. The format
+        # is Nix's portable registration stream: path, narHash, narSize,
+        # deriver, referenceCount, then that many reference lines.
         probe() {
           if ! ssh -n "root@$1" nix-store --dump-db \
             > /tmp/reconcile-host-db.txt 2> /tmp/reconcile-probe-error.txt; then
@@ -93,9 +378,9 @@ runs:
           else
             awk '
               state == 0 { print; state = 1; next }
-              state == 1 { state = 2; next } # narHash
-              state == 2 { state = 3; next } # narSize
-              state == 3 { state = 4; next } # deriver
+              state == 1 { state = 2; next }
+              state == 2 { state = 3; next }
+              state == 3 { state = 4; next }
               state == 4 {
                 refs = $0 + 0
                 state = refs == 0 ? 0 : 5
@@ -113,57 +398,67 @@ runs:
           comm -12 "$2" /tmp/reconcile-host-paths.txt
         }
 
-        probe "${CACHE_HOST}" /tmp/reconcile-expected.txt \
-          > /tmp/reconcile-on-cache.txt
-        comm -23 /tmp/reconcile-expected.txt /tmp/reconcile-on-cache.txt \
-          > /tmp/reconcile-missing.txt
-        echo "$(wc -l < /tmp/reconcile-missing.txt) outputs are missing from the cache machine."
+        # Do not require an already-cached active path to remain on a live
+        # builder. Transfer only active paths absent from the restored cache.
+        comm -23 /tmp/reconcile-required.txt /tmp/reconcile-attic-paths.txt \
+          > /tmp/reconcile-remaining.txt
+        echo "Attic already has $(( $(wc -l < /tmp/reconcile-required.txt) - $(wc -l < /tmp/reconcile-remaining.txt) )) required active paths; $(wc -l < /tmp/reconcile-remaining.txt) need upload."
 
-        # Copy each missing output from the first builder that has it.
-        # The coordinator only launches the transfer: NAR data flows
-        # directly from builder to cache (the same route as the post-build
-        # hook), avoiding a builder -> coordinator -> cache double hop.
-        # Several independent chunks run in parallel; only successful
-        # chunks are removed from the remaining set, so failures can be
-        # retried against a later builder.
-        cat >/tmp/reconcile-copy-chunk <<'EOF'
-        #!/usr/bin/env bash
-        set -euo pipefail
-        # Send the path list over the control connection's stdin. The
-        # remote builder exports it directly into the cache machine;
-        # /bin/bash is present on both Linux and macOS builders.
-        printf '%s\n' "$@" |
-          ssh root@"${BUILDER}" \
-            "/bin/bash -e -o pipefail -c 'xargs nix-store --export | ssh root@${CACHE_HOST} nix-store --import >/dev/null'"
-        printf '%s\n' "$@" >"${SUCCESS_DIR}/$$"
-        EOF
-        chmod 755 /tmp/reconcile-copy-chunk
-
-        cp /tmp/reconcile-missing.txt /tmp/reconcile-remaining.txt
         while IFS= read -r id; do
           [[ -s /tmp/reconcile-remaining.txt ]] || break
           builder="${BUILDER_PREFIX}-${id}"
           probe "${builder}" /tmp/reconcile-remaining.txt \
             > /tmp/reconcile-found.txt
           [[ -s /tmp/reconcile-found.txt ]] || continue
-          echo "Copying $(wc -l < /tmp/reconcile-found.txt) outputs from ${builder} with ${TRANSFER_JOBS} parallel streams."
-          success_dir=/tmp/reconcile-copied.d
-          rm -rf "${success_dir}"
-          mkdir -p "${success_dir}"
-          if ! BUILDER="${builder}" CACHE_HOST="${CACHE_HOST}" SUCCESS_DIR="${success_dir}" \
-            xargs -a /tmp/reconcile-found.txt -n 100 -P "${TRANSFER_JOBS}" -r \
-              /tmp/reconcile-copy-chunk; then
-            echo "::warning::Failed to copy some outputs from ${builder}; continuing."
+          count="$(wc -l < /tmp/reconcile-found.txt)"
+          echo "Offering ${count} outputs from ${builder} to Attic with ${TRANSFER_JOBS} concurrent uploads."
+
+          # Attic's --no-closure mode intentionally permits narinfos whose
+          # references live in another substituter. Its bulk missing-path
+          # query skips objects already present, while upstream signing-key
+          # filters skip public-cache objects before upload.
+          scp -q /tmp/reconcile-found.txt \
+            "root@${builder}:/tmp/reconcile-push-input.txt"
+          if ssh "root@${builder}" /bin/bash -s -- \
+            "${TRANSFER_JOBS}" "ci:${CACHE_NAME}" <<'REMOTE_PUSH'
+        set -euo pipefail
+        jobs="$1"
+        cache="$2"
+        input=/tmp/reconcile-push-input.txt
+        attic_bin="$(cat /etc/attic/attic-bin)"
+        export XDG_CONFIG_HOME=/etc
+        # Detached post-build uploads use distinct input files and Attic's
+        # missing-path protocol is idempotent, so reconciliation can safely
+        # overlap with the final background upload.
+        trap 'rm -f "${input}"' EXIT INT TERM
+        "${attic_bin}" push --stdin --no-closure \
+          --jobs "${jobs}" "${cache}" <"${input}"
+        REMOTE_PUSH
+          then
+            comm -23 /tmp/reconcile-remaining.txt /tmp/reconcile-found.txt \
+              > /tmp/reconcile-remaining.next
+            mv /tmp/reconcile-remaining.next /tmp/reconcile-remaining.txt
+          else
+            echo "::warning::Attic upload from ${builder} failed; a later builder will retry overlapping paths."
           fi
-          find "${success_dir}" -type f -exec cat {} + \
-            | sort --unique > /tmp/reconcile-copied.txt
-          echo "Copied $(wc -l < /tmp/reconcile-copied.txt) outputs from ${builder}."
-          comm -23 /tmp/reconcile-remaining.txt /tmp/reconcile-copied.txt \
-            > /tmp/reconcile-remaining.next
-          mv /tmp/reconcile-remaining.next /tmp/reconcile-remaining.txt
         done < <(jq -r '.include[].id' <<<"${BUILDERS_JSON}")
 
         left="$(wc -l < /tmp/reconcile-remaining.txt)"
         if (( left > 0 )); then
-          echo "${left} outputs exist on no builder (never built this run); skipping."
+          echo "${left} private outputs were unavailable on builders or could not be uploaded."
         fi
+
+        if (( left > 0 )); then
+          echo '::warning::Reconciliation was incomplete; preserving the previous Attic generation instead of pruning it.'
+          exit 1
+        fi
+
+        # Install the full current-lock retention set atomically only after
+        # every required active path was already cached or successfully
+        # offered. Unscheduled targets contribute existing objects by deriver;
+        # the cache host intersects this set with its sparse object table,
+        # then reaps stale objects and orphan NARs before saving.
+        scp -q /tmp/reconcile-expected.txt \
+          "root@${CACHE_HOST}:/tmp/attic-keep-paths.next"
+        ssh -n "root@${CACHE_HOST}" \
+          'mv /tmp/attic-keep-paths.next /tmp/attic-keep-paths.txt'

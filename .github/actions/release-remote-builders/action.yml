@@ -3,7 +3,8 @@ description: >-
   Signal every builder in the matrix that the run is over
   (/tmp/builder_done), so the builder jobs can exit. Optionally also
   signal the builder store cache machine (/tmp/cache_done), so its
-  signing loop can end. Intended to run with `if: always()`.
+  Attic serving loop can shut down cleanly. Intended to run with
+  `if: always()`.
 
 inputs:
   builders-json:
@@ -18,6 +19,10 @@ inputs:
       when set, it is signaled too.
     required: false
     default: ''
+  signal-attempts:
+    description: Number of 5-second attempts for each best-effort signal.
+    required: false
+    default: '60'
 
 runs:
   using: composite
@@ -28,12 +33,54 @@ runs:
         BUILDERS_JSON: ${{ inputs.builders-json }}
         BUILDER_PREFIX: ${{ inputs.builder-prefix }}
         CACHE_HOST: ${{ inputs.cache-host }}
+        SIGNAL_ATTEMPTS: ${{ inputs.signal-attempts }}
       run: |
+        set -u
+        if [[ ! "${SIGNAL_ATTEMPTS}" =~ ^[1-9][0-9]*$ ]]; then
+          echo "::error::signal-attempts must be a positive integer, got ${SIGNAL_ATTEMPTS}."
+          exit 1
+        fi
+        ssh_opts=(
+          -n
+          -o StrictHostKeyChecking=no
+          -o UserKnownHostsFile=/dev/null
+          -o ConnectTimeout=5
+          -o BatchMode=yes
+          -o ServerAliveInterval=5
+          -o ServerAliveCountMax=2
+          -o LogLevel=ERROR
+        )
+        signal_host() {
+          local host="$1" signal="$2"
+          local remote_command
+          case "${signal}" in
+            builder) remote_command='touch /tmp/builder_done' ;;
+            cache) remote_command='touch /tmp/cache_done' ;;
+            *) return 2 ;;
+          esac
+          for ((attempt = 1; attempt <= SIGNAL_ATTEMPTS; attempt++)); do
+            # Command is selected from the fixed case above.
+            # shellcheck disable=SC2029
+            if ssh "${ssh_opts[@]}" "root@${host}" "${remote_command}"; then
+              return 0
+            fi
+            sleep 5
+          done
+          echo "::warning::Could not signal ${host} after ${SIGNAL_ATTEMPTS} attempts."
+          return 1
+        }
+        # Signal in parallel: the cache job may still be restoring its
+        # multi-GiB Actions cache, and one late host must not delay attempts
+        # to release every other host.
+        pids=()
         while IFS= read -r id; do
-          ssh -n -o ConnectTimeout=5 "root@${BUILDER_PREFIX}-${id}" \
-            'touch /tmp/builder_done' || true
+          signal_host "${BUILDER_PREFIX}-${id}" builder &
+          pids+=("$!")
         done < <(jq -r '.include[].id' <<<"${BUILDERS_JSON}")
         if [[ -n "${CACHE_HOST}" ]]; then
-          ssh -n -o ConnectTimeout=5 "root@${CACHE_HOST}" \
-            'touch /tmp/cache_done' || true
+          signal_host "${CACHE_HOST}" cache &
+          pids+=("$!")
         fi
+        for pid in "${pids[@]}"; do
+          wait "${pid}" || true
+        done

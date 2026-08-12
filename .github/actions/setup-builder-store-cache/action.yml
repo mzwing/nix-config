@@ -1,32 +1,33 @@
 name: Set up builder store cache
 description: >-
-  Configure this machine as a client of the central builder store cache
-  (a plain ssh-ng store on the tailnet): validate the signing public key
-  and add the cache as a substituter. In post-build-hook mode (builders)
-  every locally built path is additionally pushed to the cache; once the
-  cache machine has signed it (within about a minute) the other builders
-  can substitute it. Remote builds via ssh-ng read /etc/nix/nix.conf per
-  session, so no daemon restart is needed on builders. In substituter-only
-  mode (coordinator) the nix-daemon must be (re)started afterwards to pick
-  up the new substituter.
+  Configure this machine as a client of the ephemeral Attic cache on the
+  tailnet. Client credentials and the run-local cache signing public key
+  are fetched over Tailscale SSH after the cache is ready. Builders also
+  install an Attic post-build hook; substituter-only mode is used by the
+  coordinator.
 
 inputs:
   cache-host:
-    description: Hostname of the builder store cache node on the tailnet.
+    description: Hostname of the builder cache node on the tailnet.
     required: true
-  signing-public-key:
-    description: >-
-      Public key (name:base64=) used to verify paths served by the cache.
-      The cache is mandatory: a missing/misconfigured key fails fast
-      instead of degrading to cache-less builds.
-    required: true
+  cache-name:
+    description: Attic cache name.
+    required: false
+    default: builder
   post-build-hook:
     description: >-
-      Whether to push every locally built path to the cache via a
-      post-build hook (builders). "false" configures only the
-      substituter side (coordinator).
+      Whether to push locally built paths to Attic from a post-build hook.
+      "false" configures only the substituter side (coordinator).
     required: false
     default: 'true'
+  ready-attempts:
+    description: Number of 5-second attempts to fetch Attic bootstrap data.
+    required: false
+    default: '60'
+  attic-nixpkgs-rev:
+    description: Pinned nixpkgs revision providing the prebuilt Attic client.
+    required: false
+    default: 2fcb964de67fcf60b43471c55d5d99e61a9ccb5a
 
 runs:
   using: composite
@@ -35,49 +36,117 @@ runs:
       shell: bash
       env:
         CACHE_HOST: ${{ inputs.cache-host }}
-        SIGNING_PUBLIC_KEY: ${{ inputs.signing-public-key }}
+        CACHE_NAME: ${{ inputs.cache-name }}
         POST_BUILD_HOOK: ${{ inputs.post-build-hook }}
+        READY_ATTEMPTS: ${{ inputs.ready-attempts }}
+        ATTIC_NIXPKGS_REV: ${{ inputs.attic-nixpkgs-rev }}
       run: |
         set -euo pipefail
-        if [[ ! "${SIGNING_PUBLIC_KEY}" =~ ^[a-z0-9-]+:[A-Za-z0-9+/]{43}=$ ]]; then
-          echo '::error::The builder store cache signing public key is not configured.'
+        if [[ ! "${READY_ATTEMPTS}" =~ ^[1-9][0-9]*$ ]]; then
+          echo "::error::ready-attempts must be a positive integer, got ${READY_ATTEMPTS}."
           exit 1
         fi
-        if [[ "${POST_BUILD_HOOK}" == 'true' ]]; then
-          sudo tee /etc/nix/push-to-builder-cache >/dev/null <<EOF
-        #!/bin/sh
-        # Push every locally built path to the central builder store
-        # cache. Only the exact outputs are exported (not their closure):
-        # upstream dependencies stay fetchable from the upstream caches.
-        # The push must never fail the build (nix ignores the hook exit
-        # code anyway); whatever is still lost after the retries is
-        # healed by the coordinator's reconcile-builder-store-cache step
-        # at the end of the run.
-        export PATH=/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-        for _ in 1 2 3; do
-          nix-store --export \$OUT_PATHS |
-            ssh root@${CACHE_HOST} nix-store --import && exit 0
-          sleep 2
-        done
-        echo "warning: failed to push \$OUT_PATHS to the builder store cache" >&2
-        EOF
-          sudo chmod 755 /etc/nix/push-to-builder-cache
-          sudo tee -a /etc/ssh/ssh_config >/dev/null <<EOF
 
-        Host ${CACHE_HOST}
-          StrictHostKeyChecking no
-          UserKnownHostsFile /dev/null
-          ConnectTimeout 10
-          BatchMode yes
-          LogLevel ERROR
-        EOF
+        ssh_opts=(
+          -o StrictHostKeyChecking=no
+          -o UserKnownHostsFile=/dev/null
+          -o ConnectTimeout=5
+          -o BatchMode=yes
+          -o LogLevel=ERROR
+        )
+        bootstrap=''
+        for ((attempt = 1; attempt <= READY_ATTEMPTS; attempt++)); do
+          if bootstrap="$(ssh "${ssh_opts[@]}" "root@${CACHE_HOST}" \
+            'cat /tmp/attic-client.json' 2>/dev/null)" &&
+            jq -e '
+              (.apiEndpoint | type == "string" and endswith("/")) and
+              (.cacheEndpoint | type == "string") and
+              (.publicKey | type == "string" and contains(":")) and
+              (.token | type == "string" and length > 0)
+            ' <<<"${bootstrap}" >/dev/null; then
+            break
+          fi
+          bootstrap=''
+          sleep 5
+        done
+        if [[ -z "${bootstrap}" ]]; then
+          echo "::error::Attic bootstrap data was not available from ${CACHE_HOST}."
+          exit 1
         fi
+
+        api_endpoint="$(jq -r '.apiEndpoint' <<<"${bootstrap}")"
+        cache_endpoint="$(jq -r '.cacheEndpoint' <<<"${bootstrap}")"
+        public_key="$(jq -r '.publicKey' <<<"${bootstrap}")"
+        token="$(jq -r '.token' <<<"${bootstrap}")"
+        if [[ ! "${public_key}" =~ ^[a-zA-Z0-9._-]+:[A-Za-z0-9+/]{43}=$ ]]; then
+          echo '::error::Attic returned an invalid cache signing public key.'
+          exit 1
+        fi
+
+        if [[ "${POST_BUILD_HOOK}" == 'true' ]]; then
+          # All supported builder systems have attic-client in
+          # cache.nixos.org. Resolve it directly; max-jobs=0 makes a missing
+          # substitute fail rather than compile the Rust client locally.
+          attic_client_path="$(nix eval --raw \
+            "github:NixOS/nixpkgs/${ATTIC_NIXPKGS_REV}#attic-client.outPath")"
+          nix-store --realise --option max-jobs 0 "${attic_client_path}" >/dev/null
+          attic_bin="${attic_client_path}/bin/attic"
+          sudo install -d -m 700 /etc/attic
+          sudo tee /etc/attic/config.toml >/dev/null <<EOF
+        default-server = "ci"
+
+        [servers.ci]
+        endpoint = "${api_endpoint}"
+        token = "${token}"
+        EOF
+          printf '%s\n' "${attic_bin}" | sudo tee /etc/attic/attic-bin >/dev/null
+          printf '%s\n' "ci:${CACHE_NAME}" | sudo tee /etc/attic/cache >/dev/null
+          sudo chmod 600 /etc/attic/config.toml /etc/attic/attic-bin /etc/attic/cache
+
+          sudo tee /etc/nix/push-to-builder-cache >/dev/null <<'HOOK'
+        #!/bin/sh
+        # Attic permits sparse binary-cache entries. Push only the outputs
+        # reported by this hook; public-cache paths are skipped server-side
+        # by signing-key name, and reconciliation fills any hook gaps.
+        export XDG_CONFIG_HOME=/etc
+        ATTIC_BIN="$(cat /etc/attic/attic-bin)"
+        CACHE="$(cat /etc/attic/cache)"
+        # Nix waits for post-build hooks. Detach the upload so completed
+        # outputs are immediately available to later builds; reconciliation
+        # closes any failed/in-flight gap before cache shutdown.
+        input="$(mktemp /tmp/attic-hook-paths.XXXXXX)" || exit 0
+        # OUT_PATHS is intentionally a shell word list supplied by Nix.
+        # shellcheck disable=SC2086
+        printf '%s\n' ${OUT_PATHS} >"${input}"
+        (
+          trap 'rm -f "${input}"' EXIT INT TERM
+          for _ in 1 2 3; do
+            if "${ATTIC_BIN}" push \
+              --stdin \
+              --no-closure \
+              --jobs 1 \
+              "${CACHE}" <"${input}"; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "warning: failed to push paths from ${input} to the builder cache" >&2
+        ) >>/tmp/attic-post-build-hook.log 2>&1 &
+        exit 0
+        HOOK
+          sudo chmod 755 /etc/nix/push-to-builder-cache
+        fi
+
         {
           echo
-          echo "extra-substituters = ssh-ng://root@${CACHE_HOST}"
-          echo "extra-trusted-public-keys = ${SIGNING_PUBLIC_KEY}"
+          echo "extra-substituters = ${cache_endpoint}"
+          echo "extra-trusted-public-keys = ${public_key}"
           if [[ "${POST_BUILD_HOOK}" == 'true' ]]; then
             echo 'post-build-hook = /etc/nix/push-to-builder-cache'
           fi
           echo 'connect-timeout = 5'
         } | sudo tee -a /etc/nix/nix.conf >/dev/null
+        # Remote ssh-ng build sessions read /etc/nix/nix.conf directly, so
+        # builders need no daemon restart. The marker means bootstrap/config
+        # is complete; the coordinator waits for it before dispatching.
+        sudo touch /tmp/builder-cache-ready

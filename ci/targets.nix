@@ -1,5 +1,5 @@
 # Host configurations that CI builds and caches, as a flat list of
-# {name, system, outputPath} entries. Evaluated by the
+# {name, system, drvPath, outputPath} entries. Evaluated by the
 # "Evaluate CI targets" step of .github/workflows/build.yml:
 #
 #   nix eval --impure --json --file ci/targets.nix
@@ -20,12 +20,14 @@ in
   lib.mapAttrsToList (name: cfg: {
     name = "darwin.${name}";
     system = systemOf cfg;
+    drvPath = cfg.system.drvPath;
     outputPath = cfg.system.outPath;
   })
   ciConfigurations.darwin
   ++ lib.mapAttrsToList (name: cfg: {
     name = "nixos.${name}";
     system = systemOf cfg;
+    drvPath = cfg.config.system.build.toplevel.drvPath;
     outputPath = cfg.config.system.build.toplevel.outPath;
   })
   ciConfigurations.nixos

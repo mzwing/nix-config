@@ -171,21 +171,27 @@ in {
             rtk
           ];
           context = "
-          DO NOT use absolute paths when editing (except /tmp or /dev/null), since it will break the permission-system's auto review ability and fall back to let user decide. Use relative paths or workspace-relative paths instead.
+            DO NOT use absolute paths when editing (except /tmp or /dev/null), since it will break the permission-system's auto review ability and fall back to let user decide. Use relative paths or workspace-relative paths instead.
 
-          NEVER try to git commit or push!
+            NEVER try to git commit or push!
 
-          NEVER try to rebuild the whole system!
+            NEVER try to rebuild the whole system!
 
-          <!-- CODEGRAPH_START -->
-          ## CodeGraph
+            NEVER try to build any programs (especially Rust) locally, except the user explicitly approve it in the context. Ask the user to build it themselves instead.
 
-          In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the repo root), reach for it BEFORE grep/find or reading files when you need to understand or locate code:
+            When possible, ALWAYS use the builtin tools (like read, edit, etc.) instead of shell commands! And when possible, ALWAYS use fffind / fffgrep instead of find / grep, since fffind / fffgrep is much faster and more efficient.
 
-          - **MCP tool** (when available): `codegraph_explore` answers most code questions in one call — the relevant symbols' verbatim source plus the call paths between them, including dynamic-dispatch hops grep can't follow. Name a file or symbol in the query to read its current line-numbered source. If it's listed but deferred, load it by name via tool search.
+            NEVER defensive programming! NEVER overthinking!
 
-          If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
-          <!-- CODEGRAPH_END -->
+            <!-- CODEGRAPH_START -->
+            ## CodeGraph
+
+            In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the repo root), reach for it BEFORE grep/find or reading files when you need to understand or locate code:
+
+            - **MCP tool** (when available): `codegraph_explore` answers most code questions in one call — the relevant symbols' verbatim source plus the call paths between them, including dynamic-dispatch hops grep can't follow. Name a file or symbol in the query to read its current line-numbered source. If it's listed but deferred, load it by name via tool search.
+
+            If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
+            <!-- CODEGRAPH_END -->
           ";
           models = {
             providers = {

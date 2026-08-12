@@ -17,14 +17,6 @@ env:
   CACHE_NAME: mzwing
   BUILDER_PREFIX: nix-b-${{ github.run_id }}-${{ github.run_attempt }}
   CACHE_HOST: nix-cache-${{ github.run_id }}-${{ github.run_attempt }}
-  # Public key matching the NIX_CI_CACHE_SIGNING_KEY repository secret
-  # (`nix key generate-secret --key-name nix-ci-cache-1` for the secret,
-  # `nix key convert-secret-to-public` for this value). Builders use it to
-  # verify paths served by the central builder store cache (the "cache"
-  # job). The cache is mandatory: if the secret or this public key is
-  # missing/misconfigured, the run fails fast instead of degrading to
-  # cache-less builds.
-  NIX_CI_CACHE_SIGNING_PUBLIC_KEY: nix-ci-cache-1:y7GWPJEVNbQYpX+qGvV0ZqH3DpZLBmnarazYlg8ntHA=
 
 jobs:
   config:
@@ -128,16 +120,6 @@ jobs:
       with:
         cachix-pull: 'true'
 
-    # The builder store cache is a plain ssh-ng store on the tailnet (no
-    # server software needed). Every locally built path is exported there
-    # by the post-build hook; once the cache machine has signed it (within
-    # about a minute) the other builders can substitute it.
-    - name: Configure builder store cache
-      uses: ./.github/actions/setup-builder-store-cache
-      with:
-        cache-host: ${{ env.CACHE_HOST }}
-        signing-public-key: ${{ env.NIX_CI_CACHE_SIGNING_PUBLIC_KEY }}
-
     - name: Join builder network
       uses: ./.github/actions/join-ci-tailnet
       with:
@@ -158,18 +140,20 @@ jobs:
       with:
         hostname: ${{ env.CACHE_HOST }}
 
+    # Fetch run-local Attic credentials only after joining the tailnet.
+    # The sparse post-build push excludes paths signed by public upstreams.
+    - name: Configure builder store cache
+      uses: ./.github/actions/setup-builder-store-cache
+      with:
+        cache-host: ${{ env.CACHE_HOST }}
+
     - name: Wait for distributed builds
       uses: ./.github/actions/wait-for-distributed-builds
 
-  # Central store cache for the builders: a plain ssh-ng store on the
-  # tailnet. Builders push every locally built path here via their
-  # post-build hook (see the "Configure builder store cache" step of the
-  # builder job) and use it as a substituter. At the end of the run the
-  # store is garbage-collected down to the build closure of the current
-  # lock and saved as a single GitHub Actions cache entry, so the next
-  # run's builders start with warm intermediate caches without each
-  # builder saving its own copy (the Actions cache is limited to 10GB
-  # per repo).
+  # Central sparse Attic cache for the builders. Its narinfos may reference
+  # public-cache paths without persisting them, so Actions Cache contains
+  # only private/local NARs. Reconciliation installs the current-lock
+  # keep-set; shutdown then prunes stale objects deterministically.
   cache:
     name: Builder store cache
     needs: config
@@ -195,18 +179,21 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         cachix-name: ${{ env.CACHE_NAME }}
 
-    # The key is unique per run so saves never race and a bad cache can
-    # never block a recurring slot; restores pick the most recent cache.
+    # With nix:false the cache action extracts as the runner user rather than
+    # managing /nix permissions, so prepare its only writable subtree first.
+    - name: Prepare Attic data directory
+      run: sudo install -d -o "$(id -u)" -g "$(id -g)" /nix/attic-data
+
+    # Restore only Attic's database and NAR storage, never the ordinary
+    # /nix/store. A unique key avoids save races; prefix restore picks the
+    # latest generation.
     - name: Restore builder store cache
       uses: nix-community/cache-nix-action/restore@v7
       with:
-        primary-key: nix-builder-store-${{ github.run_id }}-${{ github.run_attempt }}
-        restore-prefixes-first-match: nix-builder-store-
-
-    # Same as the step of the config job: keep stale root-owned lock files
-    # out of the tarball written by the "Save builder store cache" step.
-    - name: Remove stale Nix store lock files
-      run: sudo find /nix/store -maxdepth 1 -name '*.lock' -delete
+        primary-key: nix-builder-attic-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-prefixes-first-match: nix-builder-attic-
+        nix: false
+        paths: /nix/attic-data
 
     - name: Join cache network
       uses: ./.github/actions/join-ci-tailnet
@@ -217,41 +204,30 @@ jobs:
         hostname: ${{ env.CACHE_HOST }}
         args: --ssh
 
-    # Validates the signing key pair, installs the secret key, then signs
-    # the paths pushed by builders until the coordinator signals
-    # completion (/tmp/cache_done, touched by its release-remote-builders
-    # step with `if: always()`).
-    - name: Serve builders and sign pushed paths
+    # Serve until the coordinator signals completion. The action rotates
+    # the signing key, publishes a push-only token over Tailscale SSH,
+    # prunes against reconciliation's keep-set, and checks SQLite integrity.
+    - name: Serve builders with Attic
+      id: attic
       uses: ./.github/actions/serve-builder-store-cache
       with:
-        signing-key: ${{ secrets.NIX_CI_CACHE_SIGNING_KEY }}
-        signing-public-key: ${{ env.NIX_CI_CACHE_SIGNING_PUBLIC_KEY }}
+        cache-host: ${{ env.CACHE_HOST }}
 
-    # Roots the build-time closure of every CI target (ci/drvs.nix, all
-    # systems) plus the devenv shell outputs, then collects everything
-    # else. The devenv outputs are rooted directly (their drvs cannot be
-    # evaluated here for foreign systems; their heavy dependencies are
-    # substituted from devenv.cachix.org anyway, so only the small
-    # locally built pieces need protection).
-    - name: Garbage-collect stale store paths
-      uses: ./.github/actions/gc-store-to-build-closure
-      with:
-        gcroots-name: nix-ci-cache
-        extra-paths-json: ${{ needs.config.outputs.devenv_outputs }}
-
-    # Save even when the build failed: paths pushed by builders before
-    # the failure are still valid cache entries. Purging keeps at most
-    # two entries around: the one just saved (protected by
-    # purge-primary-key) and the one it was restored from (restoring
-    # refreshes its last-accessed time).
+    # Save only after Attic shut down cleanly and passed integrity checks.
+    # Keep exactly the latest sparse generation and purge legacy full-store
+    # cache entries during migration.
     - name: Save builder store cache
-      if: always()
+      if: ${{ !cancelled() && steps.attic.outputs.save-ready == 'true' }}
       uses: nix-community/cache-nix-action/save@v7
       with:
-        primary-key: nix-builder-store-${{ github.run_id }}-${{ github.run_attempt }}
+        primary-key: nix-builder-attic-${{ github.run_id }}-${{ github.run_attempt }}
+        nix: false
+        paths: /nix/attic-data
         purge: true
-        purge-prefixes: nix-builder-store-
-        purge-last-accessed: P1D
+        purge-prefixes: |-
+          nix-builder-attic-
+          nix-builder-store-
+        purge-last-accessed: 0
         purge-primary-key: never
 
   coordinator:
@@ -294,7 +270,6 @@ jobs:
       uses: ./.github/actions/setup-builder-store-cache
       with:
         cache-host: ${{ env.CACHE_HOST }}
-        signing-public-key: ${{ env.NIX_CI_CACHE_SIGNING_PUBLIC_KEY }}
         post-build-hook: 'false'
 
     - name: Configure remote builders
@@ -389,6 +364,8 @@ jobs:
       shell: bash
       run: |
         set -euo pipefail
+        jq -r '.[].drvPath' <<<"${TARGETS}" \
+          | sort --unique > /tmp/active-drvs.txt
         jq -r '.[].outputPath' <<<"${TARGETS}" > /tmp/target-outputs.txt
         grep '^/nix/store/' /tmp/built-outputs.txt 2>/dev/null \
           | grep -Fxf /tmp/target-outputs.txt > /tmp/push-outputs.txt || true
@@ -405,14 +382,11 @@ jobs:
       with:
         cachix-name: ${{ env.CACHE_NAME }}
         paths-file: /tmp/push-outputs.txt
+        closure-paths-file: /tmp/cachix-published-closure.txt
 
-    # The post-build hook pushes are fire-and-forget; whatever they
-    # dropped would be deleted by the cache machine's GC (its keep-set
-    # only covers outputs already valid there) and rebuilt next run.
-    # Reconcile deterministically while the builders are still alive to
-    # serve as copy sources; the cache machine's final signing pass (on
-    # /tmp/cache_done) signs the imported paths before the GC keep-set
-    # is computed.
+    # Re-offer every output in the exact scheduled derivation closures while
+    # builders are alive. Attic performs sparse no-closure uploads with six workers and
+    # receives the same private expected set as its shutdown keep-list.
     - name: Reconcile builder store cache
       if: '!cancelled()'
       uses: ./.github/actions/reconcile-builder-store-cache
@@ -420,6 +394,10 @@ jobs:
         builders-json: ${{ needs.config.outputs.builders }}
         builder-prefix: ${{ env.BUILDER_PREFIX }}
         cache-host: ${{ env.CACHE_HOST }}
+        active-drvs-file: /tmp/active-drvs.txt
+        # Written atomically only after Cachix accepted the full closure.
+        public-paths-file: /tmp/cachix-published-closure.txt
+        extra-paths-file: /tmp/devenv-outputs.txt
 
     # Also signals the builder store cache machine that the run is over
     # (/tmp/cache_done, via the cache-host input).

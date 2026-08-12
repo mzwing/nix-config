@@ -1,79 +1,330 @@
 name: Serve builder store cache
 description: >-
-  Run the central builder store cache loop: validate the signing key
-  pair (mandatory — without it the builders cannot trust paths from the
-  cache, so fail fast instead of degrading to cache-less builds),
-  install the secret key, then periodically sign all store paths pushed
-  by the builders to make them substitutable for the other builders. The
-  coordinator touches the done file when the run is over (its
-  release-remote-builders step runs with `if: always()`); the deadline
-  is only a backstop for a cancelled or crashed coordinator.
+  Run an ephemeral Attic server backed by a persisted data directory.
+  Attic stores sparse private NARs rather than a complete local Nix store:
+  paths signed by configured public upstream caches are skipped. The action
+  publishes run-local client credentials over Tailscale SSH, waits for the
+  coordinator's done signal, deterministically prunes objects outside the
+  current build closure, and shuts the server down cleanly.
+
+outputs:
+  save-ready:
+    description: Whether Attic shut down, pruned/checkpointed, and passed integrity checks.
+    value: ${{ steps.attic.outputs.save-ready }}
 
 inputs:
-  signing-key:
-    description: Secret signing key (repository secret).
+  cache-host:
+    description: Tailnet hostname clients use for the Attic endpoint.
     required: true
-  signing-public-key:
-    description: Matching public key (name:base64=), validated fail-fast.
-    required: true
-  key-file:
-    description: Where to install the secret key.
+  cache-name:
+    description: Attic cache name.
     required: false
-    default: /etc/nix/cache-key.pem
+    default: builder
+  data-dir:
+    description: Directory persisted by GitHub Actions Cache.
+    required: false
+    default: /nix/attic-data
+  port:
+    description: Attic HTTP port on the tailnet.
+    required: false
+    default: '8080'
   done-file:
-    description: File whose creation ends the signing loop.
+    description: File whose creation ends the serving loop.
     required: false
     default: /tmp/cache_done
+  keep-paths-file:
+    description: >-
+      Store paths to retain. Reconciliation installs this file atomically
+      before the coordinator signals completion.
+    required: false
+    default: /tmp/attic-keep-paths.txt
   deadline-minutes:
-    description: Backstop deadline for the signing loop.
+    description: Backstop deadline for the serving loop.
     required: false
-    default: '350'
-  sign-interval-seconds:
-    description: Interval between signing passes.
+    default: '390'
+  attic-nixpkgs-rev:
+    description: Pinned nixpkgs revision providing prebuilt Attic tools.
     required: false
-    default: '60'
+    default: 2fcb964de67fcf60b43471c55d5d99e61a9ccb5a
+  upstream-cache-key-names:
+    description: >-
+      Newline-separated signing key names. Paths carrying one of these
+      signatures are not stored in Attic.
+    required: false
+    default: |-
+      cache.nixos.org-1
+      cache.nixos-cuda.org
+      mzwing.cachix.org-1
+      nix-community.cachix.org-1
+      devenv.cachix.org-1
+      lantian
 
 runs:
   using: composite
   steps:
-    - name: Serve builders and sign pushed paths
+    - name: Serve builders with Attic
+      id: attic
+      if: ${{ !cancelled() }}
       shell: bash
       env:
-        SIGNING_KEY: ${{ inputs.signing-key }}
-        SIGNING_PUBLIC_KEY: ${{ inputs.signing-public-key }}
-        KEY_FILE: ${{ inputs.key-file }}
+        CACHE_HOST: ${{ inputs.cache-host }}
+        CACHE_NAME: ${{ inputs.cache-name }}
+        DATA_DIR: ${{ inputs.data-dir }}
+        PORT: ${{ inputs.port }}
         DONE_FILE: ${{ inputs.done-file }}
+        KEEP_PATHS_FILE: ${{ inputs.keep-paths-file }}
         DEADLINE_MINUTES: ${{ inputs.deadline-minutes }}
-        SIGN_INTERVAL: ${{ inputs.sign-interval-seconds }}
+        ATTIC_NIXPKGS_REV: ${{ inputs.attic-nixpkgs-rev }}
+        UPSTREAM_CACHE_KEY_NAMES: ${{ inputs.upstream-cache-key-names }}
       run: |
         set -euo pipefail
-        if [[ -z "${SIGNING_KEY}" ]]; then
-          echo '::error::The builder store cache signing key secret is not set.'
+        if [[ ! "${PORT}" =~ ^[1-9][0-9]*$ ]] || (( PORT > 65535 )); then
+          echo "::error::port must be between 1 and 65535, got ${PORT}."
           exit 1
         fi
-        if [[ ! "${SIGNING_PUBLIC_KEY}" =~ ^[a-z0-9-]+:[A-Za-z0-9+/]{43}=$ ]]; then
-          echo '::error::The builder store cache signing public key is not configured.'
+        if [[ ! "${DEADLINE_MINUTES}" =~ ^[1-9][0-9]*$ ]]; then
+          echo "::error::deadline-minutes must be a positive integer, got ${DEADLINE_MINUTES}."
           exit 1
         fi
+        # A fresh hosted runner cannot carry signals across runs. Preserve an
+        # already-created done file: the coordinator may legitimately finish
+        # while this parallel job is still restoring/starting Attic.
+        rm -f /tmp/attic-client.json
 
-        printf '%s\n' "${SIGNING_KEY}" | sudo tee "${KEY_FILE}" >/dev/null
-        sudo chmod 600 "${KEY_FILE}"
+        # Both outputs are prebuilt in cache.nixos.org for this Linux host.
+        # Resolve them directly instead of constructing a profile; max-jobs=0
+        # makes a missing substitute fail rather than compile Attic locally.
+        attic_server_path="$(nix eval --raw \
+          "github:NixOS/nixpkgs/${ATTIC_NIXPKGS_REV}#attic-server.outPath")"
+        attic_client_path="$(nix eval --raw \
+          "github:NixOS/nixpkgs/${ATTIC_NIXPKGS_REV}#attic-client.outPath")"
+        nix-store --realise --option max-jobs 0 \
+          "${attic_server_path}" "${attic_client_path}" >/dev/null
+        atticd_bin="${attic_server_path}/bin/atticd"
+        atticadm_bin="${attic_server_path}/bin/atticadm"
+        attic_bin="${attic_client_path}/bin/attic"
 
-        # sudo resets PATH to secure_path, which does not contain the Nix
-        # profile; resolve absolute paths before elevating.
-        nix_bin="$(command -v nix)"
-        deadline=$(( $(date +%s) + DEADLINE_MINUTES * 60 ))
-        sign_due=0
-        until [[ -e "${DONE_FILE}" ]]; do
-          now="$(date +%s)"
-          if (( now >= sign_due )); then
-            sudo "$nix_bin" store sign --all --key-file "${KEY_FILE}"
-            sign_due=$(( now + SIGN_INTERVAL ))
+        sudo install -d -o "$(id -u)" -g "$(id -g)" "${DATA_DIR}"
+        install -d "${DATA_DIR}/storage"
+        database="${DATA_DIR}/server.db"
+        touch "${database}"
+        # Validate the schema that the deterministic prune/query logic uses.
+        # The Attic revision is pinned, so a mismatch means the restored data
+        # must not replace the last known-good Actions cache generation.
+        if [[ -s "${database}" ]]; then
+          integrity="$(sqlite3 "${database}" 'PRAGMA integrity_check;' 2>&1 || true)"
+          if [[ "${integrity}" != ok ]]; then
+            echo "::error::Restored Attic SQLite database failed integrity_check: ${integrity}"
+            exit 1
           fi
-          if (( now >= deadline )); then
-            echo 'Timed out waiting for the coordinator to signal completion; continuing anyway.'
+          if ! sqlite3 "${database}" \
+            "SELECT store_path, cache_id, nar_id, deriver FROM object LIMIT 0;" \
+            >/dev/null 2>&1; then
+            echo '::error::Restored Attic database does not have the expected pinned schema.'
+            exit 1
+          fi
+        fi
+        jwt_secret="$(head -c 32 /dev/urandom | base64 | tr -d '\n')"
+        api_endpoint="http://${CACHE_HOST}:${PORT}/"
+        cache_endpoint="${api_endpoint}${CACHE_NAME}"
+        config=/tmp/attic-server.toml
+        cat >"${config}" <<EOF
+        listen = "[::]:${PORT}"
+        allowed-hosts = []
+        api-endpoint = "${api_endpoint}"
+        substituter-endpoint = "${api_endpoint}"
+        soft-delete-caches = false
+        require-proof-of-possession = false
+
+        [database]
+        url = "sqlite://${database}?mode=rwc"
+
+        [storage]
+        type = "local"
+        path = "${DATA_DIR}/storage"
+
+        [chunking]
+        nar-size-threshold = 65536
+        min-size = 16384
+        avg-size = 65536
+        max-size = 262144
+
+        [compression]
+        type = "zstd"
+        level = 3
+
+        [garbage-collection]
+        interval = "0 seconds"
+        default-retention-period = "0 seconds"
+
+        [jwt.signing]
+        token-hs256-secret-base64 = "${jwt_secret}"
+        EOF
+        chmod 600 "${config}"
+
+        "${atticd_bin}" -f "${config}" >/tmp/atticd.log 2>&1 &
+        atticd_pid=$!
+        stop_attic() {
+          if kill -0 "${atticd_pid}" 2>/dev/null; then
+            kill "${atticd_pid}" 2>/dev/null || true
+            wait "${atticd_pid}" 2>/dev/null || true
+          fi
+        }
+        trap stop_attic EXIT INT TERM
+
+        ready=false
+        for _ in {1..60}; do
+          if ! kill -0 "${atticd_pid}" 2>/dev/null; then
+            echo '::error::Attic exited before becoming ready.'
+            cat /tmp/atticd.log
+            exit 1
+          fi
+          if (exec 3<>"/dev/tcp/127.0.0.1/${PORT}") 2>/dev/null; then
+            exec 3>&-
+            ready=true
             break
+          fi
+          sleep 2
+        done
+        if [[ "${ready}" != true ]]; then
+          echo '::error::Timed out waiting for Attic to listen.'
+          cat /tmp/atticd.log
+          exit 1
+        fi
+
+        admin_token="$(${atticadm_bin} -f "${config}" make-token \
+          --sub nur-ci-admin \
+          --validity '8 hours' \
+          --pull "${CACHE_NAME}" \
+          --push "${CACHE_NAME}" \
+          --delete "${CACHE_NAME}" \
+          --create-cache "${CACHE_NAME}" \
+          --configure-cache "${CACHE_NAME}" \
+          --configure-cache-retention "${CACHE_NAME}" \
+          --destroy-cache "${CACHE_NAME}")"
+        admin_token="$(tr -d '\r\n' <<<"${admin_token}")"
+
+        export XDG_CONFIG_HOME=/tmp/attic-admin-config
+        install -d -m 700 "${XDG_CONFIG_HOME}/attic"
+        "${attic_bin}" login --set-default ci "${api_endpoint}" "${admin_token}"
+        upstream_args=()
+        while IFS= read -r key_name; do
+          [[ -n "${key_name}" ]] || continue
+          upstream_args+=(--upstream-cache-key-name "${key_name}")
+        done <<<"${UPSTREAM_CACHE_KEY_NAMES}"
+
+        if "${attic_bin}" cache info "ci:${CACHE_NAME}" >/dev/null 2>&1; then
+          # Rotate the cache key every run. The key embedded in an Actions
+          # cache entry is therefore stale before any restored object is
+          # served, and clients trust only this run's dynamically fetched key.
+          "${attic_bin}" cache configure \
+            --regenerate-keypair \
+            --public \
+            "${upstream_args[@]}" \
+            "ci:${CACHE_NAME}"
+        else
+          "${attic_bin}" cache create \
+            --public \
+            "${upstream_args[@]}" \
+            "ci:${CACHE_NAME}"
+        fi
+        # `attic cache info` intentionally writes its report to stderr.
+        cache_info="$(${attic_bin} cache info "ci:${CACHE_NAME}" 2>&1)"
+        public_key="$(sed -n 's/^[[:space:]]*Public Key:[[:space:]]*//p' <<<"${cache_info}")"
+        if [[ ! "${public_key}" =~ ^[a-zA-Z0-9._-]+:[A-Za-z0-9+/]{43}=$ ]]; then
+          echo '::error::Could not obtain Attic cache signing public key.'
+          printf '%s\n' "${cache_info}"
+          exit 1
+        fi
+        curl --fail --silent --show-error "${cache_endpoint}/nix-cache-info" >/dev/null
+
+        # Builders receive only pull/push rights. Administrative cache
+        # creation, deletion, retention and key-rotation permissions never
+        # leave this machine.
+        push_token="$(${atticadm_bin} -f "${config}" make-token \
+          --sub nur-ci-builder \
+          --validity '8 hours' \
+          --pull "${CACHE_NAME}" \
+          --push "${CACHE_NAME}")"
+        push_token="$(tr -d '\r\n' <<<"${push_token}")"
+        jq -n \
+          --arg apiEndpoint "${api_endpoint}" \
+          --arg cacheEndpoint "${cache_endpoint}" \
+          --arg publicKey "${public_key}" \
+          --arg token "${push_token}" \
+          '{apiEndpoint: $apiEndpoint, cacheEndpoint: $cacheEndpoint,
+            publicKey: $publicKey, token: $token}' \
+          >/tmp/attic-client.json
+        chmod 600 /tmp/attic-client.json
+        echo "Attic is ready at ${cache_endpoint}; persisted data currently uses $(du -sh "${DATA_DIR}" | cut -f1)."
+
+        deadline=$(( $(date +%s) + DEADLINE_MINUTES * 60 ))
+        until [[ -e "${DONE_FILE}" ]]; do
+          if ! kill -0 "${atticd_pid}" 2>/dev/null; then
+            echo '::error::Attic stopped while builders were active.'
+            cat /tmp/atticd.log
+            exit 1
+          fi
+          if (( $(date +%s) >= deadline )); then
+            echo '::error::Timed out waiting for the coordinator; refusing to save an active Attic database.'
+            exit 1
           fi
           sleep 15
         done
-        sudo "$nix_bin" store sign --all --key-file "${KEY_FILE}"
+
+        stop_attic
+        trap - EXIT INT TERM
+
+        # A successful completed run provides its deterministic keep-set.
+        # On red/cancelled coordinator runs, preserve every successfully
+        # uploaded object in this generation rather than pruning from an
+        # incomplete closure; the next successful run prunes it.
+        if [[ -e "${DONE_FILE}" && ! -e "${KEEP_PATHS_FILE}" ]]; then
+          echo '::warning::Coordinator finished without an Attic keep-set; preserving all uploaded objects.'
+          KEEP_PATHS_FILE=''
+        fi
+
+        if [[ -n "${KEEP_PATHS_FILE}" && -e "${KEEP_PATHS_FILE}" ]]; then
+          sort --unique "${KEEP_PATHS_FILE}" > /tmp/attic-keep-paths.sorted
+          if ! sqlite3 "${database}" \
+            "SELECT store_path, cache_id, nar_id, deriver FROM object LIMIT 0;" \
+            >/dev/null 2>&1; then
+            echo '::error::Attic database schema no longer matches deterministic pruning.'
+            exit 1
+          fi
+          before="$(sqlite3 "${database}" 'SELECT count(*) FROM object;')"
+          # Use a one-column import schema: creating a wider table and then
+          # importing a one-column file would silently append NULL columns.
+          sqlite3 "${database}" <<SQL
+        .bail on
+        PRAGMA foreign_keys = ON;
+        CREATE TEMP TABLE keep_path(path TEXT PRIMARY KEY);
+        .mode tabs
+        .import /tmp/attic-keep-paths.sorted keep_path
+        DELETE FROM object
+          WHERE NOT EXISTS (
+            SELECT 1 FROM keep_path WHERE keep_path.path = object.store_path
+          );
+        SQL
+          foreign_key_violations="$(sqlite3 "${database}" 'PRAGMA foreign_key_check;')"
+          if [[ -n "${foreign_key_violations}" ]]; then
+            echo '::error::Attic database has foreign-key violations after pruning.'
+            printf '%s\n' "${foreign_key_violations}"
+            exit 1
+          fi
+          after="$(sqlite3 "${database}" 'SELECT count(*) FROM object;')"
+          echo "Pruned $(( before - after )) stale Attic objects; ${after} current objects remain."
+        else
+          echo '::warning::No current closure keep-set was received; preserving all Attic objects.'
+        fi
+        # Always reap orphan NARs/chunks. This also cleans interrupted uploads
+        # from red builds even when no deterministic keep-set was available.
+        "${atticd_bin}" -f "${config}" --mode garbage-collector-once
+        sqlite3 "${database}" 'PRAGMA wal_checkpoint(TRUNCATE); VACUUM;'
+        integrity="$(sqlite3 "${database}" 'PRAGMA integrity_check;')"
+        if [[ "${integrity}" != ok ]]; then
+          echo "::error::Attic SQLite database failed final integrity_check: ${integrity}"
+          exit 1
+        fi
+        echo 'save-ready=true' >>"${GITHUB_OUTPUT}"
+        echo "Final persisted Attic data size: $(du -sh "${DATA_DIR}" | cut -f1)."
