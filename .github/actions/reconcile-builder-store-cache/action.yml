@@ -262,7 +262,7 @@ runs:
         # builder. Transfer only active paths absent from the restored cache.
         comm -23 /tmp/reconcile-required.txt /tmp/reconcile-attic-paths.txt \
           > /tmp/reconcile-remaining.txt
-        echo "Attic already has $(( $(wc -l < /tmp/reconcile-required.txt) - $(wc -l < /tmp/reconcile-remaining.txt) )) required active paths; $(wc -l < /tmp/reconcile-remaining.txt) need upload."
+        echo "Attic already has $(( $(wc -l < /tmp/reconcile-required.txt) - $(wc -l < /tmp/reconcile-remaining.txt) )) candidate paths; $(wc -l < /tmp/reconcile-remaining.txt) remain to probe on builders."
 
         # Run one streaming pipeline per builder. Python reads Nix's portable
         # registration stream (path, hash, size, deriver, reference count,
@@ -272,18 +272,19 @@ runs:
         # concurrency without waiting for any complete store probe.
         pipeline_builder() {
           local id="$1" builder="${BUILDER_PREFIX}-$1"
-          local succeeded="/tmp/reconcile-succeeded-${id}.txt"
-          : >"${succeeded}"
+          local events="/tmp/reconcile-events-${id}.txt"
+          : >"${events}"
           if ! scp -q /tmp/reconcile-remaining.txt \
             "root@${builder}:/tmp/reconcile-expected-paths.txt"; then
             echo "::warning::Could not send the expected path set to ${builder}."
+            touch "/tmp/reconcile-pipeline-failed-${id}"
             return 0
           fi
           echo "Streaming store probe and up to ${TRANSFER_JOBS} uploads from ${builder}."
           if ! ssh "root@${builder}" python3 - \
             "${TRANSFER_JOBS}" "ci:${CACHE_NAME}" \
             /tmp/reconcile-expected-paths.txt \
-            >"${succeeded}" <<'REMOTE_PIPELINE'
+            >"${events}" <<'REMOTE_PIPELINE'
         import os
         import queue
         import subprocess
@@ -312,16 +313,21 @@ runs:
                     result = subprocess.run(
                         [attic_bin, "push", "--no-closure", "--jobs", "1", cache, path],
                         env=environment,
-                        stdout=sys.stderr,
-                        stderr=sys.stderr,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
                         check=False,
                     )
                     if result.returncode == 0:
                         with output_lock:
-                            print(path, flush=True)
+                            print(f"UPLOADED\t{path}", flush=True)
                             counts["uploaded"] += 1
                     else:
                         print(f"warning: failed to upload {path}", file=sys.stderr, flush=True)
+                        if result.stdout:
+                            print(result.stdout, file=sys.stderr, end="")
+                        if result.stderr:
+                            print(result.stderr, file=sys.stderr, end="")
                 finally:
                     paths.task_done()
 
@@ -347,6 +353,8 @@ runs:
                 path = path.rstrip("\n")
                 if path in expected:
                     counts["found"] += 1
+                    with output_lock:
+                        print(f"FOUND\t{path}", flush=True)
                     paths.put(path)
                 for field in range(4):
                     line = dump.stdout.readline()
@@ -385,6 +393,7 @@ runs:
         REMOTE_PIPELINE
           then
             echo "::warning::Streaming reconcile pipeline failed on ${builder}."
+            touch "/tmp/reconcile-pipeline-failed-${id}"
           fi
         }
 
@@ -397,24 +406,26 @@ runs:
           wait "${pid}" || true
         done
 
-        cat /tmp/reconcile-succeeded-*.txt 2>/dev/null \
+        awk -F '\t' '$1 == "FOUND" {print $2}' \
+          /tmp/reconcile-events-*.txt 2>/dev/null \
+          | sort --unique > /tmp/reconcile-found.txt || true
+        awk -F '\t' '$1 == "UPLOADED" {print $2}' \
+          /tmp/reconcile-events-*.txt 2>/dev/null \
           | sort --unique > /tmp/reconcile-succeeded.txt || true
-        comm -23 /tmp/reconcile-remaining.txt /tmp/reconcile-succeeded.txt \
-          > /tmp/reconcile-remaining.next
-        mv /tmp/reconcile-remaining.next /tmp/reconcile-remaining.txt
-        left="$(wc -l < /tmp/reconcile-remaining.txt)"
-        if (( left > 0 )); then
-          echo "${left} private outputs were unavailable on builders or could not be uploaded."
-        fi
-
-        if (( left > 0 )); then
-          echo '::warning::Reconciliation was incomplete; preserving the previous Attic generation instead of pruning it.'
+        comm -23 /tmp/reconcile-found.txt /tmp/reconcile-succeeded.txt \
+          > /tmp/reconcile-failed.txt
+        failed="$(wc -l < /tmp/reconcile-failed.txt)"
+        echo "Builders held $(wc -l < /tmp/reconcile-found.txt) candidate paths; $(wc -l < /tmp/reconcile-succeeded.txt) were successfully offered to Attic."
+        if compgen -G '/tmp/reconcile-pipeline-failed-*' >/dev/null ||
+          (( failed > 0 )); then
+          echo "::warning::Reconciliation failed for ${failed} paths found on builders; preserving the previous Attic generation instead of pruning it."
           exit 1
         fi
 
-        # Install the full current-lock retention set atomically only after
-        # every required active path was already cached or successfully
-        # offered. Unscheduled targets contribute existing objects by deriver;
+        # Install the full current-lock retention set after every path that
+        # actually existed on a builder was successfully offered. Outputs not
+        # realised by this run are expected and do not count as failures.
+        # Unscheduled targets contribute existing objects by deriver;
         # the cache host intersects this set with its sparse object table,
         # then reaps stale objects and orphan NARs before saving.
         scp -q /tmp/reconcile-expected.txt \

@@ -58,6 +58,18 @@ inputs:
       nix-community.cachix.org-1
       devenv.cachix.org-1
       lantian
+  upstream-substituters:
+    description: >-
+      Newline-separated public binary-cache URLs. Current Attic objects found
+      in any of these caches during shutdown are removed from private storage.
+    required: false
+    default: |-
+      https://cache.nixos.org
+      https://cache.nixos-cuda.org
+      https://mzwing.cachix.org
+      https://nix-community.cachix.org
+      https://devenv.cachix.org
+      https://attic.xuyh0120.win/lantian
 
 runs:
   using: composite
@@ -76,6 +88,7 @@ runs:
         DEADLINE_MINUTES: ${{ inputs.deadline-minutes }}
         ATTIC_NIXPKGS_REV: ${{ inputs.attic-nixpkgs-rev }}
         UPSTREAM_CACHE_KEY_NAMES: ${{ inputs.upstream-cache-key-names }}
+        UPSTREAM_SUBSTITUTERS: ${{ inputs.upstream-substituters }}
       run: |
         set -euo pipefail
         if [[ ! "${PORT}" =~ ^[1-9][0-9]*$ ]] || (( PORT > 65535 )); then
@@ -317,8 +330,104 @@ runs:
         else
           echo '::warning::No current closure keep-set was received; preserving all Attic objects.'
         fi
-        # Always reap orphan NARs/chunks. This also cleans interrupted uploads
-        # from red builds even when no deterministic keep-set was available.
+
+        # Re-check retained objects against public binary caches. Attic's
+        # upstream-signature filter handles new uploads; this pass removes
+        # restored private objects that became public after an earlier run.
+        sqlite3 "${database}" 'SELECT store_path FROM object;' \
+          > /tmp/attic-current-paths.txt
+        python3 - /tmp/attic-current-paths.txt \
+          /tmp/attic-upstream-paths.txt <<'PY'
+        import concurrent.futures
+        import os
+        import sys
+        import urllib.error
+        import urllib.request
+
+        input_path, output_path = sys.argv[1:]
+        substituters = [
+            url.rstrip("/")
+            for url in os.environ["UPSTREAM_SUBSTITUTERS"].splitlines()
+            if url.strip()
+        ]
+        request_headers = {"User-Agent": "nix-ci-attic-prune"}
+
+        def available(url):
+            request = urllib.request.Request(
+                f"{url}/nix-cache-info", method="HEAD", headers=request_headers
+            )
+            try:
+                with urllib.request.urlopen(request, timeout=10):
+                    return True
+            except (urllib.error.URLError, TimeoutError):
+                return False
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
+            live_substituters = [
+                url
+                for url, live in zip(
+                    substituters, executor.map(available, substituters), strict=True
+                )
+                if live
+            ]
+
+        paths = [
+            line.rstrip("\n")
+            for line in open(input_path, encoding="utf-8")
+            if line.strip()
+        ]
+
+        def publicly_available(path):
+            store_hash = os.path.basename(path).split("-", 1)[0]
+            for substituter in live_substituters:
+                request = urllib.request.Request(
+                    f"{substituter}/{store_hash}.narinfo",
+                    method="HEAD",
+                    headers=request_headers,
+                )
+                try:
+                    with urllib.request.urlopen(request, timeout=10):
+                        return path
+                except (urllib.error.URLError, TimeoutError):
+                    pass
+            return None
+
+        with open(output_path, "w", encoding="utf-8") as output:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
+                for path in executor.map(publicly_available, paths):
+                    if path is not None:
+                        output.write(f"{path}\n")
+
+        print(
+            f"Checked {len(paths)} retained objects against "
+            f"{len(live_substituters)} reachable public substituters."
+        )
+        PY
+        public_count="$(wc -l < /tmp/attic-upstream-paths.txt)"
+        if (( public_count > 0 )); then
+          sqlite3 "${database}" <<SQL
+        .bail on
+        PRAGMA foreign_keys = ON;
+        CREATE TEMP TABLE public_path(path TEXT PRIMARY KEY);
+        .mode tabs
+        .import /tmp/attic-upstream-paths.txt public_path
+        DELETE FROM object
+          WHERE EXISTS (
+            SELECT 1 FROM public_path
+            WHERE public_path.path = object.store_path
+          );
+        SQL
+        fi
+        echo "Removed ${public_count} objects now available from public substituters."
+        foreign_key_violations="$(sqlite3 "${database}" 'PRAGMA foreign_key_check;')"
+        if [[ -n "${foreign_key_violations}" ]]; then
+          echo '::error::Attic database has foreign-key violations after upstream pruning.'
+          printf '%s\n' "${foreign_key_violations}"
+          exit 1
+        fi
+
+        # Reap NARs/chunks orphaned by either deterministic or upstream
+        # pruning, including interrupted uploads from red builds.
         "${atticd_bin}" -f "${config}" --mode garbage-collector-once
         sqlite3 "${database}" 'PRAGMA wal_checkpoint(TRUNCATE); VACUUM;'
         integrity="$(sqlite3 "${database}" 'PRAGMA integrity_check;')"
