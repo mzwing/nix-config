@@ -101,7 +101,6 @@ runs:
           exit 1
         fi
         echo "Retention roots: $(wc -l < /tmp/reconcile-top-drvs.txt); scheduled roots: $(wc -l < /tmp/reconcile-active-top-drvs.txt)."
-        store_dir="$(nix eval --raw --expr 'builtins.storeDir')"
 
         # Extra realised outputs may not be represented by DRVS_FILE (for
         # example root devenv packages). Expand each output's producing
@@ -114,10 +113,9 @@ runs:
             builder="${BUILDER_PREFIX}-${id}"
             scp -q "${EXTRA_PATHS_FILE}" \
               "root@${builder}:/tmp/reconcile-extra-paths.txt" || continue
-            ssh "root@${builder}" /bin/bash -s -- "${store_dir}" \
+            ssh "root@${builder}" /bin/bash -s \
               >> /tmp/reconcile-extra.fragments <<'REMOTE_EXTRA' || true
         set -euo pipefail
-        store_dir="$1"
         input=/tmp/reconcile-extra-paths.txt
         top_drvs=/tmp/reconcile-extra-top-drvs.$$
         drvs=/tmp/reconcile-extra-drvs.$$
@@ -134,38 +132,10 @@ runs:
         done <"${input}"
         sort --unique -o "${top_drvs}" "${top_drvs}"
         [[ -s "${top_drvs}" ]] || exit 3
-        while IFS= read -r top_drv; do
-          nix-store --query --requisites "${top_drv}" 2>/dev/null || true
-        done <"${top_drvs}" \
+        xargs -n 128 nix-store --query --requisites <"${top_drvs}" \
           | grep '\.drv$' | sort --unique >"${drvs}" || true
-        while IFS= read -r drv; do
-          json="$(nix derivation show "${drv}" 2>/dev/null || true)"
-          [[ -n "${json}" ]] || continue
-          jq -r --arg store "${store_dir}" '
-            (.derivations // .) | to_entries[].value.outputs[].path // empty
-            | if startswith("/") then . else "\($store)/\(.)" end
-            | "PATH\t\(.)"' <<<"${json}"
-          dynamic_outputs="$(jq -r '
-            (.derivations // .) | to_entries[].value.outputs
-            | to_entries[] | select(.value.path == null) | .key' \
-            <<<"${json}")"
-          if [[ -n "${dynamic_outputs}" ]]; then
-            while IFS= read -r output; do
-              printf 'CA_REQUIRED\t%s\t%s\n' "${drv}" "${output}"
-            done <<<"${dynamic_outputs}"
-            realised="$(nix realisation info --json "${drv}" 2>/dev/null || true)"
-            if [[ -n "${realised}" ]]; then
-              jq -r --arg drv "${drv}" --arg store "${store_dir}" '
-                .[] | select((.id? | type) == "string" and
-                  (.outPath? | type) == "string")
-                | (.id | split("!") | last) as $output
-                | (.outPath
-                  | if startswith("/") then . else "\($store)/\(.)" end) as $path
-                | ["CA_FOUND", $drv, $output] | @tsv,
-                  ["PATH", $path] | @tsv' <<<"${realised}"
-            fi
-          fi
-        done <"${drvs}"
+        xargs -n 128 nix-store --query --outputs <"${drvs}" \
+          | sed 's/^/PATH\t/'
         REMOTE_EXTRA
           done < <(jq -r '.include[].id' <<<"${BUILDERS_JSON}")
           awk -F '\t' '$1 == "FOUND" {print $2}' \
@@ -178,19 +148,6 @@ runs:
             echo '::error::Not every extra realised output had a deriver on a live builder.'
             comm -23 /tmp/reconcile-extra-required.txt \
               /tmp/reconcile-extra-found.txt >&2
-            exit 1
-          fi
-          awk -F '\t' '$1 == "CA_REQUIRED" {print $2 "\t" $3}' \
-            /tmp/reconcile-extra.fragments | sort --unique \
-            > /tmp/reconcile-extra-ca-required.txt
-          awk -F '\t' '$1 == "CA_FOUND" {print $2 "\t" $3}' \
-            /tmp/reconcile-extra.fragments | sort --unique \
-            > /tmp/reconcile-extra-ca-found.txt
-          if ! cmp -s /tmp/reconcile-extra-ca-required.txt \
-            /tmp/reconcile-extra-ca-found.txt; then
-            echo '::error::Not every content-addressed derivation in an extra output closure had a realisation on a live builder.'
-            comm -23 /tmp/reconcile-extra-ca-required.txt \
-              /tmp/reconcile-extra-ca-found.txt >&2
             exit 1
           fi
           awk -F '\t' '$1 == "PATH" {print $2}' \
@@ -215,97 +172,18 @@ runs:
           /tmp/reconcile-active-drvs.txt
         echo "Derivation closure: $(wc -l < /tmp/reconcile-drvs.txt) total; $(wc -l < /tmp/reconcile-active-drvs.txt) scheduled."
 
-        : > /tmp/reconcile-static.fragments
-        : > /tmp/reconcile-active-static.fragments
-        : > /tmp/reconcile-ca-outputs.txt
-        if [[ -s /tmp/reconcile-drvs.txt ]]; then
-          echo 'Reading derivation metadata in batches...'
-          xargs -n 128 nix derivation show < /tmp/reconcile-drvs.txt \
-            > /tmp/reconcile-derivations.jsons
-          jq -r --arg store "${store_dir}" '
-            (.derivations // .) | to_entries[] as $drv
-            | ($drv.key
-              | if startswith("/") then . else "\($store)/\(.)" end) as $drvPath
-            | $drv.value.outputs | to_entries[]
-            | select(.value.path != null)
-            | (.value.path
-              | if startswith("/") then . else "\($store)/\(.)" end) as $path
-            | [$drvPath, $path] | @tsv' \
-            /tmp/reconcile-derivations.jsons \
-            > /tmp/reconcile-static-map.txt
-          cut -f2 /tmp/reconcile-static-map.txt \
-            > /tmp/reconcile-static.fragments
-          awk -F '\t' '
-            NR == FNR { active[$0] = 1; next }
-            $1 in active { print $2 }
-          ' /tmp/reconcile-active-drvs.txt \
-            /tmp/reconcile-static-map.txt \
-            > /tmp/reconcile-active-static.fragments
-          jq -r --arg store "${store_dir}" '
-            (.derivations // .) | to_entries[] as $drv
-            | ($drv.key
-              | if startswith("/") then . else "\($store)/\(.)" end) as $drvPath
-            | $drv.value.outputs | to_entries[]
-            | select(.value.path == null)
-            | [$drvPath, .key] | @tsv' \
-            /tmp/reconcile-derivations.jsons \
-            > /tmp/reconcile-ca-outputs.txt
-          echo "Metadata ready: $(wc -l < /tmp/reconcile-static.fragments) static outputs and $(wc -l < /tmp/reconcile-ca-outputs.txt) dynamic outputs."
+        # `nix derivation show` reports null paths for fixed-output/source
+        # derivations as well as floating CA outputs. Resolve scheduled output
+        # paths directly in batches instead of misclassifying them and running
+        # thousands of serial `nix realisation info` queries on every builder.
+        : > /tmp/reconcile-active-outputs.txt
+        if [[ -s /tmp/reconcile-active-drvs.txt ]]; then
+          echo 'Resolving scheduled derivation outputs in batches...'
+          xargs -n 128 nix-store --query --outputs \
+            < /tmp/reconcile-active-drvs.txt \
+            | sort --unique > /tmp/reconcile-active-outputs.txt
         fi
-
-        # Floating content-addressed outputs have no static .path. Ask every
-        # live builder's realisation database and require a result for each
-        # dynamic output name, including all outputs of multi-output CA drvs.
-        # Any uncertainty aborts reconciliation, so shutdown keeps the
-        # previous generation instead of pruning a valid object.
-        awk -F '\t' '
-          NR == FNR { active[$0] = 1; next }
-          $1 in active { print }
-        ' /tmp/reconcile-active-drvs.txt /tmp/reconcile-ca-outputs.txt \
-          | sort --unique > /tmp/reconcile-active-ca-outputs.txt
-        : > /tmp/reconcile-ca.fragments
-        if [[ -s /tmp/reconcile-active-ca-outputs.txt ]]; then
-          while IFS= read -r id; do
-            builder="${BUILDER_PREFIX}-${id}"
-            scp -q /tmp/reconcile-active-ca-outputs.txt \
-              "root@${builder}:/tmp/reconcile-ca-outputs.txt" || continue
-            ssh "root@${builder}" /bin/bash -s -- "${store_dir}" \
-              >> /tmp/reconcile-ca.fragments <<'REMOTE_CA' || true
-        set -euo pipefail
-        store_dir="$1"
-        input=/tmp/reconcile-ca-outputs.txt
-        drvs=/tmp/reconcile-ca-drvs.$$
-        cleanup() { rm -f "${input}" "${drvs}"; }
-        trap cleanup EXIT
-        cut -f1 "${input}" | sort --unique >"${drvs}"
-        while IFS= read -r drv; do
-          json="$(nix realisation info --json "${drv}" 2>/dev/null || true)"
-          [[ -n "${json}" ]] || continue
-          jq -r --arg drv "${drv}" --arg store "${store_dir}" '
-            .[] | select((.id? | type) == "string" and
-              (.outPath? | type) == "string")
-            | (.id | split("!") | last) as $output
-            | (.outPath
-              | if startswith("/") then . else "\($store)/\(.)" end) as $path
-            | ["FOUND", $drv, $output, $path] | @tsv' <<<"${json}"
-        done <"${drvs}"
-        REMOTE_CA
-          done < <(jq -r '.include[].id' <<<"${BUILDERS_JSON}")
-          awk -F '\t' '$1 == "FOUND" {print $2 "\t" $3}' \
-            /tmp/reconcile-ca.fragments | sort --unique \
-            > /tmp/reconcile-ca-found.txt
-          sort --unique /tmp/reconcile-active-ca-outputs.txt \
-            > /tmp/reconcile-ca-required.txt
-          if ! cmp -s /tmp/reconcile-ca-required.txt \
-            /tmp/reconcile-ca-found.txt; then
-            echo '::error::Not every content-addressed output had a realisation on a live builder.'
-            comm -23 /tmp/reconcile-ca-required.txt \
-              /tmp/reconcile-ca-found.txt >&2
-            exit 1
-          fi
-        fi
-        awk -F '\t' '$1 == "FOUND" {print $4}' \
-          /tmp/reconcile-ca.fragments > /tmp/reconcile-ca-paths.txt
+        echo "Scheduled derivation closure has $(wc -l < /tmp/reconcile-active-outputs.txt) output paths."
 
         missing_top_drvs=0
         while IFS= read -r top_drv; do
@@ -348,11 +226,11 @@ runs:
         ' /tmp/reconcile-drvs.txt /tmp/reconcile-attic-objects.txt \
           | sort --unique > /tmp/reconcile-current-attic-paths.txt
 
-        cat /tmp/reconcile-static.fragments /tmp/reconcile-ca-paths.txt \
+        cat /tmp/reconcile-active-outputs.txt \
           /tmp/reconcile-extra-expected.txt \
           /tmp/reconcile-current-attic-paths.txt \
           > /tmp/reconcile-expected.fragments
-        cat /tmp/reconcile-active-static.fragments /tmp/reconcile-ca-paths.txt \
+        cat /tmp/reconcile-active-outputs.txt \
           /tmp/reconcile-extra-expected.txt \
           > /tmp/reconcile-required.fragments
         if [[ -n "${EXTRA_PATHS_FILE}" && -s "${EXTRA_PATHS_FILE}" ]]; then
