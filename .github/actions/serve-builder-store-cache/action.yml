@@ -1,11 +1,10 @@
 name: Serve builder store cache
 description: >-
-  Run an ephemeral Attic server backed by a persisted data directory.
-  Attic stores sparse private NARs rather than a complete local Nix store:
-  paths signed by configured public upstream caches are skipped. The action
-  publishes run-local client credentials over Tailscale SSH, waits for the
-  coordinator's done signal, deterministically prunes objects outside the
-  current build closure, and shuts the server down cleanly.
+  Legacy single-step Attic lifecycle (start, wait, prune, shut down).
+  Superseded by the start-builder-store-cache /
+  finalize-builder-store-cache pair, which additionally allows a
+  consistent mid-run checkpoint save while the server is live. Kept
+  unchanged for compatibility with workflows that still reference it.
 
 outputs:
   save-ready:
@@ -162,10 +161,17 @@ runs:
         path = "${DATA_DIR}/storage"
 
         [chunking]
-        nar-size-threshold = 65536
-        min-size = 16384
-        avg-size = 65536
-        max-size = 262144
+        # Store crate-scale NARs whole. Content-defined chunking costs a
+        # zstd pass, a hash and SQLite rows per 64K chunk (~30 rows for a
+        # 2 MiB crate output), which caps the single server at ~1-2
+        # paths/s under load. A 1 TiB threshold disables chunking for every
+        # realistic NAR; cross-NAR chunk dedupe is worthless for this
+        # mostly-unique build-output workload, and identical NARs still
+        # dedupe by NAR hash.
+        nar-size-threshold = 1099511627776
+        min-size = 1048576
+        avg-size = 4194304
+        max-size = 16777216
 
         [compression]
         type = "zstd"

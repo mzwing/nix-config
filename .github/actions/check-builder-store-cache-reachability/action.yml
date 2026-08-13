@@ -89,3 +89,12 @@ runs:
           echo "::error::The Attic builder cache is not reachable over HTTP. Direct: ${err_direct} / via builder: ${err_builder}"
           exit 1
         fi
+        # Diagnostics only: report whether the tailnet paths to the cache
+        # node are direct or relayed (DERP). A relayed path would show up
+        # as slow uploads and narinfo queries during the build.
+        tailscale ping -c 2 "${CACHE_HOST}" 2>&1 | tail -2 \
+          | sed 's/^/tailscale coordinator->cache: /' || true
+        # shellcheck disable=SC2029
+        ssh "${ssh_args[@]}" "root@${first_builder}" \
+          "tailscale ping -c 2 '${CACHE_HOST}' 2>&1 | tail -2" 2>/dev/null \
+          | sed 's/^/tailscale builder->cache: /' || true

@@ -102,6 +102,7 @@ runs:
             'touch /tmp/attic-drain-request' &
         done < <(jq -r '.include[].id' <<<"${BUILDERS_JSON}")
         wait || true
+        echo 'Signalled all Attic drainers to flush and exit.'
 
         # Evaluation materialises all current derivation metadata on the
         # coordinator for retention. Transfer requirements use the exact
@@ -242,14 +243,22 @@ runs:
             break
           fi
           drain_next=''
+          drain_backlog=''
           for id in ${drain_pending}; do
             if ! ssh -n "root@${BUILDER_PREFIX}-${id}" \
               'test -e /tmp/attic-drain-done' 2>/dev/null; then
               drain_next+="${id} "
+              spool_size="$(ssh -n "root@${BUILDER_PREFIX}-${id}" \
+                'wc -l < /tmp/attic-spool 2>/dev/null || echo unknown' \
+                2>/dev/null || echo unknown)"
+              drain_backlog+="${id}=${spool_size} "
             fi
           done
           drain_pending="${drain_next}"
-          [[ -n "${drain_pending// /}" ]] && sleep 5
+          if [[ -n "${drain_pending// /}" ]]; then
+            echo "Waiting for Attic drainers (spool backlog: ${drain_backlog})"
+            sleep 15
+          fi
         done
         if ! ssh -n "root@${CACHE_HOST}" \
           "sqlite3 '${CACHE_DATA_DIR}/server.db' \"SELECT store_path || char(9) || COALESCE(deriver, '') FROM object;\"" \
@@ -386,6 +395,7 @@ runs:
           if ! ssh "root@${builder}" python3 - \
             "${TRANSFER_JOBS}" "ci:${CACHE_NAME}" \
             /tmp/reconcile-expected-paths.txt \
+            "${id}" \
             >"${events}" <<'REMOTE_PIPELINE'
         import os
         import queue
@@ -396,6 +406,7 @@ runs:
         jobs = int(sys.argv[1])
         cache = sys.argv[2]
         expected_file = sys.argv[3]
+        tag = sys.argv[4] if len(sys.argv) > 4 else "builder"
         with open(expected_file, encoding="utf-8") as file:
             expected = {line.rstrip("\n") for line in file if line.strip()}
 
@@ -466,6 +477,21 @@ runs:
         for worker in workers:
             worker.start()
 
+        # Long uploads are silent; emit a heartbeat so a stalled pipeline is
+        # distinguishable from a slow one in the step log.
+        stop_heartbeat = threading.Event()
+
+        def heartbeat():
+            while not stop_heartbeat.wait(20):
+                print(
+                    f"[{tag}] progress: found {counts['found']}, "
+                    f"uploaded {counts['uploaded']}, queued {paths.qsize()}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+
+        threading.Thread(target=heartbeat, daemon=True).start()
+
         dump = subprocess.Popen(
             ["nix-store", "--dump-db"],
             stdout=subprocess.PIPE,
@@ -508,13 +534,14 @@ runs:
             paths.join()
             for worker in workers:
                 worker.join()
+            stop_heartbeat.set()
             try:
                 os.unlink(expected_file)
             except FileNotFoundError:
                 pass
 
         print(
-            f"Streaming probe found {counts['found']} required paths; "
+            f"[{tag}] Streaming probe found {counts['found']} required paths; "
             f"{counts['uploaded']} uploads succeeded.",
             file=sys.stderr,
             flush=True,
