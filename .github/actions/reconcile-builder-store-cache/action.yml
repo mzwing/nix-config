@@ -54,6 +54,19 @@ inputs:
     description: Number of concurrent Attic uploads per builder.
     required: false
     default: '6'
+  upstream-substituters:
+    description: >-
+      Public substituters whose paths must not be transferred to the
+      private builder cache. Remaining candidates are HEAD-probed in
+      order; the first hit excludes the path from the builder probe.
+    required: false
+    default: |-
+      https://cache.nixos.org
+      https://cache.nixos-cuda.org
+      https://mzwing.cachix.org
+      https://nix-community.cachix.org
+      https://devenv.cachix.org
+      https://attic.xuyh0120.win/lantian
 
 runs:
   using: composite
@@ -71,6 +84,7 @@ runs:
         PUBLIC_PATHS_FILE: ${{ inputs.public-paths-file }}
         EXTRA_PATHS_FILE: ${{ inputs.extra-paths-file }}
         TRANSFER_JOBS: ${{ inputs.transfer-jobs }}
+        UPSTREAM_SUBSTITUTERS: ${{ inputs.upstream-substituters }}
       run: |
         set -euo pipefail
         export LC_ALL=C
@@ -78,6 +92,16 @@ runs:
           echo "::error::transfer-jobs must be a positive integer, got ${TRANSFER_JOBS}."
           exit 1
         fi
+
+        # Ask every builder's Attic drainer to flush its spool and exit.
+        # The drain runs while evaluation below proceeds; uploads landing
+        # after the Attic object snapshot would be re-pushed by the probe
+        # (correct but wasted), and no new builds arrive after this point.
+        while IFS= read -r id; do
+          ssh -n "root@${BUILDER_PREFIX}-${id}" \
+            'touch /tmp/attic-drain-request' &
+        done < <(jq -r '.include[].id' <<<"${BUILDERS_JSON}")
+        wait || true
 
         # Evaluation materialises all current derivation metadata on the
         # coordinator for retention. Transfer requirements use the exact
@@ -205,7 +229,28 @@ runs:
         # Existing sparse objects record their producing derivation. Retain
         # objects belonging to the full current-lock derivation closure even
         # when their targets were already public this run; only scheduled
-        # targets are required transfer sources.
+        # targets are required transfer sources. Wait for the builder
+        # drainers first so the snapshot covers every hook upload.
+        drain_pending=''
+        while IFS= read -r id; do
+          drain_pending+="${id} "
+        done < <(jq -r '.include[].id' <<<"${BUILDERS_JSON}")
+        drain_deadline=$((SECONDS + 300))
+        while [[ -n "${drain_pending// /}" ]]; do
+          if (( SECONDS >= drain_deadline )); then
+            echo "::warning::Attic drainers did not finish in time on: ${drain_pending}; continuing with the probe."
+            break
+          fi
+          drain_next=''
+          for id in ${drain_pending}; do
+            if ! ssh -n "root@${BUILDER_PREFIX}-${id}" \
+              'test -e /tmp/attic-drain-done' 2>/dev/null; then
+              drain_next+="${id} "
+            fi
+          done
+          drain_pending="${drain_next}"
+          [[ -n "${drain_pending// /}" ]] && sleep 5
+        done
         if ! ssh -n "root@${CACHE_HOST}" \
           "sqlite3 '${CACHE_DATA_DIR}/server.db' \"SELECT store_path || char(9) || COALESCE(deriver, '') FROM object;\"" \
           > /tmp/reconcile-attic-objects.txt; then
@@ -264,12 +309,69 @@ runs:
           > /tmp/reconcile-remaining.txt
         echo "Attic already has $(( $(wc -l < /tmp/reconcile-required.txt) - $(wc -l < /tmp/reconcile-remaining.txt) )) candidate paths; $(wc -l < /tmp/reconcile-remaining.txt) remain to probe on builders."
 
+        # Do not transfer paths already fetchable from a public substituter:
+        # Attic would skip them server-side by signing key, but every
+        # attempt still costs client-side narinfo work and a server round
+        # trip. Probe the configured substituters concurrently here instead.
+        if [[ -s /tmp/reconcile-remaining.txt && \
+          -n "${UPSTREAM_SUBSTITUTERS// /}" ]]; then
+          mapfile -t upstream_substituters <<<"${UPSTREAM_SUBSTITUTERS}"
+          python3 - /tmp/reconcile-remaining.txt \
+            /tmp/reconcile-upstream-public.txt \
+            "${upstream_substituters[@]}" <<'UPSTREAM_FILTER'
+        import concurrent.futures
+        import sys
+        import urllib.request
+
+        remaining_file, output_file = sys.argv[1], sys.argv[2]
+        substituters = [base.rstrip("/") for base in sys.argv[3:]]
+
+        with open(remaining_file, encoding="utf-8") as file:
+            paths = [line.strip() for line in file if line.strip()]
+
+        def is_public(path):
+            store_hash = path.rsplit("/", 1)[-1].split("-", 1)[0]
+            if not store_hash:
+                return False
+            for base in substituters:
+                request = urllib.request.Request(
+                    f"{base}/{store_hash}.narinfo", method="HEAD"
+                )
+                try:
+                    with urllib.request.urlopen(request, timeout=8) as response:
+                        if response.status == 200:
+                            return True
+                except Exception:
+                    # Missing narinfo or unreachable substituter: keep the
+                    # path as a transfer candidate (conservative).
+                    continue
+            return False
+
+        public = set()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=128) as pool:
+            for path, result in zip(paths, pool.map(is_public, paths)):
+                if result:
+                    public.add(path)
+
+        with open(output_file, "w", encoding="utf-8") as file:
+            for path in sorted(public):
+                file.write(path + "\n")
+        UPSTREAM_FILTER
+          skipped="$(wc -l < /tmp/reconcile-upstream-public.txt)"
+          comm -23 /tmp/reconcile-remaining.txt \
+            /tmp/reconcile-upstream-public.txt \
+            > /tmp/reconcile-remaining.filtered.txt
+          mv /tmp/reconcile-remaining.filtered.txt /tmp/reconcile-remaining.txt
+          echo "${skipped} remaining paths are already public; $(wc -l < /tmp/reconcile-remaining.txt) transfer candidates left."
+        fi
+
         # Run one streaming pipeline per builder. Python reads Nix's portable
         # registration stream (path, hash, size, deriver, reference count,
         # references) and queues a required path as soon as its path line is
-        # seen. Six workers on that builder upload queued paths immediately;
-        # builders run independently, giving transfer-jobs × builders total
-        # concurrency without waiting for any complete store probe.
+        # seen. Workers on that builder upload queued paths in batches, so a
+        # single Attic process/session serves many paths; builders run
+        # independently, giving transfer-jobs × builders total concurrency
+        # without waiting for any complete store probe.
         pipeline_builder() {
           local id="$1" builder="${BUILDER_PREFIX}-$1"
           local events="/tmp/reconcile-events-${id}.txt"
@@ -304,32 +406,61 @@ runs:
         output_lock = threading.Lock()
         counts = {"found": 0, "uploaded": 0}
 
+        batch_size = 24
+
+        def push(batch):
+            # One process uploads a whole batch: attic performs a single bulk
+            # missing-paths query and streams the NARs with bounded
+            # concurrency, so per-path process/session overhead is amortised.
+            result = subprocess.run(
+                [attic_bin, "push", "--no-closure", "--jobs", "4", cache, *batch],
+                env=environment,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+            )
+            if result.returncode == 0:
+                with output_lock:
+                    for path in batch:
+                        print(f"UPLOADED\t{path}", flush=True)
+                        counts["uploaded"] += 1
+                return
+            if len(batch) > 1:
+                # Isolate the failing path by retrying individually.
+                for path in batch:
+                    push([path])
+                return
+            print(f"warning: failed to upload {batch[0]}", file=sys.stderr, flush=True)
+            if result.stdout:
+                print(result.stdout, file=sys.stderr, end="")
+            if result.stderr:
+                print(result.stderr, file=sys.stderr, end="")
+
         def upload_worker():
             while True:
-                path = paths.get()
-                try:
-                    if path is None:
-                        return
-                    result = subprocess.run(
-                        [attic_bin, "push", "--no-closure", "--jobs", "1", cache, path],
-                        env=environment,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        text=True,
-                        check=False,
-                    )
-                    if result.returncode == 0:
-                        with output_lock:
-                            print(f"UPLOADED\t{path}", flush=True)
-                            counts["uploaded"] += 1
-                    else:
-                        print(f"warning: failed to upload {path}", file=sys.stderr, flush=True)
-                        if result.stdout:
-                            print(result.stdout, file=sys.stderr, end="")
-                        if result.stderr:
-                            print(result.stderr, file=sys.stderr, end="")
-                finally:
+                first = paths.get()
+                if first is None:
                     paths.task_done()
+                    return
+                batch = [first]
+                while len(batch) < batch_size:
+                    try:
+                        item = paths.get_nowait()
+                    except queue.Empty:
+                        break
+                    if item is None:
+                        # Leave a sentinel for the remaining workers and
+                        # upload what this batch already holds.
+                        paths.task_done()
+                        paths.put(None)
+                        break
+                    batch.append(item)
+                try:
+                    push(batch)
+                finally:
+                    for _ in batch:
+                        paths.task_done()
 
         workers = [threading.Thread(target=upload_worker) for _ in range(jobs)]
         for worker in workers:

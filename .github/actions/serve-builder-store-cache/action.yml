@@ -137,6 +137,11 @@ runs:
             exit 1
           fi
         fi
+        # narinfo queries sit on the build scheduling critical path and must
+        # not queue behind push write transactions. WAL lets readers proceed
+        # concurrently with the single writer; the mode persists in the
+        # database header, so restored generations keep it too.
+        sqlite3 "${database}" 'PRAGMA journal_mode=WAL;'
         jwt_secret="$(head -c 32 /dev/urandom | base64 | tr -d '\n')"
         api_endpoint="http://${CACHE_HOST}:${PORT}/"
         cache_endpoint="${api_endpoint}${CACHE_NAME}"

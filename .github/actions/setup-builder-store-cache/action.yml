@@ -105,36 +105,80 @@ runs:
 
           sudo tee /etc/nix/push-to-builder-cache >/dev/null <<'HOOK'
         #!/bin/sh
-        # Attic permits sparse binary-cache entries. Push only the outputs
-        # reported by this hook; public-cache paths are skipped server-side
-        # by signing-key name, and reconciliation fills any hook gaps.
-        export XDG_CONFIG_HOME=/etc
-        ATTIC_BIN="$(cat /etc/attic/attic-bin)"
-        CACHE="$(cat /etc/attic/cache)"
-        # Nix waits for post-build hooks. Detach the upload so completed
-        # outputs are immediately available to later builds; reconciliation
-        # closes any failed/in-flight gap before cache shutdown.
-        input="$(mktemp /tmp/attic-hook-paths.XXXXXX)" || exit 0
-        # OUT_PATHS is intentionally a shell word list supplied by Nix.
-        # shellcheck disable=SC2086
-        printf '%s\n' ${OUT_PATHS} >"${input}"
-        (
-          trap 'rm -f "${input}"' EXIT INT TERM
-          for _ in 1 2 3; do
-            if "${ATTIC_BIN}" push \
-              --stdin \
-              --no-closure \
-              --jobs 1 \
-              "${CACHE}" <"${input}"; then
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "warning: failed to push paths from ${input} to the builder cache" >&2
-        ) >>/tmp/attic-post-build-hook.log 2>&1 &
+        # Enqueue built outputs for the Attic drainer. The hook only appends:
+        # Nix waits for post-build hooks, so uploads must never happen inline,
+        # and unbounded per-path background pushes would overwhelm the single
+        # Attic server during a full rebuild. The append runs under a
+        # spinlock shared with the drainer so concurrent completions cannot
+        # interleave lines; reconciliation fills any gap left by a dropped
+        # enqueue, and public-cache paths are skipped server-side by
+        # signing-key name.
+        lock=/tmp/attic-spool.lock
+        for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+          if mkdir "${lock}" 2>/dev/null; then
+            # OUT_PATHS is intentionally a shell word list supplied by Nix.
+            # shellcheck disable=SC2086
+            printf '%s\n' ${OUT_PATHS} >>/tmp/attic-spool
+            rmdir "${lock}"
+            exit 0
+          fi
+          sleep 0.2 2>/dev/null || sleep 1
+        done
         exit 0
         HOOK
           sudo chmod 755 /etc/nix/push-to-builder-cache
+
+          # Bounded uploader draining the hook spool: at most one Attic
+          # process per builder pushes batches with four streams.
+          sudo tee /tmp/attic-drainer >/dev/null <<'DRAINER'
+        #!/bin/bash
+        set -uo pipefail
+        export XDG_CONFIG_HOME=/etc
+        attic_bin="$(cat /etc/attic/attic-bin)"
+        cache="$(cat /etc/attic/cache)"
+        spool=/tmp/attic-spool
+        lock=/tmp/attic-spool.lock
+        touch "${spool}"
+        while true; do
+          # Reconciliation asks for a full flush and an exit before its
+          # Attic object snapshot, so late hook uploads cannot overlap
+          # with its own batched pushes. No new builds arrive afterwards.
+          drain=0
+          [[ -e /tmp/attic-drain-request ]] && drain=1
+          batch="$(mktemp /tmp/attic-batch.XXXXXX)"
+          for _ in $(seq 50); do
+            mkdir "${lock}" 2>/dev/null && break
+            sleep 0.2
+          done
+          cat "${spool}" >>"${batch}"
+          : >"${spool}"
+          rmdir "${lock}"
+          if [[ -s "${batch}" ]]; then
+            sort -u -o "${batch}" "${batch}"
+            split -l 128 "${batch}" "${batch}.part."
+            for part in "${batch}".part.*; do
+              for _ in 1 2 3; do
+                if "${attic_bin}" push --stdin --no-closure --jobs 4 \
+                  "${cache}" <"${part}"; then
+                  break
+                fi
+                sleep 2
+              done
+              rm -f "${part}"
+            done
+            rm -f "${batch}"
+          else
+            rm -f "${batch}"
+            if (( drain )); then
+              touch /tmp/attic-drain-done
+              exit 0
+            fi
+            sleep 2
+          fi
+        done
+        DRAINER
+          sudo chmod 755 /tmp/attic-drainer
+          sudo nohup /tmp/attic-drainer >>/tmp/attic-drainer.log 2>&1 </dev/null &
         fi
 
         {
