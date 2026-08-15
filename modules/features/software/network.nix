@@ -31,7 +31,7 @@
       pkgs,
       ...
     }:
-      lib.mkIf pkgs.stdenv.isLinux {
+      lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
         services.kdeconnect = {
           enable = true;
           indicator = true;

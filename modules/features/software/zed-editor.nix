@@ -19,10 +19,10 @@
       programs.zed-editor = {
         enable = true;
         package =
-          if pkgs.stdenv.isDarwin
+          if pkgs.stdenv.hostPlatform.isDarwin
           then null
           else pkgs.zed-editor;
-        extraPackages = lib.optionals (!pkgs.stdenv.isDarwin) [
+        extraPackages = lib.optionals (!pkgs.stdenv.hostPlatform.isDarwin) [
           pkgs.alejandra
           pkgs.nixd
           pkgs.nur.repos.mzwing.typenix
@@ -39,7 +39,7 @@
         ];
         enableMcpIntegration = true;
         installRemoteServer =
-          if pkgs.stdenv.isDarwin
+          if pkgs.stdenv.hostPlatform.isDarwin
           then false
           else true;
       };

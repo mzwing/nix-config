@@ -49,7 +49,7 @@ in {
       pkgs,
       ...
     }:
-      lib.mkIf pkgs.stdenv.isLinux {
+      lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
         programs.jetbrains-remote = {
           enable = true;
           ides = with pkgs.jetbrains; [

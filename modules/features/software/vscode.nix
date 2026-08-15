@@ -16,13 +16,13 @@
       ...
     }: {
       programs =
-        lib.optionalAttrs pkgs.stdenv.isDarwin {
+        lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
           vscode = {
             enable = true;
             package = null;
           };
         }
-        // lib.optionalAttrs pkgs.stdenv.isLinux {
+        // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
           vscodium = {
             enable = true;
             package = pkgs.vscodium-fhs;

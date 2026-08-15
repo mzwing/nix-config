@@ -70,7 +70,7 @@ in {
               foreach = "submodule foreach";
             };
           }
-          // lib.optionalAttrs pkgs.stdenv.isDarwin {
+          // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
             credential.helper = "osxkeychain";
           };
       };
