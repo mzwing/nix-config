@@ -16,3 +16,5 @@ devenv.local.yaml
 TODO
 
 .codegraph/
+
+*.pyc
