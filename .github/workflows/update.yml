@@ -32,7 +32,7 @@ jobs:
           hatchet-protocol: cleave
 
       - name: Set up Nix
-        uses: ./.github/actions/setup-nix
+        uses: mzwing/nix-actions/nix/setup@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cachix-pull: 'false'
@@ -44,7 +44,7 @@ jobs:
       # must hash the union of all jobs' lock inputs and use the same gc
       # size.
       - name: Restore Nix store
-        uses: ./.github/actions/restore-nix-store
+        uses: mzwing/nix-actions/nix/restore-store@master
         with:
           primary-key: nix-ci-${{ hashFiles('flake.lock', 'devenv.lock', 'devenv.nix', 'devenv.yaml') }}
           restore-prefix: nix-ci-
@@ -59,7 +59,7 @@ jobs:
 
       - name: Commit and push changes
         id: commit
-        uses: ./.github/actions/commit-and-push
+        uses: mzwing/nix-actions/git/commit-and-push@master
         with:
           paths: devenv.lock flake.lock
           message: "chore: update lockfile"
