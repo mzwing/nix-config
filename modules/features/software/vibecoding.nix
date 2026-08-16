@@ -263,7 +263,7 @@ in {
 
             NEVER try to build any programs (especially Rust) locally, except the user explicitly approve it in the context. Ask the user to build it themselves instead.
 
-            When possible, ALWAYS use the builtin tools (like read, edit, etc.) instead of shell commands! And when possible, ALWAYS use fffind / fffgrep instead of find / grep, since fffind / fffgrep is much faster and more efficient.
+            When possible, ALWAYS use the builtin tools (like read, edit, etc.) instead of shell commands! And when possible, ALWAYS use fffind / fffgrep instead of find / grep, since fffind / fffgrep is much faster and more efficient, but NOTICE: fffind / fffgrep is git-aware, and cannot search files not tracked by git.
 
             NEVER defensive programming! NEVER overthinking!
 
