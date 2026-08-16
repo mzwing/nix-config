@@ -160,6 +160,7 @@ in {
           showClaudeCodeVersion = true;
           showMemoryUsage = true;
           showPromptCache = true;
+          promptCacheTtlSeconds = 3600; # The fxxking cc hud is hardcoded cache TTL to 5 mins, so we have to set it to 1 hour for Claude Coding Plan.
         };
       };
 
@@ -190,10 +191,6 @@ in {
             includeCoAuthoredBy = false;
             theme = "dark";
             hooks = config.programs.gryph.hooks.claude-code;
-
-            env = {
-              "ENABLE_PROMPT_CACHING_1H" = "1";
-            };
 
             statusLine = {
               type = "command";
