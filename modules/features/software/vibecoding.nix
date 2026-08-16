@@ -189,6 +189,10 @@ in {
             theme = "dark";
             hooks = config.programs.gryph.hooks.claude-code;
 
+            env = {
+              "ENABLE_PROMPT_CACHING_1H" = "1";
+            };
+
             statusLine = {
               type = "command";
               command = let
