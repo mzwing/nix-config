@@ -62,6 +62,7 @@ in {
 
       homebrew.casks = [
         "antigravity"
+        "cc-switch"
         "chatgpt"
       ];
     };
@@ -100,6 +101,7 @@ in {
 
       environment.systemPackages = with pkgs; [
         antigravity
+        cc-switch
       ];
     };
 
