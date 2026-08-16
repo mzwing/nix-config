@@ -18,6 +18,8 @@
     nixd
     nixos-rebuild-ng
     ruff
+    shellcheck
+    shfmt
     ty
     inputs.agenix.packages.${pkgs.stdenv.hostPlatform.system}.default
     nur.repos.mzwing.typenix
@@ -31,6 +33,8 @@
     just --version
     nixd --version
     ruff --version
+    shellcheck --version
+    shfmt --version
     ty --version
     typenix --version
   '';

@@ -57,6 +57,12 @@ jobs:
           ruff check scripts/
           ty check scripts/
 
+      # Only the CI scripts: shfmt rewrites associative-array subscripts as arithmetic, so it must not be pointed at shell embedded in Nix packages.
+      - name: Lint shell scripts
+        run: |
+          git ls-files 'scripts/ci/*.sh' | xargs shfmt --diff
+          git ls-files 'scripts/ci/*.sh' | xargs shellcheck
+
       - name: Check formatting
         run: |
           just fmt
