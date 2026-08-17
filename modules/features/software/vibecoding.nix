@@ -118,6 +118,56 @@ in {
         rev = "v0.7.1";
         hash = "sha256-LvSuIbniF4lC2ruopijAo9avGAWjNS2YLa/EiFW0IBU=";
       };
+
+      jsonFormat = pkgs.formats.json {};
+
+      # Every pi plugin keeps its own `config.json` under
+      # <configDir>/extensions/<plugin>/, so the settings are declared here and
+      # linked below, keyed by plugin directory name.
+      piExtensionSettings = {
+        pi-permission-auto-review = {
+          "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/main/packages/pi-permission-auto-review/schemas/config.schema.json";
+          provider = "openai-codex";
+          reasoning = "medium";
+          additionalPolicy = "At any time, any execution that would result in git commit and git push operations is strictly prohibited! (Please note that this rule only prohibits these two operations. Read-only viewing is not included in this list and should be allowed in the correct context. git add can also be executed under reasonable circumstances)";
+        };
+
+        pi-permission-system = {
+          debugLog = false;
+          permissionReviewLog = true;
+          yoloMode = false;
+          authorizerChain = ["auto-review"];
+        };
+
+        pi-rtk-optimizer = {
+          enabled = true;
+          mode = "rewrite";
+          guardWhenRtkMissing = true;
+          showRewriteNotifications = true;
+          outputCompaction = {
+            enabled = true;
+            stripAnsi = true;
+            readCompaction.enabled = false;
+            sourceCodeFilteringEnabled = false;
+            preserveExactSkillReads = false;
+            truncate = {
+              enabled = true;
+              maxChars = 12000;
+            };
+            sourceCodeFiltering = "none";
+            smartTruncate = {
+              enabled = false;
+              maxLines = 220;
+            };
+            aggregateTestOutput = true;
+            filterBuildOutput = true;
+            compactGitOutput = true;
+            aggregateLinterOutput = true;
+            groupSearchOutput = true;
+            trackSavings = true;
+          };
+        };
+      };
     in {
       imports = [
         inputs.agenix.homeManagerModules.default
@@ -133,36 +183,52 @@ in {
         pkgs.nur.repos.mzwing.codegraph
       ];
 
-      home.file."${config.programs.claude-code.configDir}/plugins/claude-hud/config.json".source = (pkgs.formats.json {}).generate "claude-hud-config.json" {
-        language = "zh-Hans";
-        lineLayout = "expanded";
-        display = {
-          showTools = true;
-          showSkills = true;
-          showMcp = true;
-          showAgents = true;
-          showTodos = true;
+      home.file = lib.mkMerge [
+        {
+          "${config.programs.claude-code.configDir}/plugins/claude-hud/config.json".source = jsonFormat.generate "claude-hud-config.json" {
+            language = "zh-Hans";
+            lineLayout = "expanded";
+            display = {
+              showTools = true;
+              showSkills = true;
+              showMcp = true;
+              showAgents = true;
+              showTodos = true;
 
-          showSessionName = true;
-          showSessionTokens = true;
-          showDuration = true;
-          showCompactions = true;
-          showEffortLevel = true;
-          showOutputStyle = true;
-          showAdvisor = true;
+              showSessionName = true;
+              showSessionTokens = true;
+              showDuration = true;
+              showCompactions = true;
+              showEffortLevel = true;
+              showOutputStyle = true;
+              showAdvisor = true;
 
-          showCost = true;
-          showRoutedCost = true;
-          showSpeed = true;
-          showConfigCounts = true;
+              showCost = true;
+              showRoutedCost = true;
+              showSpeed = true;
+              showConfigCounts = true;
 
-          showAuth = true;
-          showClaudeCodeVersion = true;
-          showMemoryUsage = true;
-          showPromptCache = true;
-          promptCacheTtlSeconds = 3600; # The fxxking cc hud is hardcoded cache TTL to 5 mins, so we have to set it to 1 hour for Claude Coding Plan.
-        };
-      };
+              showAuth = true;
+              showClaudeCodeVersion = true;
+              showMemoryUsage = true;
+              showPromptCache = true;
+              promptCacheTtlSeconds = 3600; # The fxxking cc hud hardcodes cache TTL to 5 mins, so we have to set it to 1 hour for Claude Coding Plan manually.
+            };
+          };
+        }
+
+        # pi-coding-agent has no Home Manager option for plugin settings, so the
+        # files are linked directly. Changing them from inside pi (e.g. the
+        # `/permission-system` modal) replaces the link with a plain file, which
+        # the next activation backs up as `config.json..bak` and relinks.
+        (lib.mapAttrs' (
+            name: settings:
+              lib.nameValuePair "${config.programs.pi-coding-agent.configDir}/extensions/${name}/config.json" {
+                source = jsonFormat.generate "${name}-config.json" settings;
+              }
+          )
+          piExtensionSettings)
+      ];
 
       programs = {
         claude-code = {
@@ -189,8 +255,15 @@ in {
 
           settings = {
             includeCoAuthoredBy = false;
+            model = "opus";
             theme = "dark";
             hooks = config.programs.gryph.hooks.claude-code;
+
+            # The persisted `effortLevel` setting only accepts low/medium/high/xhigh,
+            # so `max` has to come in through the env var, which wins over everything.
+            env.CLAUDE_CODE_EFFORT_LEVEL = "max";
+
+            permissions.defaultMode = "auto";
 
             statusLine = {
               type = "command";
