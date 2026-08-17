@@ -385,7 +385,7 @@ jobs:
     # The job log is size-capped and silently truncates a long build; the artifact is not, so a post-mortem has the whole thing.
     - name: Upload build log
       if: '!cancelled()'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: coordinator-build-log
         path: /tmp/nix-build.log
