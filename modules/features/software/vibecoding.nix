@@ -29,6 +29,7 @@ in {
     darwin = {
       config,
       inputs,
+      secrets,
       username,
       ...
     }: {
@@ -42,12 +43,12 @@ in {
       age.identityPaths = ["${config.users.users.${username}.home}/.ssh/server_key"];
       age.secrets = {
         cliproxyapiplus-api-key = {
-          file = ../../../secrets/cliproxyapiplus/api-key.age;
+          file = secrets."cliproxyapiplus/api-key";
           owner = "_cliproxyapiplus";
           group = "_cliproxyapiplus";
         };
         cliproxyapiplus-remote-secret-key = {
-          file = ../../../secrets/cliproxyapiplus/remote-secret-key.age;
+          file = secrets."cliproxyapiplus/remote-secret-key";
           owner = "_cliproxyapiplus";
           group = "_cliproxyapiplus";
         };
@@ -71,6 +72,7 @@ in {
       config,
       inputs,
       pkgs,
+      secrets,
       username,
       ...
     }: {
@@ -81,12 +83,12 @@ in {
       age.identityPaths = ["${config.users.users.${username}.home}/.ssh/server_key"];
       age.secrets = {
         cliproxyapiplus-api-key = {
-          file = ../../../secrets/cliproxyapiplus/api-key.age;
+          file = secrets."cliproxyapiplus/api-key";
           owner = "cliproxyapiplus";
           group = "cliproxyapiplus";
         };
         cliproxyapiplus-remote-secret-key = {
-          file = ../../../secrets/cliproxyapiplus/remote-secret-key.age;
+          file = secrets."cliproxyapiplus/remote-secret-key";
           owner = "cliproxyapiplus";
           group = "cliproxyapiplus";
         };
@@ -110,6 +112,7 @@ in {
       inputs,
       lib,
       pkgs,
+      secrets,
       ...
     }: let
       claudeHudSrc = pkgs.fetchFromGitHub {
@@ -177,7 +180,7 @@ in {
       age.identityPaths = [
         "${config.home.homeDirectory}/.ssh/server_key"
       ];
-      age.secrets."cliproxyapiplus-api-key".file = ../../../secrets/cliproxyapiplus/api-key.age;
+      age.secrets."cliproxyapiplus-api-key".file = secrets."cliproxyapiplus/api-key";
 
       home.packages = [
         pkgs.nur.repos.mzwing.codegraph

@@ -1,23 +1,10 @@
-{
-  config,
-  inputs,
-  lib,
-  ...
-}: {
+# Working on this repo rather than on the machines it configures.
+{inputs, ...}: {
   systems = [
     "aarch64-darwin"
     "x86_64-linux"
     "aarch64-linux"
   ];
-
-  flake = {
-    darwinConfigurations = lib.mapAttrs (_: host: config.mzwing.lib.mkDarwinHost host) config.mzwing.hosts.darwin;
-    nixosConfigurations = lib.mapAttrs (_: host: config.mzwing.lib.mkNixosHost host) config.mzwing.hosts.nixos;
-
-    darwinModules = config.mzwing.lib.moduleAttrsFor "darwin";
-    nixosModules = config.mzwing.lib.moduleAttrsFor "nixos";
-    homeModules = config.mzwing.lib.moduleAttrsFor "home";
-  };
 
   perSystem = {
     pkgs,

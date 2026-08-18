@@ -5,26 +5,16 @@
     type = "server";
     username = "mzwing";
     useremail = "mzwing@mzwing.eu.org";
+
     features = [
-      "core/nix"
-      "home/base"
-      "nixos/server/base"
-      "nixos/server/disko-vda-ext4"
-      "nixos/server/network/upcloud-sg"
+      "profiles/nixos-server"
       "nixos/server/upcloud"
-      "nixos/server/ssh"
-      "nixos/server/zram"
-      "software/fish"
-      "software/git"
-      "software/gpg"
-      "software/neovim"
       "software/pumpkin"
-      "software/server"
-      "software/shell"
-      "software/vpn"
-      "users/mzwing"
-      "users/root"
     ];
-    hardware = ./_hardware.nix;
+
+    modules = [
+      ./_hardware.nix
+      ./_network.nix
+    ];
   };
 }

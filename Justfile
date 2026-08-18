@@ -1,6 +1,8 @@
 darwin_host := "mzwing-MacBook-Pro"
-flake_ref := "path:" + justfile_directory()
 repo_dir := justfile_directory()
+
+# "." resolves to git+file: and sees only tracked files. "path:<dir>" copies the whole working directory instead, which hard-fails on a Unix socket like .codegraph/daemon.sock.
+flake_ref := "."
 
 default:
   @just --list
@@ -10,25 +12,30 @@ darwin-hosts:
   @nix --accept-flake-config --quiet eval --raw {{flake_ref}}#darwinConfigurations \
     --apply 'configs: (builtins.concatStringsSep "\n" (builtins.attrNames configs)) + "\n"'
 
+# Pass `debug` to add --show-trace --verbose.
 [group('darwin')]
-darwin host=darwin_host:
-  nix build .#darwinConfigurations.{{host}}.system \
-    --extra-experimental-features 'nix-command flakes'
-  sudo -E ./result/sw/bin/darwin-rebuild switch --flake .#{{host}}
+darwin host=darwin_host debug='':
+  #!/usr/bin/env bash
+  set -euo pipefail
 
-[group('darwin')]
-darwin-debug host=darwin_host:
-  nix build .#darwinConfigurations.{{host}}.system --show-trace --verbose \
-    --extra-experimental-features 'nix-command flakes'
-  sudo -E ./result/sw/bin/darwin-rebuild switch --flake .#{{host}} --show-trace --verbose
+  case "{{debug}}" in
+    '') flags='' ;;
+    debug) flags='--show-trace --verbose' ;;
+    *) printf 'darwin only accepts "debug" as its second argument\n' >&2; exit 2 ;;
+  esac
+
+  nix build ".#darwinConfigurations.{{host}}.system" \
+    --extra-experimental-features 'nix-command flakes' ${flags}
+  sudo -E ./result/sw/bin/darwin-rebuild switch --flake ".#{{host}}" ${flags}
 
 [group('nixos')]
 nixos-hosts:
   @nix --accept-flake-config --quiet eval --raw {{flake_ref}}#nixosConfigurations \
     --apply 'configs: (builtins.concatStringsSep "\n" (builtins.attrNames configs)) + "\n"'
 
+# Push this flake to a remote host and rebuild there. Pass `debug` for --verbose --debug.
 [group('nixos')]
-nixos host target action='switch':
+nixos host target action='switch' debug='':
   #!/usr/bin/env bash
   set -euo pipefail
 
@@ -37,22 +44,10 @@ nixos host target action='switch':
     *) printf 'nixos only accepts boot, switch, or test as its action\n' >&2; exit 2 ;;
   esac
 
-  flake_path="$(nix flake metadata --no-write-lock-file --json {{flake_ref}} | jq -r .path)"
-  nix copy --to "ssh-ng://{{target}}" "$flake_path"
-  ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "{{target}}" nixos-rebuild \
-    --flake "path:$flake_path#{{host}}" \
-    --accept-flake-config \
-    --show-trace \
-    "{{action}}"
-
-[group('nixos')]
-nixos-debug host target action='switch':
-  #!/usr/bin/env bash
-  set -euo pipefail
-
-  case "{{action}}" in
-    boot|switch|test) ;;
-    *) printf 'nixos-debug only accepts boot, switch, or test as its action\n' >&2; exit 2 ;;
+  case "{{debug}}" in
+    '') flags='' ;;
+    debug) flags='--verbose --debug' ;;
+    *) printf 'nixos only accepts "debug" as its fourth argument\n' >&2; exit 2 ;;
   esac
 
   flake_path="$(nix flake metadata --no-write-lock-file --json {{flake_ref}} | jq -r .path)"
@@ -61,8 +56,7 @@ nixos-debug host target action='switch':
     --flake "path:$flake_path#{{host}}" \
     --accept-flake-config \
     --show-trace \
-    --verbose \
-    --debug \
+    ${flags} \
     "{{action}}"
 
 [group('nixos')]
@@ -100,6 +94,11 @@ nixos-anywhere host target no_reboot='':
 [group('nix')]
 flake-check:
   nix flake check --show-trace {{flake_ref}} --all-systems
+
+# What CI would build and cache.
+[group('nix')]
+ci-targets:
+  @nix eval --json .#legacyPackages.x86_64-linux.ci.targets | jq
 
 [group('nix')]
 typecheck:

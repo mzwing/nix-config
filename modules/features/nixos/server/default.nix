@@ -1,5 +1,5 @@
 {
-  mzwing.features."nixos/server/base" = {
+  mzwing.features."nixos/server" = {
     meta.platforms = ["nixos"];
 
     nixos = {hostname, ...}: {

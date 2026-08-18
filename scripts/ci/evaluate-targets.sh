@@ -2,11 +2,14 @@
 # Evaluate the CI target list and the root devenv outputs for every supported system.
 set -euo pipefail
 
-printf 'targets=%s\n' "$(nix eval --impure --json --file ci/targets.nix)" >>"${GITHUB_OUTPUT}"
+# Same contents whichever system you read it from; this job runs on x86_64-linux.
+CI_ATTR='.#legacyPackages.x86_64-linux.ci'
+
+printf 'targets=%s\n' "$(nix eval --json "${CI_ATTR}.targets")" >>"${GITHUB_OUTPUT}"
 
 devenv_outputs='{}'
-for system in x86_64-linux aarch64-linux aarch64-darwin; do
-  # devenv-nixpkgs-patched sets allowSubstitutes = false, so nix will not substitute it mid-evaluation and would try to build it locally, which cannot work for a foreign system. Pre-seed it instead.
+while IFS= read -r system; do
+  # devenv-nixpkgs-patched sets allowSubstitutes = false, so nix tries to build it locally, which cannot work for a foreign system. Pre-seed it.
   patched_src="$(DEVENV_SYSTEM="${system}" nix eval --raw --impure --file ci/devenv-patched-src.nix)"
   if ! nix copy --from https://devenv.cachix.org "${patched_src}"; then
     printf '::warning::Could not pre-seed %s from devenv.cachix.org; foreign-system devenv evaluation may fail.\n' "${patched_src}"
@@ -14,5 +17,5 @@ for system in x86_64-linux aarch64-linux aarch64-darwin; do
   packages="$(devenv eval -s "${system}" packages | jq -c .packages)"
   devenv_outputs="$(jq -c --arg system "${system}" --argjson packages "${packages}" \
     '. + {($system): $packages}' <<<"${devenv_outputs}")"
-done
+done < <(nix eval --json "${CI_ATTR}.systems" | jq -r '.[]')
 printf 'devenv_outputs=%s\n' "${devenv_outputs}" >>"${GITHUB_OUTPUT}"

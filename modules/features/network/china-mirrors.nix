@@ -1,3 +1,5 @@
+# Route package downloads through Chinese mirrors.
+# flake.nix's nixConfig repeats the substituter list — that copy is what puts a brand-new machine on the mirrors before any of this applies. Nix wants a literal there, so change both together.
 let
   nixMirrorSubstituters = [
     # "https://mirrors.cernet.edu.cn/nix-channels/store"
@@ -7,6 +9,14 @@ let
     "https://mirror.nju.edu.cn/nix-channels/store"
     # "https://mirrors.cqupt.edu.cn/nix-channels/store"
   ];
+
+  homebrewMirrorEnv = {
+    HOMEBREW_API_DOMAIN = "https://mirrors.cernet.edu.cn/homebrew-bottles/api";
+    HOMEBREW_BOTTLE_DOMAIN = "https://mirrors.cernet.edu.cn/homebrew-bottles";
+    HOMEBREW_BREW_GIT_REMOTE = "https://mirror.nju.edu.cn/git/homebrew/brew.git";
+    HOMEBREW_CORE_GIT_REMOTE = "https://mirror.nju.edu.cn/git/homebrew/homebrew-core.git";
+    HOMEBREW_PIP_INDEX_URL = "https://mirrors.aliyun.com/pypi/simple/";
+  };
 in {
   mzwing.features."network/china-mirrors" = {
     meta.platforms = [
@@ -14,16 +24,8 @@ in {
       "nixos"
     ];
 
-    darwin = {lib, ...}: let
-      homebrewMirrorEnv = {
-        HOMEBREW_API_DOMAIN = "https://mirrors.cernet.edu.cn/homebrew-bottles/api";
-        HOMEBREW_BOTTLE_DOMAIN = "https://mirrors.cernet.edu.cn/homebrew-bottles";
-        HOMEBREW_BREW_GIT_REMOTE = "https://mirror.nju.edu.cn/git/homebrew/brew.git";
-        HOMEBREW_CORE_GIT_REMOTE = "https://mirror.nju.edu.cn/git/homebrew/homebrew-core.git";
-        HOMEBREW_PIP_INDEX_URL = "https://mirrors.aliyun.com/pypi/simple/";
-      };
-    in {
-      mzwing.nix.extraSubstitutersBeforeDefault = nixMirrorSubstituters;
+    darwin = {lib, ...}: {
+      mzwing.nix.mirrorSubstituters = nixMirrorSubstituters;
       environment.variables = homebrewMirrorEnv;
 
       system.activationScripts.homebrew.text = let
@@ -41,7 +43,7 @@ in {
     };
 
     nixos = {
-      mzwing.nix.extraSubstitutersBeforeDefault = nixMirrorSubstituters;
+      mzwing.nix.mirrorSubstituters = nixMirrorSubstituters;
     };
   };
 }

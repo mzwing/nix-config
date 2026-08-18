@@ -1,5 +1,5 @@
 {
-  mzwing.features."flatpak" = {
+  mzwing.features."nixos/flatpak" = {
     meta.platforms = ["nixos"];
 
     nixos = {inputs, ...}: {

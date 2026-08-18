@@ -1,6 +1,8 @@
 {
   description = "mzwing's nix config";
 
+  # Gets a brand-new machine onto the mirrors before any of the config below applies — see README's bootstrap section.
+  # Repeats data/caches.nix and features/network/china-mirrors.nix because Nix wants a literal here (`import`, and even `[a] ++ [b]`, are rejected as thunks). Keep in step by hand.
   nixConfig = {
     substituters = [
       # "https://mirrors.cernet.edu.cn/nix-channels/store"
@@ -10,18 +12,18 @@
       "https://mirror.nju.edu.cn/nix-channels/store"
       # "https://mirrors.cqupt.edu.cn/nix-channels/store"
       "https://cache.nixos.org"
-      "https://cache.nixos-cuda.org"
       "https://nix-community.cachix.org"
-      "https://attic.xuyh0120.win/lantian"
+      "https://cache.nixos-cuda.org"
       "https://mzwing.cachix.org"
       "https://so1ve.cachix.org"
+      "https://attic.xuyh0120.win/lantian"
     ];
     extra-trusted-public-keys = [
-      "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-      "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
+      "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
       "mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA="
       "so1ve.cachix.org-1:51jcW4FkJhiLcqPsiUx3nglRP469les8F9zjFxio1nw="
+      "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
     ];
   };
 
@@ -34,14 +36,10 @@
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
 
-    home-manager-nixos = {
+    # One entry for both platforms: useGlobalPkgs = true means packages come from the system's nixpkgs, so this input's own follows barely matters.
+    home-manager = {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    home-manager-darwin = {
-      url = "github:nix-community/home-manager/master";
-      inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
 
     nur = {

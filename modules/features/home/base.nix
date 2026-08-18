@@ -6,12 +6,13 @@
     ];
 
     home = {
+      lib,
       system,
       username,
       ...
     }: let
       homeDirectory =
-        if system == "aarch64-darwin" || system == "x86_64-darwin"
+        if lib.hasSuffix "-darwin" system
         then "/Users/${username}"
         else "/home/${username}";
     in {

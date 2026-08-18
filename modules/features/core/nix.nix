@@ -3,22 +3,48 @@
   lib,
   ...
 }: let
-  defaultSubstituters = [
-    "https://cache.nixos.org"
-    "https://cache.nixos-cuda.org"
-    "https://nix-community.cachix.org"
-  ];
-  nixCommunityKey = "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=";
-  nixosCudaKey = "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M=";
-  nurAtticCaches = map (entry: entry.attic) (builtins.attrValues config.mzwing.registry.nur);
-  nurAtticSubstituters = map (cache: cache.url) nurAtticCaches;
-  nurAtticPublicKeys = map (cache: cache.publicKey) nurAtticCaches;
+  cacheData = import ../../../data/caches.nix;
+
+  # `config` here is the flake-parts config; the submodules below shadow it.
+  nurCaches = map (entry: entry.cache) (builtins.attrValues config.mzwing.registry.nur);
+  nurSubstituters = map (cache: cache.url) nurCaches;
+  nurPublicKeys = map (cache: cache.publicKey) nurCaches;
+
   nixOptions = {
-    extraSubstitutersBeforeDefault = lib.mkOption {
+    mirrorSubstituters = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
-      description = "Extra substituters placed before cache.nixos.org and nix-community caches.";
+      description = "Nearby mirrors, ahead of every other layer. Set by network/china-mirrors.";
     };
+
+    extraSubstituters = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = cacheData.extraSubstituters;
+      description = "Substituters after the public caches, before the NUR ones.";
+    };
+  };
+
+  # Shared by both platforms so they cannot drift apart again.
+  mkNixSettings = hostConfig: {
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
+
+    substituters = lib.mkForce (
+      hostConfig.mzwing.nix.mirrorSubstituters
+      ++ cacheData.defaultSubstituters
+      ++ hostConfig.mzwing.nix.extraSubstituters
+      ++ nurSubstituters
+    );
+
+    extra-trusted-public-keys = lib.unique (
+      cacheData.defaultPublicKeys
+      ++ cacheData.extraPublicKeys
+      ++ nurPublicKeys
+    );
+
+    builders-use-substitutes = true;
   };
 in {
   mzwing.features."core/nix" = {
@@ -42,20 +68,11 @@ in {
           enable = true;
           package = pkgs.nix;
 
-          settings = {
-            experimental-features = [
-              "nix-command"
-              "flakes"
-            ];
-            substituters = lib.mkForce (
-              config.mzwing.nix.extraSubstitutersBeforeDefault
-              ++ defaultSubstituters
-              ++ nurAtticSubstituters
-            );
-            extra-trusted-public-keys = lib.unique ([nixCommunityKey nixosCudaKey] ++ nurAtticPublicKeys);
-            builders-use-substitutes = true;
-            auto-optimise-store = false;
-          };
+          settings =
+            mkNixSettings config
+            // {
+              auto-optimise-store = false;
+            };
 
           gc = {
             automatic = lib.mkDefault true;
@@ -86,19 +103,8 @@ in {
       config = {
         nix = {
           channel.enable = false;
-          settings = {
-            experimental-features = [
-              "nix-command"
-              "flakes"
-            ];
-            substituters = lib.mkForce (
-              config.mzwing.nix.extraSubstitutersBeforeDefault
-              ++ nurAtticSubstituters
-              ++ defaultSubstituters
-            );
-            extra-trusted-public-keys = lib.unique ([nixCommunityKey nixosCudaKey] ++ nurAtticPublicKeys);
-            builders-use-substitutes = true;
-          };
+
+          settings = mkNixSettings config;
 
           gc = {
             automatic = lib.mkDefault true;

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Work out which realised outputs go to Cachix, and which derivations reconciliation should treat as this run's active set.
-# Only final outputs are published: built host configuration paths plus the devenv shells of the systems that succeeded. Everything else built on the builders stays in the private store cache.
+# Which realised outputs go to Cachix, and which derivations count as this run's active set.
+# Only final outputs are published: host configurations plus the devenv shells that succeeded. Everything else stays in the private cache.
 set -euo pipefail
 
 jq -r '.[].drvPath' <<<"${TARGETS}" | sort --unique >/tmp/active-drvs.txt

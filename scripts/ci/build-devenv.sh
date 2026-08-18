@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Build the root devenv shell for every scheduled system.
-# `devenv build` has no --keep-going, so try every system and report all failures at the end rather than stopping at the first.
+# Build the root devenv shell for every scheduled system. `devenv build` has no --keep-going, so collect failures and report at the end.
 set -euo pipefail
 
 printf '### Built root devenv systems\n\n' >>"${GITHUB_STEP_SUMMARY}"
