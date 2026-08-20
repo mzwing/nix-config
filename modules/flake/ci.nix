@@ -6,12 +6,13 @@
   lib,
   ...
 }: let
-  # Hosts with their local-only features stripped — see meta.ci.mode.
-  ciConfigurations = {
+  # Hosts with local-only features stripped — see meta.ci.mode.
+  variants = {
     darwin = lib.mapAttrs (_: config.mzwing.lib.mkDarwinCIHost) config.mzwing.hosts.darwin;
     nixos = lib.mapAttrs (_: config.mzwing.lib.mkNixosCIHost) config.mzwing.hosts.nixos;
   };
 
+  # Also exported so ci/outputs.nix / ci/drvs.nix can stay as thin shims for the external actions' default inputs.
   # The one place that knows where each platform keeps its toplevel derivation.
   toplevelOf = {
     darwin = cfg: cfg.system;
@@ -29,13 +30,13 @@
         outputPath = drv.outPath;
       }
     )
-    ciConfigurations.${platform};
+    variants.${platform};
 
   targets = targetsFor "darwin" ++ targetsFor "nixos";
 in {
   perSystem = {pkgs, ...}: {
     legacyPackages.ci = {
-      inherit targets;
+      inherit variants targets;
       inherit (config) systems;
     };
 
