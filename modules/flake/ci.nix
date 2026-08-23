@@ -12,32 +12,38 @@
     nixos = lib.mapAttrs (_: config.mzwing.lib.mkNixosCIHost) config.mzwing.hosts.nixos;
   };
 
-  # Also exported so ci/outputs.nix / ci/drvs.nix can stay as thin shims for the external actions' default inputs.
   # The one place that knows where each platform keeps its toplevel derivation.
   toplevelOf = {
     darwin = cfg: cfg.system;
     nixos = cfg: cfg.config.system.build.toplevel;
   };
 
-  targetsFor = platform:
-    lib.mapAttrsToList (
-      name: cfg: let
-        drv = toplevelOf.${platform} cfg;
-      in {
-        name = "${platform}.${name}";
-        system = cfg.pkgs.stdenv.hostPlatform.system;
-        drvPath = drv.drvPath;
-        outputPath = drv.outPath;
-      }
-    )
+  entriesFor = platform:
+    lib.mapAttrsToList (name: cfg: {
+      name = "${platform}.${name}";
+      system = cfg.pkgs.stdenv.hostPlatform.system;
+      drv = toplevelOf.${platform} cfg;
+    })
     variants.${platform};
 
-  targets = targetsFor "darwin" ++ targetsFor "nixos";
+  entries = entriesFor "darwin" ++ entriesFor "nixos";
+
+  targets =
+    map (entry: {
+      inherit (entry) name system;
+      drvPath = entry.drv.drvPath;
+      outputPath = entry.drv.outPath;
+    })
+    entries;
 in {
   perSystem = {pkgs, ...}: {
     legacyPackages.ci = {
-      inherit variants targets;
+      inherit targets;
       inherit (config) systems;
+
+      # The shims under ci/ read these, so they need no knowledge of the darwin/nixos split.
+      bySystem = lib.genAttrs config.systems (system: map (entry: entry.drv) (lib.filter (entry: entry.system == system) entries));
+      drvs = map (entry: entry.drv.drvPath) entries;
     };
 
     # Forces every host to evaluate, which `nix flake check` otherwise never does for darwinConfigurations.
