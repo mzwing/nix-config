@@ -17,8 +17,9 @@
       # `structure = "link"` needs a literal path under $HOME, but upstream's dests are shell expressions and its own extraction only handles the `${VAR:-$HOME/...}` form, not pi's plain `$HOME/...`.
       staticDest = name: let
         dest = agentLib.defaultTargets.${name}.dest;
-        expanded = builtins.match "\\$\\{[^}]*:-\\$HOME/([^}]+)\\}(.*)" dest;
-        plain = builtins.match "\\$HOME/(.*)" dest;
+        # Brackets rather than backslashes: builtins.match is POSIX ERE, where \{ and \} are undefined — glibc rejects them outright, so \$\{...\} evaluated on macOS but blew up on Linux.
+        expanded = builtins.match "[$][{][^}]*:-[$]HOME/([^}]+)[}](.*)" dest;
+        plain = builtins.match "[$]HOME/(.*)" dest;
       in
         if expanded != null
         then (builtins.elemAt expanded 0) + (builtins.elemAt expanded 1)

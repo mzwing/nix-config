@@ -5,7 +5,11 @@ set -euo pipefail
 # Same contents whichever system you read it from; this job runs on x86_64-linux.
 CI_ATTR='.#legacyPackages.x86_64-linux.ci'
 
-printf 'targets=%s\n' "$(nix eval --json "${CI_ATTR}.targets")" >>"${GITHUB_OUTPUT}"
+# Assign before printing: inside `printf ... "$(nix eval)"` a failed eval still exits 0, so the step goes green with an empty output and the failure only surfaces later as a JSON parse error in plan-builds.
+targets="$(nix eval --json "${CI_ATTR}.targets")"
+systems="$(nix eval --json "${CI_ATTR}.systems")"
+
+printf 'targets=%s\n' "${targets}" >>"${GITHUB_OUTPUT}"
 
 devenv_outputs='{}'
 while IFS= read -r system; do
@@ -17,5 +21,5 @@ while IFS= read -r system; do
   packages="$(devenv eval -s "${system}" packages | jq -c .packages)"
   devenv_outputs="$(jq -c --arg system "${system}" --argjson packages "${packages}" \
     '. + {($system): $packages}' <<<"${devenv_outputs}")"
-done < <(nix eval --json "${CI_ATTR}.systems" | jq -r '.[]')
+done < <(jq -r '.[]' <<<"${systems}")
 printf 'devenv_outputs=%s\n' "${devenv_outputs}" >>"${GITHUB_OUTPUT}"
