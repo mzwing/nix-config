@@ -18,8 +18,7 @@
     value = featureByName name;
   };
 
-  # genericClosure dedupes and terminates on cycles. Sorted by name afterwards so module order depends only on which features are selected — otherwise moving one into a profile would reshuffle every list-valued option.
-  # Use mkBefore/mkAfter if you actually need ordering.
+  # genericClosure dedupes and terminates on cycles. Sorted by name so module order does not depend on where a feature was selected from; use mkBefore/mkAfter if you need ordering.
   closeOver = names:
     builtins.sort (a: b: a.name < b.name)
     (map (entry: entry.value) (builtins.genericClosure {
@@ -27,7 +26,7 @@
       operator = entry: map item entry.value.requires;
     }));
 
-  # Without this a feature that does not apply to the host's platform resolves to a null module and silently vanishes.
+  # Otherwise a feature that does not apply to the platform silently resolves to a null module.
   checkFeatures = platform: host: features: let
     problemsFor = feature: let
       declared = feature.meta.platforms;

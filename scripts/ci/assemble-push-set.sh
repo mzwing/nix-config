@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Which realised outputs go to Cachix, and which derivations count as this run's active set.
-# Only final outputs are published: host configurations plus the devenv shells that succeeded. Everything else stays in the private cache.
+# Only final outputs are published — host configurations and the devenv shells that succeeded; the rest stays private.
 set -euo pipefail
 
 jq -r '.[].drvPath' <<<"${TARGETS}" | sort --unique >/tmp/active-drvs.txt

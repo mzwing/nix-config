@@ -1,6 +1,6 @@
 # Output path of devenv's patched nixpkgs, without realising it:
 #   DEVENV_SYSTEM=x86_64-linux nix eval --raw --impure --file ci/devenv-patched-src.nix
-# That tree is marked allowSubstitutes = false, so nix tries to build it locally and fails for foreign systems. The workflows `nix copy` this path from devenv.cachix.org first.
+# allowSubstitutes = false there, so nix builds it locally and fails for foreign systems; the workflows `nix copy` it from devenv.cachix.org first.
 # Mirrors cachix/devenv-nixpkgs' default.nix.
 let
   system = builtins.getEnv "DEVENV_SYSTEM";

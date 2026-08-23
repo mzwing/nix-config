@@ -1,4 +1,4 @@
-# The flake outputs describing my machines. Features that provide a module are also re-exported individually, for reuse from outside.
+# The flake outputs: my machines, plus every feature module re-exported for reuse.
 {
   config,
   lib,

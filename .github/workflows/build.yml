@@ -43,7 +43,7 @@ jobs:
         extra-trusted-public-keys: devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
         install-devenv: 'true'
 
-    # One cache family (nix-ci-) shared with update.yml and tests.yml, so this restores the warm cache from the daily update run. The key must hash every job's lock inputs and use the same gc size.
+    # One cache family (nix-ci-) shared with update.yml and tests.yml. The key must hash every job's lock inputs and use the same gc size.
     # The action also clears stale root-owned store lock files, which break the post-run tar.
     - name: Restore Nix store
       uses: mzwing/nix-actions/nix/restore-store@master
@@ -80,7 +80,7 @@ jobs:
     - name: Check out repository
       uses: actions/checkout@v7
 
-    # Cachix is pull-only here: the coordinator pushes the final outputs, and intermediate paths go to the builder store cache instead. Also keeps the Cachix write token off the unsandboxed macOS builders.
+    # Cachix is pull-only here: the coordinator pushes the final outputs, and the write token stays off the unsandboxed macOS builders.
     - name: Set up Nix
       uses: mzwing/nix-actions/nix/setup@master
       with:
@@ -95,7 +95,7 @@ jobs:
         hostname: ${{ env.BUILDER_PREFIX }}-${{ matrix.id }}
         args: --ssh
 
-    # macOS only: joining with DNS accepted replaces the system DNS with quad100 and kills public internet, so the action resets it to DHCP. That also drops MagicDNS, hence the /etc/hosts pin; Linux builders use split DNS.
+    # macOS only: accepting Tailscale DNS kills public internet, so the action resets to DHCP — which drops MagicDNS, hence the /etc/hosts pin. Linux builders use split DNS.
     - name: Resolve builder store cache address
       if: endsWith(matrix.system, '-darwin')
       uses: mzwing/nix-actions/tailnet/pin-peer@master
@@ -151,7 +151,7 @@ jobs:
         nix: false
         paths: /nix/attic-data
 
-    # A surviving checkpoint always postdates the newest finalized generation, and every successful final save purges the checkpoint family — so if one exists, adopt it over the finalized restore.
+    # A surviving checkpoint always postdates the newest finalized generation, so adopt it over the finalized restore.
     - name: Restore checkpoint builder store cache
       uses: nix-community/cache-nix-action/restore@v7
       with:
@@ -178,8 +178,8 @@ jobs:
       with:
         cache-host: ${{ env.CACHE_HOST }}
 
-    # Checkpoint rounds: the coordinator signals after its Cachix push, but a cold rebuild can run for hours first. Each round stages a snapshot on signal OR timeout, so even a cancelled run leaves a warm generation.
-    # Three rounds rather than six: six waited 345 minutes total and the job was cancelled before Finalize could hand over a generation. Each save also re-uploads a multi-GiB generation into a 10 GiB quota.
+    # Each round snapshots on the coordinator's signal or on timeout, so even a cancelled run leaves a warm generation.
+    # Three rounds, not six: six waited 345 minutes and the job was cancelled before Finalize ran, and each save re-uploads a multi-GiB generation into a 10 GiB quota.
     - name: Wait for checkpoint (round 1)
       id: attic-checkpoint-1
       uses: mzwing/nix-actions/store-cache/checkpoint@master
@@ -252,7 +252,7 @@ jobs:
         purge-last-accessed: 0
         purge-primary-key: never
 
-    # The deadline covers the coordinator's remaining work after the last round and still leaves room inside the job for the save below; the 390-minute default outlived the job itself.
+    # Covers the coordinator's remaining work and still leaves room for the save below; the 390-minute default outlived the job itself.
     - name: Finalize Attic
       id: attic
       uses: mzwing/nix-actions/store-cache/finalize@master
@@ -286,7 +286,7 @@ jobs:
     needs: config
     if: needs.config.outputs.has_builds == 'true'
     runs-on: ubuntu-latest
-    # Below the runner maximum: the build steps budget themselves, leaving room for the Cachix push and reconciliation instead of being cancelled with the job.
+    # Below the runner maximum, so the Cachix push and reconciliation still run instead of being cancelled with the job.
     timeout-minutes: 350
     steps:
     - name: Check out repository
@@ -342,7 +342,7 @@ jobs:
       with:
         targets: ${{ needs.config.outputs.targets }}
 
-    # The job log is size-capped and silently truncates a long build; the artifact is not, so a post-mortem has the whole thing.
+    # The job log truncates a long build; the artifact does not.
     - name: Upload build log
       if: '!cancelled()'
       uses: actions/upload-artifact@v7

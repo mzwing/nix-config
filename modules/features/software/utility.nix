@@ -45,7 +45,6 @@ in {
         ++ (with pkgs; [
           kdePackages.ark
         ]);
-      programs.nano.enable = true;
     };
 
     home = {

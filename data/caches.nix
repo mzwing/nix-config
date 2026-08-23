@@ -1,5 +1,5 @@
 # Substituters and their public keys. Plain data, outside modules/ because import-tree would treat it as a flake-parts module.
-# flake.nix's nixConfig repeats some of this and cannot import it (Nix wants a literal there), so keep them in step by hand.
+# flake.nix's nixConfig repeats some of this and cannot import it; keep them in step by hand.
 # features/core/nix.nix assembles the layers as mirror ++ default ++ extra ++ nur.
 {
   # cache.nixos.org must stay listed: core/nix.nix applies this with mkForce, which replaces the module default instead of adding to it.
@@ -8,8 +8,7 @@
     "https://nix-community.cachix.org"
   ];
 
-  # No cache.nixos.org key on purpose. These feed extra-trusted-public-keys, which appends to trusted-public-keys, and that default already has it.
-  # Don't "fix" the asymmetry by assigning trusted-public-keys directly — that one replaces, and you'd lose the main cache's key.
+  # No cache.nixos.org key on purpose: these feed extra-trusted-public-keys, which appends. Assigning trusted-public-keys directly would replace the default and lose it.
   defaultPublicKeys = [
     "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
   ];

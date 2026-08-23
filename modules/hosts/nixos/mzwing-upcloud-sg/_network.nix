@@ -1,4 +1,4 @@
-# Network layout for mzwing-upcloud-sg. Interface names are pinned to this server's MAC addresses. The .network files are secrets; agenix drops them into /etc/systemd/network at activation.
+# Network layout, interfaces pinned by MAC. The .network files are secrets, dropped into /etc/systemd/network by agenix at activation.
 {
   config,
   lib,

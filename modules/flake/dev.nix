@@ -17,6 +17,17 @@
       meta.description = "Install NixOS hosts with nixos-anywhere.";
     };
 
+    # Paths resolve from the working directory, so run it from the repo root — `just skills-update` does.
+    apps.skills-sources-lock = {
+      type = "app";
+      program = "${inputs.agent-skills.lib.agent-skills.mkSourceLockProgram {
+        inherit pkgs;
+        manifestsDir = "data/skills/sources";
+        lockFile = "data/skills/sources.lock.json";
+      }}/bin/skills-sources-lock";
+      meta.description = "Re-resolve data/skills/sources/*.nix into data/skills/sources.lock.json.";
+    };
+
     formatter = pkgs.writeShellApplication {
       name = "nix-config-format";
       runtimeInputs = [pkgs.alejandra];

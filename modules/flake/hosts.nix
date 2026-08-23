@@ -1,4 +1,4 @@
-# Assembling a host into a nix-darwin / NixOS system. One builder for both: everything that differs lives in `platforms` below.
+# Assembling a host into nix-darwin / NixOS. One builder for both; the differences live in `platforms`.
 {
   config,
   inputs,

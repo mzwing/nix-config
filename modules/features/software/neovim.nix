@@ -6,12 +6,17 @@
     ];
 
     # TODO: Configure neovim completely.
-    home = {pkgs, ...}: let
+    home = {
+      lib,
+      pkgs,
+      ...
+    }: let
       typenix = pkgs.nur.repos.mzwing.typenix;
     in {
       programs.neovim = {
         enable = true;
-        defaultEditor = true;
+        # Only a default; software/editor makes the real choice.
+        defaultEditor = lib.mkDefault true;
         viAlias = true;
         vimAlias = true;
         vimdiffAlias = true;

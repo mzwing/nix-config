@@ -1,4 +1,4 @@
-# agenix rules, derived from registry.nix. Pure builtins only: the agenix CLI evaluates this standalone, without nixpkgs lib.
+# agenix rules from registry.nix. Pure builtins only: the agenix CLI evaluates this without nixpkgs lib.
 let
   registry = import ./registry.nix;
 in

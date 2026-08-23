@@ -12,6 +12,15 @@ in {
       "nixos"
     ];
 
+    # What an interactive session is expected to have on hand. ghostty and java only materialise on desktops.
+    requires = [
+      "software/fish"
+      "software/ghostty"
+      "software/git"
+      "software/gpg"
+      "software/java"
+    ];
+
     darwin = {pkgs, ...}: {
       environment.systemPackages =
         systemShellPackages pkgs

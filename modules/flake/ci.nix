@@ -1,5 +1,5 @@
 # What CI builds and caches: nix eval --json .#legacyPackages.x86_64-linux.ci.targets
-# Under legacyPackages because `nix flake check` walks it without forcing its contents; a custom top-level output would just draw a warning.
+# Under legacyPackages because `nix flake check` walks it without forcing its contents.
 # Same value whichever system you read it from.
 {
   config,
@@ -46,8 +46,7 @@ in {
       drvs = map (entry: entry.drv.drvPath) entries;
     };
 
-    # Forces every host to evaluate, which `nix flake check` otherwise never does for darwinConfigurations.
-    # Context is discarded so this stays a text file rather than a build of every system.
+    # Forces every host to evaluate, which `nix flake check` skips for darwinConfigurations. Context is discarded so this stays a text file.
     checks.eval-all = pkgs.writeText "nix-config-eval-all" (
       lib.concatMapStrings
       (target: "${target.name} ${builtins.unsafeDiscardStringContext target.drvPath}\n")

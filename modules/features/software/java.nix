@@ -8,10 +8,12 @@ in {
     ];
 
     # This config is for running java programs like MC. If you want developing java programs, you should use devenv config in the `environments/java` .
+    # software/shell pulls it in on the servers too, where a whole GraalVM would be for nothing.
 
     darwin = {
       lib,
       pkgs,
+      type,
       ...
     }: let
       java = javaPackage pkgs;
@@ -40,22 +42,29 @@ in {
             ln -s "${java}/bin/java" "$out/Contents/MacOS/java"
             ln -s "${infoPlist}" "$out/Contents/Info.plist"
           '');
-    in {
-      system.activationScripts.extraActivation.text = let
-        ln = lib.getExe' pkgs.coreutils "ln";
-        mkdir = lib.getExe' pkgs.coreutils "mkdir";
-      in ''
-        echo "linking Java into place..." >&2
-        ${mkdir} -p "/Library/Java/JavaVirtualMachines"
-        ${ln} -sfnT "${javaBundle}" "/Library/Java/JavaVirtualMachines/nix-java.jdk"
-      '';
-    };
-
-    home = {pkgs, ...}: {
-      programs.java = {
-        enable = true;
-        package = javaPackage pkgs;
+    in
+      lib.mkIf (type == "desktop") {
+        system.activationScripts.extraActivation.text = let
+          ln = lib.getExe' pkgs.coreutils "ln";
+          mkdir = lib.getExe' pkgs.coreutils "mkdir";
+        in ''
+          echo "linking Java into place..." >&2
+          ${mkdir} -p "/Library/Java/JavaVirtualMachines"
+          ${ln} -sfnT "${javaBundle}" "/Library/Java/JavaVirtualMachines/nix-java.jdk"
+        '';
       };
-    };
+
+    home = {
+      lib,
+      pkgs,
+      type,
+      ...
+    }:
+      lib.mkIf (type == "desktop") {
+        programs.java = {
+          enable = true;
+          package = javaPackage pkgs;
+        };
+      };
   };
 }

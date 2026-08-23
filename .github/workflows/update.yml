@@ -38,7 +38,7 @@ jobs:
           cachix-pull: 'false'
           install-devenv: 'true'
 
-      # One cache family (nix-ci-) shared with build.yml and tests.yml; every job restores the warm cache this run saves. The key must hash every job's lock inputs and use the same gc size.
+      # One cache family (nix-ci-) shared with build.yml and tests.yml. The key must hash every job's lock inputs and use the same gc size.
       - name: Restore Nix store
         uses: mzwing/nix-actions/nix/restore-store@master
         with:
@@ -53,11 +53,16 @@ jobs:
         shell: devenv shell bash -- -e {0}
         run: just up
 
+      # After the flake inputs, so the resolver matches the agent-skills revision this commit pins.
+      - name: Update skill sources
+        shell: devenv shell bash -- -e {0}
+        run: just skills-update
+
       - name: Commit and push changes
         id: commit
         uses: mzwing/nix-actions/git/commit-and-push@master
         with:
-          paths: devenv.lock flake.lock
+          paths: devenv.lock flake.lock data/skills/sources.lock.json
           message: "chore: update lockfile"
           trigger-workflow: build.yml
           github-token: ${{ github.token }}

@@ -1,8 +1,8 @@
 {
   description = "mzwing's nix config";
 
-  # Gets a brand-new machine onto the mirrors before any of the config below applies — see README's bootstrap section.
-  # Repeats data/caches.nix and features/network/china-mirrors.nix because Nix wants a literal here (`import`, and even `[a] ++ [b]`, are rejected as thunks). Keep in step by hand.
+  # Puts a brand-new machine on the mirrors before any of the config below applies.
+  # Duplicates data/caches.nix and features/network/china-mirrors.nix because Nix wants a literal here. Keep in step by hand.
   nixConfig = {
     substituters = [
       # "https://mirrors.cernet.edu.cn/nix-channels/store"
@@ -36,7 +36,7 @@
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
 
-    # One entry for both platforms: useGlobalPkgs = true means packages come from the system's nixpkgs, so this input's own follows barely matters.
+    # One entry for both platforms; useGlobalPkgs = true, so this input's own follows barely matters.
     home-manager = {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -55,6 +55,13 @@
     agenix = {
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Updating this moves the machinery, not the skills: those are pinned in data/skills/sources.lock.json.
+    agent-skills = {
+      url = "github:Kyure-A/agent-skills-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
     };
 
     flatpaks.url = "github:in-a-dil-emma/declarative-flatpak/latest";

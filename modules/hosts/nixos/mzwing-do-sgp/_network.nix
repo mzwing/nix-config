@@ -1,4 +1,4 @@
-# Network layout for mzwing-do-sgp. The .network files are secrets; agenix drops them into /etc/systemd/network at activation.
+# Network layout. The .network files are secrets, dropped into /etc/systemd/network by agenix at activation.
 {
   config,
   lib,

@@ -1,4 +1,4 @@
-# Schema for the feature/host registry. A feature is a named capability contributing up to three module fragments; a host picks features by name.
+# Schema for the feature/host registry: a feature contributes up to three module fragments, a host picks features by name.
 {lib, ...}: let
   inherit (lib) mkOption types;
 

@@ -1,0 +1,74 @@
+{
+  "manifests": {
+    "so1ve-skills": {
+      "filter": {
+        "maxDepth": 1,
+        "nameRegex": null
+      },
+      "idPrefix": null,
+      "pin": {
+        "at": null,
+        "branch": "main",
+        "owner": "so1ve",
+        "preReleases": false,
+        "releasePrefix": null,
+        "repo": "nix-config",
+        "submodules": false,
+        "type": "github",
+        "versionUpperBound": null
+      },
+      "subdir": "dotfiles/agents/skills"
+    },
+    "vercel-skills": {
+      "filter": {
+        "maxDepth": 1,
+        "nameRegex": null
+      },
+      "idPrefix": null,
+      "pin": {
+        "at": null,
+        "branch": "main",
+        "owner": "vercel-labs",
+        "preReleases": false,
+        "releasePrefix": null,
+        "repo": "skills",
+        "submodules": false,
+        "type": "github",
+        "versionUpperBound": null
+      },
+      "subdir": "skills"
+    }
+  },
+  "npins": {
+    "pins": {
+      "so1ve-skills": {
+        "branch": "main",
+        "hash": "sha256-ftnUkS861kZkRZ+UM+ErezxdFb7XJj7i/SDudKbI7Pc=",
+        "repository": {
+          "owner": "so1ve",
+          "repo": "nix-config",
+          "type": "GitHub"
+        },
+        "revision": "801e042b9fcdc83ad97362d46931704b50faef7e",
+        "submodules": false,
+        "type": "Git",
+        "url": "https://github.com/so1ve/nix-config/archive/801e042b9fcdc83ad97362d46931704b50faef7e.tar.gz"
+      },
+      "vercel-skills": {
+        "branch": "main",
+        "hash": "sha256-qD+gGPYjgbArf1Nz5rtlJVCS/2KNTuspag/B079l014=",
+        "repository": {
+          "owner": "vercel-labs",
+          "repo": "skills",
+          "type": "GitHub"
+        },
+        "revision": "435076e78988e1e6ec40d00b0b1d76bdbbc5419a",
+        "submodules": false,
+        "type": "Git",
+        "url": "https://github.com/vercel-labs/skills/archive/435076e78988e1e6ec40d00b0b1d76bdbbc5419a.tar.gz"
+      }
+    },
+    "version": 8
+  },
+  "schemaVersion": 1
+}

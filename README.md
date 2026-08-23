@@ -9,7 +9,7 @@ Reference welcome, but my config is not intended to be used as a template for yo
 ## Structure
 
 - `ci` - contains ci related nix file
-- `data/` - contains plain data shared across the config
+- `data/` - contains plain data shared across the config, including the pinned agent skill sources under `data/skills/`
 - `environments/` - contains examples of [devenv](https://devenv.sh) config for different languages and tools
 - `modules/` - contains nix modules for system configuration, including nix-darwin and NixOS
 - `scripts/` - contains scripts for ci / proxy
@@ -26,6 +26,15 @@ just # list all available shortcut commands
 just darwin # to build and apply nix-darwin config
 just typecheck # to type check the nix config
 ```
+
+## Agent skills
+
+Skills are declarative, via [agent-skills-nix](https://github.com/Kyure-A/agent-skills-nix).
+
+- `data/skills/sources/*.nix` — one manifest per upstream repo. The filename is the source name.
+- `data/skills/sources.lock.json` — the resolved revisions. Evaluation fails if it disagrees with the manifests.
+
+Use `just skills-update` to update the skills lock file.
 
 ## CI cache
 

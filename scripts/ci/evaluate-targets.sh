@@ -9,7 +9,7 @@ printf 'targets=%s\n' "$(nix eval --json "${CI_ATTR}.targets")" >>"${GITHUB_OUTP
 
 devenv_outputs='{}'
 while IFS= read -r system; do
-  # devenv-nixpkgs-patched sets allowSubstitutes = false, so nix tries to build it locally, which cannot work for a foreign system. Pre-seed it.
+  # devenv-nixpkgs-patched sets allowSubstitutes = false, so pre-seed it — a foreign system cannot build it locally.
   patched_src="$(DEVENV_SYSTEM="${system}" nix eval --raw --impure --file ci/devenv-patched-src.nix)"
   if ! nix copy --from https://devenv.cachix.org "${patched_src}"; then
     printf '::warning::Could not pre-seed %s from devenv.cachix.org; foreign-system devenv evaluation may fail.\n' "${patched_src}"

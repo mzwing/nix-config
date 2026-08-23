@@ -1,5 +1,5 @@
 # Route package downloads through Chinese mirrors.
-# flake.nix's nixConfig repeats the substituter list — that copy is what puts a brand-new machine on the mirrors before any of this applies. Nix wants a literal there, so change both together.
+# flake.nix's nixConfig repeats this list for bootstrap; change both together.
 let
   nixMirrorSubstituters = [
     # "https://mirrors.cernet.edu.cn/nix-channels/store"

@@ -1,4 +1,4 @@
-# Every age secret: where it lives and who can decrypt it. secrets.nix derives the agenix rules from this, and modules get the paths via the `secrets` specialArg.
+# Every age secret: where it lives and who can decrypt it. secrets.nix derives the agenix rules; modules get paths via the `secrets` specialArg.
 # Names carry no .age suffix; it is added where needed.
 let
   identities = import ../data/identities.nix;

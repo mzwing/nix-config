@@ -22,7 +22,7 @@
         inherit username homeDirectory;
         stateVersion = "26.11";
 
-        # Keep interactive shells consistently UTF-8 and opt out of noisy tool telemetry by default.
+        # UTF-8 shells, and no telemetry.
         sessionVariables = {
           LANG = "zh_CN.UTF-8";
           LANGUAGE = "zh_CN";

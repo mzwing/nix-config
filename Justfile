@@ -1,7 +1,7 @@
 darwin_host := "mzwing-MacBook-Pro"
 repo_dir := justfile_directory()
 
-# "." resolves to git+file: and sees only tracked files. "path:<dir>" copies the whole working directory instead, which hard-fails on a Unix socket like .codegraph/daemon.sock.
+# "." is git+file: and sees only tracked files; "path:<dir>" would copy the whole tree and choke on .codegraph/daemon.sock.
 flake_ref := "."
 
 default:
@@ -107,6 +107,11 @@ typecheck:
 [group('nix')]
 show:
   nix flake show --no-write-lock-file {{flake_ref}}
+
+# Re-resolve the pinned skill sources; a rebuild never does.
+[group('nix')]
+skills-update:
+  nix run {{flake_ref}}#skills-sources-lock
 
 [group('nix')]
 up:
