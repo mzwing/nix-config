@@ -34,6 +34,9 @@ in {
       programs.ssh = {
         enable = true;
 
+        # Home Manager's own `Host *` block is on its way out and warns if left on. Everything it set was already ssh's own default, so there is nothing to carry over.
+        enableDefaultConfig = false;
+
         # Rendered as the first line, ahead of every Host block — the only place OrbStack's include works.
         includes =
           lib.optional pkgs.stdenv.hostPlatform.isDarwin "${config.home.homeDirectory}/.orbstack/ssh/config"
