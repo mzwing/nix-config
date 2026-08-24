@@ -21,7 +21,6 @@
           then pkgs.pinentry_mac
           else pkgs.pinentry-curses;
         enableFishIntegration = true;
-        enableSshSupport = true;
       };
     };
   };

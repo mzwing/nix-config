@@ -15,6 +15,7 @@
       "software/ai"
       "software/android"
       "software/android-sdk"
+      "software/bitwarden"
       "software/browser"
       "software/communication"
       "software/creative"

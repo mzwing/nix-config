@@ -19,6 +19,7 @@ in {
       "software/git"
       "software/gpg"
       "software/java"
+      "software/ssh"
     ];
 
     darwin = {pkgs, ...}: {

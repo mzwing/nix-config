@@ -27,7 +27,7 @@
           "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/main/packages/pi-permission-auto-review/schemas/config.schema.json";
           provider = "openai-codex";
           reasoning = "medium";
-          additionalPolicy = "At any time, any execution that would result in git commit and git push operations is strictly prohibited! (Please note that this rule only prohibits these two operations. Read-only viewing is not included in this list and should be allowed in the correct context. git add can also be executed under reasonable circumstances)";
+          additionalPolicy = "At any time, any execution that would result in `git commit` and `git push` operations is strictly prohibited! (Please note that this rule only prohibits these two operations. Read-only viewing is not included in this list and should be allowed in the correct context. `git add` can also be executed under reasonable circumstances)";
         };
 
         pi-permission-system = {
@@ -71,9 +71,9 @@
         inputs.agenix.homeManagerModules.default
       ];
 
-      # The same key for the user: clients cannot read the service's copy.
+      # The same identity the system module uses, spelled again because Home Manager is a separate agenix instance — clients cannot read the service's copy of the secret.
       age.identityPaths = [
-        "${config.home.homeDirectory}/.ssh/server_key"
+        "${config.home.homeDirectory}/.ssh/agenix"
       ];
       age.secrets."cliproxyapiplus-api-key".file = secrets."cliproxyapiplus/api-key";
 
@@ -106,7 +106,7 @@
           context = "
             DO NOT use absolute paths when editing (except /tmp or /dev/null), since it will break the permission-system's auto review ability and fall back to let user decide. Use relative paths or workspace-relative paths instead.
 
-            NEVER try to git commit or push!
+            NEVER try to `git commit` or `git push`!
 
             NEVER try to rebuild the whole system!
 

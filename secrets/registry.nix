@@ -3,7 +3,7 @@
 let
   identities = import ../data/identities.nix;
 
-  inherit (identities.users) mzwing;
+  inherit (identities.age) mzwing;
 
   # I can decrypt everything so I can rekey; the host decrypts its own at activation time.
   ownedBy = host: [
@@ -11,6 +11,7 @@ let
     identities.hosts.${host}
   ];
 in {
+  # One recipient covers both readers on the Mac: root at activation and Home Manager as me both point at ~/.ssh/agenix.
   "cliproxyapiplus/api-key" = {
     file = ./cliproxyapiplus/api-key.age;
     recipients = [mzwing];

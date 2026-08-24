@@ -33,9 +33,6 @@ in {
           "stats"
           "easydict"
         ];
-        masApps = {
-          "Bitwarden" = 1352778147;
-        };
       };
     };
 

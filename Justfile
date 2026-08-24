@@ -4,6 +4,9 @@ repo_dir := justfile_directory()
 # "." is git+file: and sees only tracked files; "path:<dir>" would copy the whole tree and choke on .codegraph/daemon.sock.
 flake_ref := "."
 
+# agenix only looks for ~/.ssh/id_rsa and ~/.ssh/id_ed25519 on its own, and this is neither: it decrypts secrets and logs into nothing.
+age_identity := "~/.ssh/agenix"
+
 default:
   @just --list
 
@@ -90,6 +93,22 @@ nixos-anywhere host target no_reboot='':
     {{no_reboot}} \
     --build-on remote \
     --generate-hardware-config nixos-generate-config {{repo_dir}}/modules/hosts/nixos/{{host}}/_hardware.nix
+
+# Names as registry.nix spells them, without the .age suffix that `secret` adds back.
+[group('secrets')]
+secrets:
+  @nix --accept-flake-config --quiet eval --raw --file {{repo_dir}}/secrets/registry.nix \
+    --apply 'r: (builtins.concatStringsSep "\n" (builtins.attrNames r)) + "\n"'
+
+# Edit one secret in $EDITOR; saving re-encrypts it to whoever registry.nix says may read it.
+[group('secrets')]
+secret name:
+  cd {{repo_dir}}/secrets && agenix -e {{name}}.age -i {{age_identity}}
+
+# Re-encrypt every secret. Run after changing recipients or adding a host.
+[group('secrets')]
+rekey:
+  cd {{repo_dir}}/secrets && agenix --rekey -i {{age_identity}}
 
 [group('nix')]
 flake-check:

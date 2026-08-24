@@ -65,7 +65,8 @@ in {
         inputs.nur.repos.mzwing.modules.darwin.cliproxyapiplus
       ];
 
-      age.identityPaths = ["${config.users.users.${username}.home}/.ssh/server_key"];
+      # Not the agenix default (/etc/ssh/ssh_host_*): macOS makes those outside nix and may replace them. Root can read this one whatever its mode, and it decrypts secrets and nothing else.
+      age.identityPaths = ["${config.users.users.${username}.home}/.ssh/agenix"];
       age.secrets = {
         cliproxyapiplus-api-key = {
           file = secrets."cliproxyapiplus/api-key";
@@ -92,14 +93,13 @@ in {
       inputs,
       pkgs,
       secrets,
-      username,
       ...
     }: {
       imports = [
         inputs.nur.repos.mzwing.modules.nixos.cliproxyapiplus
       ];
 
-      age.identityPaths = ["${config.users.users.${username}.home}/.ssh/server_key"];
+      # Unlike darwin: nix owns the host keys here, so the agenix default holds. A NixOS host selecting this feature has to be added to the recipients in secrets/registry.nix.
       age.secrets = {
         cliproxyapiplus-api-key = {
           file = secrets."cliproxyapiplus/api-key";
