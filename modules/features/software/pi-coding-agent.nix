@@ -6,13 +6,15 @@
       "nixos"
     ];
 
-    # The provider below needs its key and port.
+    # The provider below points at that service.
     requires = ["software/cliproxyapiplus"];
 
     home = {
       config,
+      inputs,
       lib,
       pkgs,
+      secrets,
       ...
     }: let
       endpoint = import ../../../data/cliproxyapiplus.nix;
@@ -65,6 +67,16 @@
         };
       };
     in {
+      imports = [
+        inputs.agenix.homeManagerModules.default
+      ];
+
+      # The same key for the user: clients cannot read the service's copy.
+      age.identityPaths = [
+        "${config.home.homeDirectory}/.ssh/server_key"
+      ];
+      age.secrets."cliproxyapiplus-api-key".file = secrets."cliproxyapiplus/api-key";
+
       # No Home Manager option for plugin settings, so link the files. Editing them inside pi replaces the link, and the next activation backs that up as `config.json..bak` and relinks.
       home.file =
         lib.mapAttrs' (

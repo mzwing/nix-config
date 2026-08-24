@@ -1,8 +1,21 @@
-# The local CLI proxy: the service, plus its API key for clients like software/pi-coding-agent.
+# The local CLI proxy: the service and its plugins.
 let
   endpoint = import ../../../data/cliproxyapiplus.nix;
 
-  cliproxyapiplusService = {
+  # Copies, not symlinks: the plugin scan skips anything that is not a regular file.
+  pluginsDir = pkgs:
+    pkgs.runCommandLocal "cliproxyapiplus-plugins" {
+      plugins = with pkgs.nur.repos.mzwing; [
+        cpa-plugin-antigravity-coding-filter
+      ];
+    } ''
+      mkdir -p "$out"
+      for plugin in $plugins; do
+        install -m444 -t "$out" "$plugin"/lib/cliproxyapiplus/plugins/*
+      done
+    '';
+
+  cliproxyapiplusService = pkgs: {
     enable = true;
     settings = {
       inherit (endpoint) host port;
@@ -16,6 +29,20 @@ let
         allow-remote = false;
         disable-control-panel = false;
       };
+
+      # A store path, so the plugin set rolls back with the generation. The panel's plugin store cannot write there.
+      plugins = {
+        enabled = true;
+        dir = "${pluginsDir pkgs}";
+
+        configs.antigravity-coding-filter = {
+          enabled = true;
+          priority = 1;
+          # "block" would 403 my own clients instead.
+          mode = "rewrite";
+          use_default_keywords = true;
+        };
+      };
     };
   };
 in {
@@ -28,6 +55,7 @@ in {
     darwin = {
       config,
       inputs,
+      pkgs,
       secrets,
       username,
       ...
@@ -37,7 +65,6 @@ in {
         inputs.nur.repos.mzwing.modules.darwin.cliproxyapiplus
       ];
 
-      # Same recipients as the Home Manager copy, so root decrypts with the user's key.
       age.identityPaths = ["${config.users.users.${username}.home}/.ssh/server_key"];
       age.secrets = {
         cliproxyapiplus-api-key = {
@@ -53,7 +80,7 @@ in {
       };
 
       services.cliproxyapiplus =
-        cliproxyapiplusService
+        cliproxyapiplusService pkgs
         // {
           apiKeysPaths = [config.age.secrets.cliproxyapiplus-api-key.path];
           remoteSecretKeyPath = config.age.secrets.cliproxyapiplus-remote-secret-key.path;
@@ -63,6 +90,7 @@ in {
     nixos = {
       config,
       inputs,
+      pkgs,
       secrets,
       username,
       ...
@@ -86,28 +114,11 @@ in {
       };
 
       services.cliproxyapiplus =
-        cliproxyapiplusService
+        cliproxyapiplusService pkgs
         // {
           apiKeysPaths = [config.age.secrets.cliproxyapiplus-api-key.path];
           remoteSecretKeyPath = config.age.secrets.cliproxyapiplus-remote-secret-key.path;
         };
-    };
-
-    # The same key for the user: clients cannot read the service's copy.
-    home = {
-      config,
-      inputs,
-      secrets,
-      ...
-    }: {
-      imports = [
-        inputs.agenix.homeManagerModules.default
-      ];
-
-      age.identityPaths = [
-        "${config.home.homeDirectory}/.ssh/server_key"
-      ];
-      age.secrets."cliproxyapiplus-api-key".file = secrets."cliproxyapiplus/api-key";
     };
   };
 }
