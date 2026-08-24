@@ -13,6 +13,6 @@
   };
 
   enterTest = ''
-    bun --version
+    node --version
   '';
 }
