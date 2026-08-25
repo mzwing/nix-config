@@ -53,9 +53,11 @@ in {
       "nixos"
     ];
 
+    # Both set nixpkgs.*, and nothing should configure nixpkgs without its overlays.
+    requires = ["core/overlays"];
+
     darwin = {
       config,
-      inputs,
       lib,
       pkgs,
       system,
@@ -86,14 +88,12 @@ in {
             allowUnfree = true;
             android_sdk.accept_license = true;
           };
-          overlays = [inputs.nur.overlays.default];
         };
       };
     };
 
     nixos = {
       config,
-      inputs,
       lib,
       system,
       ...
@@ -116,7 +116,6 @@ in {
         nixpkgs = {
           hostPlatform = lib.mkDefault system;
           config.allowUnfree = true;
-          overlays = [inputs.nur.overlays.default];
         };
 
         system.stateVersion = "26.11";
