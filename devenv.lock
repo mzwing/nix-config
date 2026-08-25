@@ -46,11 +46,11 @@
     "devenv": {
       "locked": {
         "dir": "src/modules",
-        "lastModified": 1787540378,
-        "narHash": "sha256-OqCfKD0VGEoH98oEOlibYmUUr3hALG3NBTOrsjHPRYA=",
+        "lastModified": 1787602541,
+        "narHash": "sha256-5j9Gvd2ulF6xiMALjwNl2JISzbjZAI+otYE2W+v4bgQ=",
         "owner": "cachix",
         "repo": "devenv",
-        "rev": "ffb790fa8de10911b88c3114f35917a26759874a",
+        "rev": "4352c84d4dfbf26e7ad221378addde7920fc485b",
         "type": "github"
       },
       "original": {
@@ -162,11 +162,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1787578428,
-        "narHash": "sha256-/BWUoZfaBU0HLxhVMiLIXLLyeqcw/wYDvUS5Wrdr+AA=",
+        "lastModified": 1787665585,
+        "narHash": "sha256-PPEmLH6YQZalOlwmJFdBcVGsLLOWnn4HkmEBozrVcBM=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "bf8491d992430afd51b24630b966fe36fe107186",
+        "rev": "8f129d922546a9a60c93321d833b9f15be7dd21f",
         "type": "github"
       },
       "original": {
