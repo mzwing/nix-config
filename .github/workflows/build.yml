@@ -180,6 +180,7 @@ jobs:
 
     # Each round snapshots on the coordinator's signal or on timeout, so even a cancelled run leaves a warm generation.
     # Three rounds, not six: six waited 345 minutes and the job was cancelled before Finalize ran, and each save re-uploads a multi-GiB generation into a 10 GiB quota.
+    # Every round is insurance, so each save carries continue-on-error: Finalize below has no if: and would otherwise be skipped by a failed round, taking the finalized save — the run's actual result — with it.
     - name: Wait for checkpoint (round 1)
       id: attic-checkpoint-1
       uses: mzwing/nix-actions/store-cache/checkpoint@master
@@ -194,6 +195,7 @@ jobs:
 
     - name: Save builder store cache checkpoint (round 1)
       if: ${{ !cancelled() && steps.attic-checkpoint-1.outputs.checkpoint-ready == 'true' }}
+      continue-on-error: true
       uses: nix-community/cache-nix-action/save@v7
       with:
         primary-key: nix-builder-atticchk-${{ github.run_id }}-${{ github.run_attempt }}-1
@@ -218,6 +220,7 @@ jobs:
 
     - name: Save builder store cache checkpoint (round 2)
       if: ${{ !cancelled() && steps.attic-checkpoint-2.outputs.checkpoint-ready == 'true' }}
+      continue-on-error: true
       uses: nix-community/cache-nix-action/save@v7
       with:
         primary-key: nix-builder-atticchk-${{ github.run_id }}-${{ github.run_attempt }}-2
@@ -242,6 +245,7 @@ jobs:
 
     - name: Save builder store cache checkpoint (round 3)
       if: ${{ !cancelled() && steps.attic-checkpoint-3.outputs.checkpoint-ready == 'true' }}
+      continue-on-error: true
       uses: nix-community/cache-nix-action/save@v7
       with:
         primary-key: nix-builder-atticchk-${{ github.run_id }}-${{ github.run_attempt }}-3

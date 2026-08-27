@@ -24,12 +24,7 @@
       pkgs,
       ...
     }: let
-      claudeHudSrc = pkgs.fetchFromGitHub {
-        owner = "jarrodwatts";
-        repo = "claude-hud";
-        rev = "v0.7.1";
-        hash = "sha256-LvSuIbniF4lC2ruopijAo9avGAWjNS2YLa/EiFW0IBU=";
-      };
+      claude-hud = pkgs.nur.repos.mzwing.claude-hud;
 
       jsonFormat = pkgs.formats.json {};
     in {
@@ -84,7 +79,7 @@
           If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
           <!-- CODEGRAPH_END -->
         ";
-        plugins.claude-hud = claudeHudSrc;
+        plugins.claude-hud = claude-hud;
 
         settings = {
           includeCoAuthoredBy = false;
@@ -109,7 +104,7 @@
                   ""|*[!0-9]*) cols=120;;
                 esac
                 export COLUMNS=$(( cols > 4 ? cols - 4 : 1 ))
-                exec ${lib.getExe pkgs.nodejs} ${claudeHudSrc}/dist/index.js
+                exec ${lib.getExe claude-hud}
               '';
             in "${claudeHudStatusline}";
           };
