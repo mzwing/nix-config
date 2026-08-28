@@ -146,6 +146,7 @@
               maxRetries = 3;
             };
             theme = "dark";
+            tuiMode = "fullscreen";
             npmCommand = [
               "pnpm"
               "--config.node-linker=hoisted"
@@ -161,6 +162,7 @@
               "npm:@narumitw/pi-btw"
               "npm:@narumitw/pi-plan-mode"
               "npm:@narumitw/pi-usage"
+              "npm:@pi-lab/notify"
               "npm:@upstash/context7-pi"
               "npm:pi-codex-goal"
               "npm:pi-effort"
