@@ -75,17 +75,19 @@ in {
   ];
 
   # The Node/TypeScript toolchain. Kept out of the deno profile: its LSP takes over TS and fights these.
-  webJs = with m; [
-    antfu.browse-lite
-    antfu.vite
-    christian-kohler.npm-intellisense
-    dbaeumer.vscode-eslint
-    firefox-devtools.vscode-firefox-debug
-    mariusalchimavicius.json-to-ts
-    oxc.oxc-vscode
-    typescriptteam.native-preview
-    vitest.explorer
-    wix.vscode-import-cost
+  webJs = [
+    # Still the official marketplace, but via nixpkgs: it keeps the version in step with the postPatch that points
+    # oxc.path.oxlint/oxfmt at nixpkgs binaries. vscode-marketplace serves a 0.0.2 pre-release that patch cannot parse.
+    pkgs.vscode-extensions.oxc.oxc-vscode
+    m.antfu.browse-lite
+    m.antfu.vite
+    m.christian-kohler.npm-intellisense
+    m.dbaeumer.vscode-eslint
+    m.firefox-devtools.vscode-firefox-debug
+    m.mariusalchimavicius.json-to-ts
+    m.typescriptteam.native-preview
+    m.vitest.explorer
+    m.wix.vscode-import-cost
   ];
 
   react = with m; [
@@ -122,7 +124,7 @@ in {
   bun = [m.oven.bun-vscode];
 
   lldb = [
-    # vscode-marketplace carries 1.12.3, which the input's own version map rejects. Drop the override once it catches up.
+    # vscode-marketplace carries 1.12.3, which the input's own version map rejects; nixpkgs builds codelldb from Rust source.
     pkgs.open-vsx.vadimcn.vscode-lldb
     m.llvm-vs-code-extensions.lldb-dap
   ];
@@ -207,13 +209,14 @@ in {
     myriad-dreamin.tinymist
   ];
 
+  # zamerick.vscode-caddyfile-syntax is gone on purpose: its 1.0.4 vsix ships extension/examples/Caddyfile twice and
+  # will not unpack, and caddyfile-support already covers the same language with formatting on top.
   ops = with m; [
     ahmadalli.vscode-nginx-conf
     claui.packaging
     matthewpi.caddyfile-support
     nico-castell.linux-desktop-file
     parallelsdesktop.parallels-desktop
-    zamerick.vscode-caddyfile-syntax
   ];
 
   zig = [m.ziglang.vscode-zig];
