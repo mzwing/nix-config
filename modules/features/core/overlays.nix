@@ -3,6 +3,7 @@ let
   overlaysModule = {inputs, ...}: {
     nixpkgs.overlays = [
       inputs.nur.overlays.default
+      inputs.nix-vscode-extensions.overlays.default
     ];
   };
 in {
