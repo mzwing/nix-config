@@ -34,6 +34,7 @@
     }: {
       imports = [
         inputs.nur.repos.mzwing.modules.homeManager.gryph
+        inputs.nur.repos.mzwing.modules.homeManager.magic-context
       ];
 
       home.packages = [
@@ -68,6 +69,26 @@
           enable = true;
           enableIntegration.pi-agent = true;
           settings.storage.retention_days = 30;
+        };
+        magic-context = {
+          enable = true;
+          settings = {
+            historian.pi = {
+              model = {
+                model = "openai-codex/gpt-5.6-sol";
+                thinking_level = "xhigh";
+              };
+              fallback_models = ["deepseek/deepseek-v4-flash"];
+            };
+            dreamer.pi.model = {
+              model = "openai-codex/gpt-5.6-sol";
+              thinking_level = "xhigh";
+            };
+            sidekick = {
+              model = "openai-codex/gpt-5.6-luna";
+              thinking_level = "xhigh";
+            };
+          };
         };
       };
     };

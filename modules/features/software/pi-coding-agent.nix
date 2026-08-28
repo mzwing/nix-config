@@ -151,6 +151,7 @@
               "--config.node-linker=hoisted"
             ];
             packages = [
+              "npm:@cortexkit/pi-magic-context"
               "npm:@ff-labs/pi-fff"
               "npm:@gotgenes/pi-permission-system"
               "npm:@gotgenes/pi-subagents"
