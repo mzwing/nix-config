@@ -85,6 +85,10 @@
           includeCoAuthoredBy = false;
           model = "opus";
           theme = "dark";
+
+          # Flicker-free alt-screen renderer with virtualized scrollback; `/tui fullscreen` can't persist it since settings.json is a store symlink.
+          tui = "fullscreen";
+
           hooks = config.programs.gryph.hooks.claude-code;
 
           # The persisted `effortLevel` only accepts low/medium/high/xhigh, so `max` has to come in through the env var.
