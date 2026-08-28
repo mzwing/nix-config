@@ -10,7 +10,6 @@
     };
 
     home = {
-      config,
       lib,
       pkgs,
       ...
@@ -43,7 +42,8 @@
 
           "update.showReleaseNotes" = false;
           # The extensions directory is a read-only store symlink, so any update attempt can only fail.
-          "extensions.autoUpdate" = false;
+          # "off", not false: the boolean is the legacy spelling and VSCode rewrites it on launch, which a store symlink refuses.
+          "extensions.autoUpdate" = "off";
           "extensions.autoCheckUpdates" = false;
 
           "diffEditor.codeLens" = true;
@@ -126,17 +126,9 @@
         "vite.browserType" = "system";
       };
 
-      opsSettings =
-        {
-          "nginx-conf-hint.syntax" = "sublime";
-        }
-        // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
-          "parallels-desktop.extension.path" = "${config.home.homeDirectory}/.parallels-desktop-vscode";
-          "parallels-desktop.devops-service.path" = "${config.home.homeDirectory}/.parallels-desktop-vscode/tools/prldevops";
-          "parallels-desktop.brew.path" = "/opt/homebrew/bin/brew";
-          "parallels-desktop.prlctl.path" = "/usr/local/bin/prlctl";
-          "parallels-desktop.git.path" = lib.getExe pkgs.git;
-        };
+      opsSettings = {
+        "nginx-conf-hint.syntax" = "sublime";
+      };
 
       mkProfile = extensions: userSettings: {
         inherit extensions;

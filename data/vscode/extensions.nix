@@ -216,7 +216,6 @@ in {
     claui.packaging
     matthewpi.caddyfile-support
     nico-castell.linux-desktop-file
-    parallelsdesktop.parallels-desktop
   ];
 
   zig = [m.ziglang.vscode-zig];
