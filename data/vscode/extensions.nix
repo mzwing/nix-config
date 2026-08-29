@@ -59,7 +59,6 @@ in {
   ];
 
   shellTools = with m; [
-    ms-vscode.powershell
     timonwong.shellcheck
   ];
 
