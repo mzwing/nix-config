@@ -26,6 +26,7 @@
       "software/editor"
       "software/email"
       "software/gaming"
+      "software/keyguard"
       "software/media"
       "software/network"
       "software/server"
