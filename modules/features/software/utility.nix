@@ -29,7 +29,6 @@ in {
           "keepingyouawake"
           "keka"
           "kekaexternalhelper"
-          "keyguard"
           "maccy"
           "stats"
           "easydict"
@@ -42,7 +41,6 @@ in {
         systemUtilityPackages pkgs
         ++ (with pkgs; [
           kdePackages.ark
-          keyguard
         ]);
     };
 

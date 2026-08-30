@@ -1,4 +1,4 @@
-# The official vault app. Just the app: the agents are software/keyguard's.
+# The vault app. Its SSH agent is wired up by software/ssh, which is what points at the socket this exposes.
 {
   mzwing.features."software/bitwarden" = {
     meta.platforms = [
