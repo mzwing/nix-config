@@ -117,8 +117,8 @@ in {
   bun = [m.oven.bun-vscode];
 
   lldb = [
-    # vscode-marketplace carries 1.12.3, which the input's own version map rejects; nixpkgs builds codelldb from Rust source.
-    pkgs.open-vsx.vadimcn.vscode-lldb
+    # vscode-marketplace carries 1.12.3, which the input's own version map rejects; open-vsx builds the identical drv but its fork of node_deps.nix still calls the deprecated stdenv.isDarwin.
+    pkgs.vscode-extensions.vadimcn.vscode-lldb
     m.llvm-vs-code-extensions.lldb-dap
   ];
 
