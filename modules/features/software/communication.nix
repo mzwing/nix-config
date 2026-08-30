@@ -5,6 +5,20 @@
       "nixos"
     ];
 
+    requires = ["darwin/homebrew"];
+
+    packages.nixos = pkgs:
+      with pkgs; [
+        ayugram-desktop
+        discord
+        element-desktop
+        feishu
+        qq
+        wechat
+        wemeet
+        nur.repos.xddxdd.dingtalk
+      ];
+
     darwin.homebrew = {
       casks = [
         "discord"
@@ -19,19 +33,6 @@
         "QQ" = 451108668;
         "Telegram" = 747648890;
       };
-    };
-
-    nixos = {pkgs, ...}: {
-      environment.systemPackages = with pkgs; [
-        ayugram-desktop
-        discord
-        element-desktop
-        feishu
-        qq
-        wechat
-        wemeet
-        nur.repos.xddxdd.dingtalk
-      ];
     };
   };
 }

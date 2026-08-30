@@ -15,7 +15,6 @@
     in {
       programs.neovim = {
         enable = true;
-        # Only a default; software/editor makes the real choice.
         defaultEditor = lib.mkDefault true;
         viAlias = true;
         vimAlias = true;

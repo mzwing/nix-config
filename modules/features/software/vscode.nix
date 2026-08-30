@@ -5,9 +5,9 @@
       "nixos"
     ];
 
-    darwin = {
-      homebrew.casks = ["visual-studio-code"];
-    };
+    requires = ["darwin/homebrew"];
+
+    darwin.homebrew.casks = ["visual-studio-code"];
 
     home = {
       lib,
@@ -15,125 +15,15 @@
       ...
     }: let
       ext = import ../../../data/vscode/extensions.nix pkgs;
+      settings = import ../../../data/vscode/settings.nix pkgs;
 
-      # Every profile starts here: reading an unfamiliar repository needs none of the language groups.
       core = with ext; base ++ git ++ remote ++ nixTools ++ shellTools;
-
       web = ext.webUi ++ ext.webJs;
-
-      coreSettings =
-        {
-          "security.workspace.trust.untrustedFiles" = "open";
-
-          "editor.tabSize" = 2;
-          "editor.wordWrap" = "on";
-          "editor.fontSize" = 13;
-          "editor.fontFamily" = "'JetBrains Mono', Menlo, Monaco, 'Courier New', monospace";
-          "editor.codeLensFontFamily" = "'JetBrains Mono'";
-          "editor.gotoLocation.multipleDefinitions" = "goto";
-
-          "files.autoSave" = "onFocusChange";
-          "explorer.confirmDelete" = false;
-          "explorer.confirmDragAndDrop" = false;
-
-          "workbench.startupEditor" = "none";
-          "workbench.colorTheme" = "Dark Modern";
-          "workbench.browser.openLocalhostLinks" = false;
-
-          "update.showReleaseNotes" = false;
-          # The extensions directory is a read-only store symlink, so any update attempt can only fail.
-          # "off", not false: the boolean is the legacy spelling and VSCode rewrites it on launch, which a store symlink refuses.
-          "extensions.autoUpdate" = "off";
-          "extensions.autoCheckUpdates" = false;
-
-          "diffEditor.codeLens" = true;
-          "http.systemCertificatesNode" = true;
-
-          "chat.viewSessions.orientation" = "stacked";
-          "chat.tools.terminal.autoApprove" = {
-            "/^sips -s format png ref\\.pdf --out ref\\.png$/" = {
-              approve = true;
-              matchCommandLine = true;
-            };
-          };
-
-          "github.copilot.nextEditSuggestions.enabled" = true;
-          "github.copilot.nextEditSuggestions.eagerness" = "low";
-          "github.copilot.enable" = {
-            "*" = true;
-            ini = true;
-            "java-properties" = false;
-            markdown = true;
-            plaintext = true;
-            scminput = false;
-            shellscript = true;
-            typst = false;
-          };
-          "claudeCode.preferredLocation" = "panel";
-
-          "json.schemaDownload.trustedDomains" = {
-            "https://schemastore.azurewebsites.net/" = true;
-            "https://raw.githubusercontent.com/" = true;
-            "https://www.schemastore.org/" = true;
-            "https://json.schemastore.org/" = true;
-            "https://json-schema.org/" = true;
-            "https://opencode.ai/config.json" = true;
-            "https://models.dev/model-schema.json" = true;
-            "https://unpkg.com" = true;
-          };
-
-          "yaml.disableSchemaDetection" = [
-            "**/.github/workflows/*.yml"
-            "**/.github/workflows/*.yaml"
-            "**/.gitea/workflows/*.yml"
-            "**/.gitea/workflows/*.yaml"
-            "**/.forgejo/workflows/*.yml"
-            "**/.forgejo/workflows/*.yaml"
-          ];
-          "[yaml]"."editor.defaultFormatter" = "redhat.vscode-yaml";
-
-          "todo-tree.ripgrep.ripgrep" = lib.getExe pkgs.ripgrep;
-
-          "git.confirmSync" = false;
-          "git.autofetch" = true;
-          "git.enableSmartCommit" = true;
-          "git.enableCommitSigning" = true;
-          "git.replaceTagsWhenPull" = true;
-          "git-graph.repository.commits.showSignatureStatus" = true;
-          "git-graph.repository.sign.commits" = true;
-          "git-graph.repository.sign.tags" = true;
-
-          "remoteHub.commitDirectlyWarning" = "off";
-        }
-        // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
-          "terminal.external.osxExec" = "Ghostty.app";
-          "terminal.integrated.defaultProfile.osx" = "fish";
-        };
-
-      coreKeybindings = map (key: {
-        inherit key;
-        command = "workbench.action.terminal.sendSequence";
-        when = "terminalFocus";
-        args.text = "\\\r\n";
-      }) ["ctrl+enter" "shift+enter"];
-
-      webJsSettings = {
-        "[typescript]"."editor.defaultFormatter" = "TypeScriptTeam.native-preview";
-        "[javascript]"."editor.defaultFormatter" = "TypeScriptTeam.native-preview";
-        "typescript.updateImportsOnFileMove.enabled" = "always";
-        "js/ts.experimental.useTsgo" = true;
-        "vite.autoStart" = false;
-        "vite.browserType" = "system";
-      };
-
-      opsSettings = {
-        "nginx-conf-hint.syntax" = "sublime";
-      };
 
       mkProfile = extensions: userSettings: {
         inherit extensions;
-        userSettings = coreSettings // userSettings;
-        keybindings = coreKeybindings;
+        userSettings = settings.core // userSettings;
+        inherit (settings) keybindings;
         # programs.mcp comes from software/vibecoding; profiles do not inherit it, so every one asks for it.
         enableMcpIntegration = true;
       };
@@ -141,18 +31,18 @@
       profiles = {
         default = mkProfile core {};
 
-        nodejs = mkProfile (core ++ web ++ ext.solid) webJsSettings;
-        react = mkProfile (core ++ web ++ ext.react) webJsSettings;
-        vue = mkProfile (core ++ web ++ ext.vue) (webJsSettings
+        nodejs = mkProfile (core ++ web ++ ext.solid) settings.webJs;
+        react = mkProfile (core ++ web ++ ext.react) settings.webJs;
+        vue = mkProfile (core ++ web ++ ext.vue) (settings.webJs
           // {
             "[vue]"."editor.defaultFormatter" = "Vue.volar";
           });
-        svelte = mkProfile (core ++ web ++ ext.svelte) (webJsSettings
+        svelte = mkProfile (core ++ web ++ ext.svelte) (settings.webJs
           // {
             "svelte.enable-ts-plugin" = true;
           });
-        lit = mkProfile (core ++ web ++ ext.lit) webJsSettings;
-        bun = mkProfile (core ++ web ++ ext.bun) webJsSettings;
+        lit = mkProfile (core ++ web ++ ext.lit) settings.webJs;
+        bun = mkProfile (core ++ web ++ ext.bun) settings.webJs;
         # No webJs: deno's LSP takes over TypeScript and collides with eslint, oxc and tsgo.
         deno = mkProfile (core ++ ext.webUi ++ ext.deno) {};
 
@@ -163,7 +53,6 @@
         go = mkProfile (core ++ ext.go) {
           "go.toolsManagement.autoUpdate" = true;
         };
-        # Kotlin rides along: it shares the Gradle tooling and never appears without a JVM around.
         java = mkProfile (core ++ ext.java ++ ext.kotlin) {
           "[xml]"."editor.defaultFormatter" = "redhat.vscode-xml";
           "redhat.telemetry.enabled" = true;
@@ -180,7 +69,7 @@
         nix = mkProfile (core ++ ext.typenix) {
           "devenv.profile" = "";
         };
-        shell = mkProfile (core ++ ext.ops) opsSettings;
+        shell = mkProfile (core ++ ext.ops) settings.ops;
         typst = mkProfile (core ++ ext.docs) {};
         ctf = mkProfile (core ++ ext.ctf) {};
       };
@@ -202,7 +91,6 @@
         };
 
       # VSCodium browses Open VSX by default; this points it at the marketplace the extensions above come from.
-      # Values read off an official VS Code build's resources/app/product.json.
       # mkIf, not optionalAttrs: deciding this module's own attribute names from `pkgs` recurses through _module.args.
       xdg.configFile."VSCodium/product.json" = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
         source = (pkgs.formats.json {}).generate "vscodium-product.json" {

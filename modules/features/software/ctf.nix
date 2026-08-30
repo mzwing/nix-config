@@ -5,15 +5,16 @@
       "nixos"
     ];
 
-    darwin.homebrew.casks = [
-      "websocket-reflector-x"
-    ];
+    requires = ["darwin/homebrew"];
 
-    nixos = {pkgs, ...}: {
-      environment.systemPackages = with pkgs; [
+    packages.nixos = pkgs:
+      with pkgs; [
         nur.repos.mzwing.packages.wsrx
         nur.repos.mzwing.packages.wsrx-desktop
       ];
-    };
+
+    darwin.homebrew.casks = [
+      "websocket-reflector-x"
+    ];
   };
 }

@@ -1,4 +1,3 @@
-# Working on this repo rather than on the machines it configures.
 {inputs, ...}: {
   systems = [
     "aarch64-darwin"
@@ -17,7 +16,7 @@
       meta.description = "Install NixOS hosts with nixos-anywhere.";
     };
 
-    # Paths resolve from the working directory, so run it from the repo root — `just skills-update` does.
+    # Paths resolve from the working directory; run it from the repo root.
     apps.skills-sources-lock = {
       type = "app";
       program = "${inputs.agent-skills.lib.agent-skills.mkSourceLockProgram {

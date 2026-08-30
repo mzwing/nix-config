@@ -1,4 +1,3 @@
-# Agent skills: the pinned sources, what is built from them, and where they land.
 {
   mzwing.features."software/skills" = {
     meta.platforms = [
@@ -6,10 +5,12 @@
       "nixos"
     ];
 
+    # Discovery only (`skills find`, `skills use`); its mutable lock would fight Home Manager during activation.
+    packages.home = pkgs: [pkgs.skills];
+
     home = {
       inputs,
       lib,
-      pkgs,
       ...
     }: let
       agentLib = inputs.agent-skills.lib.agent-skills;
@@ -28,9 +29,6 @@
         else throw "software/skills: cannot derive a static destination for target '${name}' from '${dest}'";
     in {
       imports = [inputs.agent-skills.homeManagerModules.default];
-
-      # Discovery only (`skills find`, `skills use`); its mutable lock would fight Home Manager during activation.
-      home.packages = [pkgs.skills];
 
       programs.agent-skills = {
         enable = true;

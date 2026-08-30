@@ -1,33 +1,34 @@
-let
-  systemMediaPackages = pkgs:
-    with pkgs; [
-      ffmpeg
-      ffmpegthumbnailer
-    ];
-in {
+{
   mzwing.features."software/media" = {
-    meta.platforms = ["darwin"];
+    meta.platforms = [
+      "darwin"
+      "nixos"
+    ];
 
-    darwin = {pkgs, ...}: {
-      environment.systemPackages = systemMediaPackages pkgs;
-      homebrew.casks = [
-        "bakamusic"
-        "kid3"
-        "mac-music-player"
-        "piliplus"
-        "vlc"
-        "xld"
-      ];
-    };
+    requires = ["darwin/homebrew"];
 
-    nixos = {pkgs, ...}: {
-      environment.systemPackages =
-        systemMediaPackages pkgs
-        ++ (with pkgs; [
+    packages = {
+      system = pkgs:
+        with pkgs; [
+          ffmpeg
+          ffmpegthumbnailer
+        ];
+
+      nixos = pkgs:
+        with pkgs; [
           kid3
           piliplus
           vlc
-        ]);
+        ];
     };
+
+    darwin.homebrew.casks = [
+      "bakamusic"
+      "kid3"
+      "mac-music-player"
+      "piliplus"
+      "vlc"
+      "xld"
+    ];
   };
 }

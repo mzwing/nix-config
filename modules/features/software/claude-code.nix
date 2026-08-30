@@ -1,22 +1,23 @@
-# Claude Code, its statusline and the account switcher. Skills come from software/skills, MCP and gryph from software/vibecoding.
-{
+let
+  agentContext = import ../../../data/agent-context.nix;
+in {
   mzwing.features."software/claude-code" = {
     meta.platforms = [
       "darwin"
       "nixos"
     ];
 
-    darwin = {
-      homebrew.casks = [
-        "cc-switch"
-      ];
-    };
+    requires = [
+      "darwin/homebrew"
+      # `hooks` below reads programs.gryph.
+      "software/gryph"
+    ];
 
-    nixos = {pkgs, ...}: {
-      environment.systemPackages = with pkgs; [
-        cc-switch
-      ];
-    };
+    packages.nixos = pkgs: [pkgs.cc-switch];
+
+    darwin.homebrew.casks = [
+      "cc-switch"
+    ];
 
     home = {
       config,
@@ -62,23 +63,12 @@
       programs.claude-code = {
         enable = true;
         enableMcpIntegration = true;
-        context = "
+        context = ''
           NEVER try to git commit or push!
 
-          NEVER try to rebuild the whole system!
-
-          NEVER try to build any programs (especially Rust) locally, except the user explicitly approve it in the context. Ask the user to build it themselves instead.
-
-          <!-- CODEGRAPH_START -->
-          ## CodeGraph
-
-          In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the repo root), reach for it BEFORE grep/find or reading files when you need to understand or locate code:
-
-          - **MCP tool** (when available): `codegraph_explore` answers most code questions in one call — the relevant symbols' verbatim source plus the call paths between them, including dynamic-dispatch hops grep can't follow. Name a file or symbol in the query to read its current line-numbered source. If it's listed but deferred, load it by name via tool search.
-
-          If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
-          <!-- CODEGRAPH_END -->
-        ";
+          ${agentContext.rules}
+          ${agentContext.codegraph}
+        '';
         plugins.claude-hud = claude-hud;
 
         settings = {
@@ -86,7 +76,7 @@
           model = "opus";
           theme = "dark";
 
-          # Flicker-free alt-screen renderer with virtualized scrollback; `/tui fullscreen` can't persist it since settings.json is a store symlink.
+          # `/tui fullscreen` cannot persist this: settings.json is a store symlink.
           tui = "fullscreen";
 
           hooks = config.programs.gryph.hooks.claude-code;

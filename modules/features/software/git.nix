@@ -1,19 +1,15 @@
-let
-  systemGitModule = {pkgs, ...}: {
-    environment.systemPackages = with pkgs; [
-      git
-      git-extras
-    ];
-  };
-in {
+{
   mzwing.features."software/git" = {
     meta.platforms = [
       "darwin"
       "nixos"
     ];
 
-    darwin = systemGitModule;
-    nixos = systemGitModule;
+    packages.system = pkgs:
+      with pkgs; [
+        git
+        git-extras
+      ];
 
     home = {
       lib,

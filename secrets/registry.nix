@@ -1,17 +1,15 @@
-# Every age secret: where it lives and who can decrypt it. secrets.nix derives the agenix rules; modules get paths via the `secrets` specialArg.
 # Names carry no .age suffix; it is added where needed.
 let
   identities = import ../data/identities.nix;
 
   inherit (identities.age) mzwing;
 
-  # I can decrypt everything so I can rekey; the host decrypts its own at activation time.
   ownedBy = host: [
     mzwing
     identities.hosts.${host}
   ];
 in {
-  # One recipient covers both readers on the Mac: root at activation and Home Manager as me both point at ~/.ssh/agenix.
+  # One recipient covers both Mac readers: root and Home Manager both use ~/.ssh/agenix.
   "cliproxyapiplus/api-key" = {
     file = ./cliproxyapiplus/api-key.age;
     recipients = [mzwing];

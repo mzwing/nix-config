@@ -1,4 +1,3 @@
-# Baseline for my NixOS servers. A profile is a feature with no modules of its own.
 {
   mzwing.features."profiles/nixos-server" = {
     meta.platforms = ["nixos"];

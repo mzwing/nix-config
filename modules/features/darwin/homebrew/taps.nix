@@ -7,6 +7,8 @@ in {
   mzwing.features."darwin/homebrew/taps" = {
     meta.platforms = ["darwin"];
 
+    requires = ["darwin/homebrew"];
+
     darwin = {
       homebrew.taps = map trustedTap [
         "aninsomniacy/motrix-next"

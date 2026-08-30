@@ -1,42 +1,39 @@
-let
-  systemAiPackages = pkgs:
-    with pkgs; [
-      nur.repos.mzwing.autocli
-      nur.repos.mzwing.hfd
-      defuddle
-    ];
-in {
+{
   mzwing.features."software/ai" = {
     meta.platforms = [
       "darwin"
       "nixos"
     ];
 
-    darwin = {pkgs, ...}: {
-      environment.systemPackages =
-        systemAiPackages pkgs;
-      homebrew = {
-        brews = [
-          "llama.cpp"
-          {
-            name = "manboster@rc";
-            link = true;
-          }
-          "stable-diffusion.cpp"
-        ];
-        casks = [
-          "kelivo"
-        ];
-      };
-    };
+    requires = ["darwin/homebrew"];
 
-    nixos = {pkgs, ...}: {
-      environment.systemPackages =
-        systemAiPackages pkgs
-        ++ (with pkgs; [
+    packages = {
+      system = pkgs:
+        with pkgs; [
+          nur.repos.mzwing.autocli
+          nur.repos.mzwing.hfd
+          defuddle
+        ];
+
+      nixos = pkgs:
+        with pkgs; [
           llama-cpp
           stable-diffusion-cpp-cuda
-        ]);
+        ];
+    };
+
+    darwin.homebrew = {
+      brews = [
+        "llama.cpp"
+        {
+          name = "manboster@rc";
+          link = true;
+        }
+        "stable-diffusion.cpp"
+      ];
+      casks = [
+        "kelivo"
+      ];
     };
   };
 }

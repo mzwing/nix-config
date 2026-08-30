@@ -1,4 +1,3 @@
-# The vibecoding stack. Only the glue that needs more than one agent stays here: MCP servers, gryph, and the GUI apps.
 {
   mzwing.features."software/vibecoding" = {
     meta.platforms = [
@@ -7,24 +6,22 @@
     ];
 
     requires = [
+      "darwin/homebrew"
       "software/claude-code"
       "software/cliproxyapiplus"
       "software/pi-coding-agent"
       "software/skills"
     ];
 
-    darwin = {
-      homebrew.casks = [
-        "antigravity"
-        "chatgpt"
-      ];
+    packages = {
+      nixos = pkgs: [pkgs.antigravity];
+      home = pkgs: [pkgs.nur.repos.mzwing.codegraph];
     };
 
-    nixos = {pkgs, ...}: {
-      environment.systemPackages = with pkgs; [
-        antigravity
-      ];
-    };
+    darwin.homebrew.casks = [
+      "antigravity"
+      "chatgpt"
+    ];
 
     home = {
       inputs,
@@ -33,12 +30,7 @@
       ...
     }: {
       imports = [
-        inputs.nur.repos.mzwing.modules.homeManager.gryph
         inputs.nur.repos.mzwing.modules.homeManager.magic-context
-      ];
-
-      home.packages = [
-        pkgs.nur.repos.mzwing.codegraph
       ];
 
       programs = {
@@ -64,11 +56,6 @@
               };
             };
           };
-        };
-        gryph = {
-          enable = true;
-          enableIntegration.pi-agent = true;
-          settings.storage.retention_days = 30;
         };
         magic-context = {
           enable = true;

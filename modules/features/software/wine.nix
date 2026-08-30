@@ -5,6 +5,8 @@
       "darwin"
     ];
 
+    requires = ["darwin/homebrew"];
+
     darwin = {
       homebrew = {
         brews = [

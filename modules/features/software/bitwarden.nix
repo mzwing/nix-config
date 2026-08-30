@@ -1,4 +1,3 @@
-# The vault app. Its SSH agent is wired up by software/ssh, which is what points at the socket this exposes.
 {
   mzwing.features."software/bitwarden" = {
     meta.platforms = [
@@ -6,12 +5,10 @@
       "nixos"
     ];
 
-    darwin = {
-      homebrew.masApps."Bitwarden" = 1352778147;
-    };
+    requires = ["darwin/homebrew"];
 
-    nixos = {pkgs, ...}: {
-      environment.systemPackages = [pkgs.bitwarden-desktop];
-    };
+    packages.nixos = pkgs: [pkgs.bitwarden-desktop];
+
+    darwin.homebrew.masApps."Bitwarden" = 1352778147;
   };
 }

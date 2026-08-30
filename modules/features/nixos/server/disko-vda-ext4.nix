@@ -41,6 +41,7 @@
         };
       };
 
+      # mkForce: nixpkgs' digital-ocean-config.nix sets the grub device itself.
       boot.loader.grub.devices = lib.mkForce ["/dev/vda"];
     };
   };

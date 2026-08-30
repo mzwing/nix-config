@@ -1,6 +1,4 @@
-# Substituters and their public keys. Plain data, outside modules/ because import-tree would treat it as a flake-parts module.
 # flake.nix's nixConfig repeats some of this and cannot import it; keep them in step by hand.
-# features/core/nix.nix assembles the layers as mirror ++ default ++ extra ++ nur.
 {
   # cache.nixos.org must stay listed: core/nix.nix applies this with mkForce, which replaces the module default instead of adding to it.
   defaultSubstituters = [
@@ -8,12 +6,11 @@
     "https://nix-community.cachix.org"
   ];
 
-  # No cache.nixos.org key on purpose: these feed extra-trusted-public-keys, which appends. Assigning trusted-public-keys directly would replace the default and lose it.
+  # No cache.nixos.org key on purpose: these feed extra-trusted-public-keys, which appends.
   defaultPublicKeys = [
     "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
   ];
 
-  # Useful but not universal, so they sit behind the public caches.
   extraSubstituters = [
     "https://cache.nixos-cuda.org"
   ];
@@ -22,7 +19,6 @@
     "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
   ];
 
-  # Only xddxdd's is Attic; the other two are Cachix. Hence `cache`, not `attic`.
   nur = {
     xddxdd = {
       author = "xddxdd";

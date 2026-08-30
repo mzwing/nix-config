@@ -9,7 +9,6 @@ indent_style = space
 indent_size = 2
 
 [*.sh]
-# Read by shfmt as well as editors.
 switch_case_indent = true
 space_redirects = false
 

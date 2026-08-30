@@ -1,14 +1,7 @@
-{
-  config,
-  lib,
-  ...
-}: let
+{lib, ...}: let
   cacheData = import ../../../data/caches.nix;
 
-  # `config` here is the flake-parts config; the submodules below shadow it.
-  nurCaches = map (entry: entry.cache) (builtins.attrValues config.mzwing.registry.nur);
-  nurSubstituters = map (cache: cache.url) nurCaches;
-  nurPublicKeys = map (cache: cache.publicKey) nurCaches;
+  nurCaches = map (entry: entry.cache) (lib.attrValues cacheData.nur);
 
   nixOptions = {
     mirrorSubstituters = lib.mkOption {
@@ -23,29 +16,6 @@
       description = "Substituters after the public caches, before the NUR ones.";
     };
   };
-
-  # Shared by both platforms so they cannot drift apart again.
-  mkNixSettings = hostConfig: {
-    experimental-features = [
-      "nix-command"
-      "flakes"
-    ];
-
-    substituters = lib.mkForce (
-      hostConfig.mzwing.nix.mirrorSubstituters
-      ++ cacheData.defaultSubstituters
-      ++ hostConfig.mzwing.nix.extraSubstituters
-      ++ nurSubstituters
-    );
-
-    extra-trusted-public-keys = lib.unique (
-      cacheData.defaultPublicKeys
-      ++ cacheData.extraPublicKeys
-      ++ nurPublicKeys
-    );
-
-    builders-use-substitutes = true;
-  };
 in {
   mzwing.features."core/nix" = {
     meta.platforms = [
@@ -53,46 +23,9 @@ in {
       "nixos"
     ];
 
-    # Both set nixpkgs.*, and nothing should configure nixpkgs without its overlays.
     requires = ["core/overlays"];
 
-    darwin = {
-      config,
-      lib,
-      pkgs,
-      system,
-      ...
-    }: {
-      options.mzwing.nix = nixOptions;
-
-      config = {
-        nix = {
-          enable = true;
-          package = pkgs.nix;
-
-          settings =
-            mkNixSettings config
-            // {
-              auto-optimise-store = false;
-            };
-
-          gc = {
-            automatic = lib.mkDefault true;
-            options = lib.mkDefault "--delete-older-than 3d";
-          };
-        };
-
-        nixpkgs = {
-          hostPlatform = lib.mkDefault system;
-          config = {
-            allowUnfree = true;
-            android_sdk.accept_license = true;
-          };
-        };
-      };
-    };
-
-    nixos = {
+    system = {
       config,
       lib,
       system,
@@ -102,13 +35,30 @@ in {
 
       config = {
         nix = {
-          channel.enable = false;
+          settings = {
+            experimental-features = [
+              "nix-command"
+              "flakes"
+            ];
 
-          settings = mkNixSettings config;
+            substituters = lib.mkForce (
+              config.mzwing.nix.mirrorSubstituters
+              ++ cacheData.defaultSubstituters
+              ++ config.mzwing.nix.extraSubstituters
+              ++ map (cache: cache.url) nurCaches
+            );
+
+            extra-trusted-public-keys = lib.unique (
+              cacheData.defaultPublicKeys
+              ++ cacheData.extraPublicKeys
+              ++ map (cache: cache.publicKey) nurCaches
+            );
+
+            builders-use-substitutes = true;
+          };
 
           gc = {
             automatic = lib.mkDefault true;
-            dates = lib.mkDefault "weekly";
             options = lib.mkDefault "--delete-older-than 3d";
           };
         };
@@ -117,9 +67,26 @@ in {
           hostPlatform = lib.mkDefault system;
           config.allowUnfree = true;
         };
-
-        system.stateVersion = "26.11";
       };
+    };
+
+    darwin = {pkgs, ...}: {
+      nix = {
+        enable = true;
+        package = pkgs.nix;
+        settings.auto-optimise-store = false;
+      };
+
+      nixpkgs.config.android_sdk.accept_license = true;
+    };
+
+    nixos = {lib, ...}: {
+      nix = {
+        channel.enable = false;
+        gc.dates = lib.mkDefault "weekly";
+      };
+
+      system.stateVersion = "26.11";
     };
   };
 }

@@ -1,4 +1,3 @@
-# Network layout. The .network files are secrets, dropped into /etc/systemd/network by agenix at activation.
 {
   config,
   lib,

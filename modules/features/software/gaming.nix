@@ -5,16 +5,14 @@
       "nixos"
     ];
 
+    requires = ["darwin/homebrew"];
+
+    packages.nixos = pkgs: [pkgs.heroic];
+
     darwin.homebrew.casks = [
       "heroic"
       "xmcl"
     ];
-
-    nixos = {pkgs, ...}: {
-      environment.systemPackages = with pkgs; [
-        heroic
-      ];
-    };
 
     home = {
       lib,

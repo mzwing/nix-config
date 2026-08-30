@@ -1,8 +1,7 @@
 {
   description = "mzwing's nix config";
 
-  # Puts a brand-new machine on the mirrors before any of the config below applies.
-  # Duplicates data/caches.nix and features/network/china-mirrors.nix because Nix wants a literal here. Keep in step by hand.
+  # Nix wants a literal here, so this duplicates data/caches.nix and network/china-mirrors. Keep in step by hand.
   nixConfig = {
     substituters = [
       # "https://mirrors.cernet.edu.cn/nix-channels/store"
@@ -36,7 +35,6 @@
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
 
-    # One entry for both platforms; useGlobalPkgs = true, so this input's own follows barely matters.
     home-manager = {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -62,7 +60,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Updating this moves the machinery, not the skills: those are pinned in data/skills/sources.lock.json.
+    # Moves the machinery, not the skills: those are pinned in data/skills/sources.lock.json.
     agent-skills = {
       url = "github:Kyure-A/agent-skills-nix";
       inputs.nixpkgs.follows = "nixpkgs";

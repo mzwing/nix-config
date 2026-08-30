@@ -5,6 +5,16 @@
       "nixos"
     ];
 
+    requires = ["darwin/homebrew"];
+
+    packages.nixos = pkgs:
+      with pkgs; [
+        blender
+        kdePackages.kdenlive
+        krita
+        musescore
+      ];
+
     darwin.homebrew = {
       casks = [
         "blender"
@@ -20,17 +30,9 @@
       };
     };
 
-    nixos = {pkgs, ...}: {
-      environment.systemPackages = with pkgs; [
-        blender
-        kdePackages.kdenlive
-        krita
-        musescore
-      ];
-      programs.obs-studio = {
-        enable = true;
-        enableVirtualCamera = true;
-      };
+    nixos.programs.obs-studio = {
+      enable = true;
+      enableVirtualCamera = true;
     };
   };
 }

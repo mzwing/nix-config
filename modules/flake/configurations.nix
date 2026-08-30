@@ -1,15 +1,12 @@
-# The flake outputs: my machines, plus every feature module re-exported for reuse.
-{
-  config,
-  lib,
-  ...
-}: {
+{config, ...}: let
+  inherit (config.mzwing.lib) mkHosts moduleAttrsFor selectFeatures;
+in {
   flake = {
-    darwinConfigurations = lib.mapAttrs (_: config.mzwing.lib.mkDarwinHost) config.mzwing.hosts.darwin;
-    nixosConfigurations = lib.mapAttrs (_: config.mzwing.lib.mkNixosHost) config.mzwing.hosts.nixos;
+    darwinConfigurations = mkHosts selectFeatures "darwin";
+    nixosConfigurations = mkHosts selectFeatures "nixos";
 
-    darwinModules = config.mzwing.lib.moduleAttrsFor "darwin";
-    nixosModules = config.mzwing.lib.moduleAttrsFor "nixos";
-    homeModules = config.mzwing.lib.moduleAttrsFor "home";
+    darwinModules = moduleAttrsFor "darwin";
+    nixosModules = moduleAttrsFor "nixos";
+    homeModules = moduleAttrsFor "home";
   };
 }

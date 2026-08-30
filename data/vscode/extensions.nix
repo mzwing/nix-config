@@ -1,9 +1,6 @@
-# Extension groups for software/vscode. Groups are the unit of composition; profiles are assembled from them there.
-# VSCode profiles do not inherit from one another, so every combination is flattened in Nix before it reaches the editor.
 pkgs: let
   m = pkgs.vscode-marketplace;
 in {
-  # Editor feel and the file formats that show up in every repository.
   base = with m; [
     aaron-bond.better-comments
     alefragnani.bookmarks
@@ -62,7 +59,6 @@ in {
     timonwong.shellcheck
   ];
 
-  # Markup and styling. Shared by every web profile, including deno, which does not want the Node toolchain below.
   webUi = with m; [
     blanu.vscode-styled-jsx
     bradlc.vscode-tailwindcss
@@ -73,10 +69,8 @@ in {
     tobermory.es6-string-html
   ];
 
-  # The Node/TypeScript toolchain. Kept out of the deno profile: its LSP takes over TS and fights these.
   webJs = [
-    # Still the official marketplace, but via nixpkgs: it keeps the version in step with the postPatch that points
-    # oxc.path.oxlint/oxfmt at nixpkgs binaries. vscode-marketplace serves a 0.0.2 pre-release that patch cannot parse.
+    # Via nixpkgs so the version stays in step with the postPatch pointing oxc.path.oxlint/oxfmt at nixpkgs binaries; vscode-marketplace serves a 0.0.2 pre-release that patch cannot parse.
     pkgs.vscode-extensions.oxc.oxc-vscode
     m.antfu.browse-lite
     m.antfu.vite
@@ -208,8 +202,7 @@ in {
     myriad-dreamin.tinymist
   ];
 
-  # zamerick.vscode-caddyfile-syntax is gone on purpose: its 1.0.4 vsix ships extension/examples/Caddyfile twice and
-  # will not unpack, and caddyfile-support already covers the same language with formatting on top.
+  # zamerick.vscode-caddyfile-syntax is gone on purpose: its 1.0.4 vsix ships one file twice and will not unpack.
   ops = with m; [
     ahmadalli.vscode-nginx-conf
     claui.packaging
@@ -224,6 +217,5 @@ in {
     m.ms-vscode.hexeditor
   ];
 
-  # The repo typechecks its own Nix with typenix; software/neovim and software/zed-editor already wire it up.
   typenix = [pkgs.nur.repos.mzwing.vscode-extensions.ryanrasti.typenix];
 }

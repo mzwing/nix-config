@@ -5,6 +5,8 @@
       "nixos"
     ];
 
+    requires = ["darwin/homebrew"];
+
     darwin = {
       homebrew.casks = ["zed"];
     };
@@ -38,10 +40,7 @@
           }
         ];
         enableMcpIntegration = true;
-        installRemoteServer =
-          if pkgs.stdenv.hostPlatform.isDarwin
-          then false
-          else true;
+        installRemoteServer = !pkgs.stdenv.hostPlatform.isDarwin;
       };
     };
   };

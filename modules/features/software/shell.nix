@@ -1,18 +1,10 @@
-let
-  systemShellPackages = pkgs:
-    with pkgs; [
-      any-nix-shell
-      bind
-      nur.repos.mzwing.haru
-    ];
-in {
+{
   mzwing.features."software/shell" = {
     meta.platforms = [
       "darwin"
       "nixos"
     ];
 
-    # What an interactive session is expected to have on hand. ghostty and java only materialise on desktops.
     requires = [
       "software/fish"
       "software/ghostty"
@@ -22,17 +14,19 @@ in {
       "software/ssh"
     ];
 
-    darwin = {pkgs, ...}: {
-      environment.systemPackages =
-        systemShellPackages pkgs
-        ++ (with pkgs; [
+    packages = {
+      system = pkgs:
+        with pkgs; [
+          any-nix-shell
+          bind
+          nur.repos.mzwing.haru
+        ];
+
+      darwin = pkgs:
+        with pkgs; [
           bash
           iproute2mac
-        ]);
-    };
-
-    nixos = {pkgs, ...}: {
-      environment.systemPackages = systemShellPackages pkgs;
+        ];
     };
 
     home = {pkgs, ...}: {
@@ -101,7 +95,6 @@ in {
           ];
         };
       };
-      home.packages = [pkgs.any-nix-shell];
       home.shellAliases = {
         urldecode = "python3 -c 'import sys, urllib.parse as ul; print(ul.unquote_plus(sys.stdin.read()))'";
         urlencode = "python3 -c 'import sys, urllib.parse as ul; print(ul.quote_plus(sys.stdin.read()))'";

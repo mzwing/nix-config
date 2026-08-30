@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # A feature's declared name must match its path — core/nix.nix -> "core/nix", nixos/server/default.nix -> "nixos/server".
-# Typed by hand, so nothing else catches drift.
 set -euo pipefail
 
 status=0

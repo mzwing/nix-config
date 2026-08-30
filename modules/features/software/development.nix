@@ -1,48 +1,45 @@
-let
-  systemDevelopmentPackages = pkgs:
-    with pkgs; [
-      devenv
-      devbox
-      tokei
-    ];
-in {
+{
   mzwing.features."software/development" = {
     meta.platforms = [
       "darwin"
       "nixos"
     ];
 
-    darwin = {pkgs, ...}: {
-      environment.systemPackages =
-        systemDevelopmentPackages pkgs
-        ++ (with pkgs; [
-          tuist
-        ]);
-      homebrew = {
-        brews = [
-          "licensed"
-          "xcode-build-server"
+    requires = ["darwin/homebrew"];
+
+    packages = {
+      system = pkgs:
+        with pkgs; [
+          devenv
+          devbox
+          tokei
         ];
-        casks = [
-          "openinterminal"
+
+      darwin = pkgs: [pkgs.tuist];
+
+      nixos = pkgs:
+        with pkgs; [
+          licensed
+          jetbrains.idea
         ];
-        masApps = {
-          "Developer" = 640199958;
-          "TestFlight" = 899247664;
-          "Xcode" = 497799835;
-        };
+    };
+
+    darwin.homebrew = {
+      brews = [
+        "licensed"
+        "xcode-build-server"
+      ];
+      casks = [
+        "openinterminal"
+      ];
+      masApps = {
+        "Developer" = 640199958;
+        "TestFlight" = 899247664;
+        "Xcode" = 497799835;
       };
     };
 
-    nixos = {pkgs, ...}: {
-      environment.systemPackages =
-        systemDevelopmentPackages pkgs
-        ++ (with pkgs; [
-          licensed
-          jetbrains.idea
-        ]);
-      programs.ccache.enable = true;
-    };
+    nixos.programs.ccache.enable = true;
 
     home = {
       lib,

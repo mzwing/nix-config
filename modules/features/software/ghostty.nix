@@ -5,7 +5,8 @@
       "nixos"
     ];
 
-    # software/shell pulls this in on the servers too, which have no use for a terminal emulator.
+    requires = ["darwin/homebrew"];
+
     darwin = {
       lib,
       type,

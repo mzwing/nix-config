@@ -1,22 +1,24 @@
 {
   mzwing.features."software/virtualization" = {
-    meta.platforms = ["darwin"];
+    meta.platforms = [
+      "darwin"
+      "nixos"
+    ];
 
-    darwin = {pkgs, ...}: {
-      environment.systemPackages = with pkgs; [
-        container
+    requires = ["darwin/homebrew"];
+
+    packages.darwin = pkgs: [pkgs.container];
+
+    darwin.homebrew = {
+      brews = [
+        "container-compose"
       ];
-      homebrew = {
-        brews = [
-          "container-compose"
-        ];
-        casks = [
-          "orbstack"
-          "utm"
-        ];
-        masApps = {
-          "Windows App" = 1295203466;
-        };
+      casks = [
+        "orbstack"
+        "utm"
+      ];
+      masApps = {
+        "Windows App" = 1295203466;
       };
     };
 

@@ -5,11 +5,7 @@
       "nixos"
     ];
 
-    nixos = {pkgs, ...}: {
-      environment.systemPackages = with pkgs; [
-        gnupg
-      ];
-    };
+    packages.nixos = pkgs: [pkgs.gnupg];
 
     home = {pkgs, ...}: {
       programs.gpg.enable = true;

@@ -1,27 +1,12 @@
-# Assembling a host into nix-darwin / NixOS. One builder for both; the differences live in `platforms`.
 {
   config,
   inputs,
   lib,
   ...
 }: let
-  inherit (config.mzwing.lib) selectFeatures selectCIFeatures modulesFor;
+  inherit (config.mzwing.lib) modulesFor;
 
-  # Secret paths by name, so no module has to spell out a path into secrets/.
-  secretPaths = builtins.mapAttrs (_: entry: entry.file) (import ../../secrets/registry.nix);
-
-  specialArgsFor = host: {
-    inherit inputs;
-    secrets = secretPaths;
-    inherit
-      (host)
-      hostname
-      system
-      type
-      username
-      useremail
-      ;
-  };
+  secretPaths = lib.mapAttrs (_: entry: entry.file) (import ../../secrets/registry.nix);
 
   platforms = {
     darwin = {
@@ -40,42 +25,46 @@
     };
   };
 
-  homeManagerConfig = host: homeModules: {
-    home-manager = {
-      useGlobalPkgs = true;
-      useUserPackages = true;
-      extraSpecialArgs = specialArgsFor host;
-      users.${host.username}.imports = homeModules;
-      backupFileExtension = ".bak";
-    };
-  };
-
   mkHost = platform: featureSelector: host: let
     inherit (platforms.${platform}) build homeManagerModule baseModules;
 
+    specialArgs = {
+      inherit inputs;
+      secrets = secretPaths;
+      inherit
+        (host)
+        hostname
+        system
+        type
+        username
+        useremail
+        ;
+    };
+
     features = featureSelector platform host;
-    systemModules = modulesFor platform features;
     homeModules = modulesFor "home" features;
   in
     build {
       inherit (host) system;
-      specialArgs = specialArgsFor host;
+      inherit specialArgs;
       modules =
         baseModules
-        ++ systemModules
+        ++ modulesFor platform features
         ++ host.modules
         ++ lib.optionals (homeModules != []) [
           homeManagerModule
-          (homeManagerConfig host homeModules)
+          {
+            home-manager = {
+              useGlobalPkgs = true;
+              useUserPackages = true;
+              extraSpecialArgs = specialArgs;
+              users.${host.username}.imports = homeModules;
+              backupFileExtension = ".bak";
+            };
+          }
         ];
     };
 in {
-  config.mzwing.lib = {
-    inherit mkHost;
-
-    mkDarwinHost = mkHost "darwin" selectFeatures;
-    mkDarwinCIHost = mkHost "darwin" selectCIFeatures;
-    mkNixosHost = mkHost "nixos" selectFeatures;
-    mkNixosCIHost = mkHost "nixos" selectCIFeatures;
-  };
+  config.mzwing.lib.mkHosts = featureSelector: platform:
+    lib.mapAttrs (_: mkHost platform featureSelector) config.mzwing.hosts.${platform};
 }

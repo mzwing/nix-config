@@ -22,7 +22,6 @@
         inherit username homeDirectory;
         stateVersion = "26.11";
 
-        # UTF-8 shells, and no telemetry.
         sessionVariables = {
           LANG = "zh_CN.UTF-8";
           LANGUAGE = "zh_CN";

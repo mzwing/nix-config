@@ -5,6 +5,11 @@
       "nixos"
     ];
 
+    requires = ["darwin/homebrew"];
+
+    # TODO: complete chromium configuration
+    packages.nixos = pkgs: [pkgs.ungoogled-chromium];
+
     darwin.homebrew = {
       casks = [
         "arc"
@@ -16,13 +21,6 @@
         "uBlock Origin Lite" = 6745342698;
         "Userscripts" = 1463298887;
       };
-    };
-
-    # TODO: complete chromium configuration
-    nixos = {pkgs, ...}: {
-      environment.systemPackages = with pkgs; [
-        ungoogled-chromium
-      ];
     };
 
     home = {

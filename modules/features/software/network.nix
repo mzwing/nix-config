@@ -5,6 +5,15 @@
       "nixos"
     ];
 
+    requires = ["darwin/homebrew"];
+
+    packages.nixos = pkgs:
+      with pkgs; [
+        bruno
+        localsend
+        wireshark
+      ];
+
     darwin.homebrew = {
       casks = [
         "bruno"
@@ -17,14 +26,7 @@
       };
     };
 
-    nixos = {pkgs, ...}: {
-      environment.systemPackages = with pkgs; [
-        bruno
-        localsend
-        wireshark
-      ];
-      programs.kdeconnect.enable = true;
-    };
+    nixos.programs.kdeconnect.enable = true;
 
     home = {
       lib,

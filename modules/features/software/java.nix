@@ -8,7 +8,6 @@ in {
     ];
 
     # This config is for running java programs like MC. If you want developing java programs, you should use devenv config in the `environments/java` .
-    # software/shell pulls it in on the servers too, where a whole GraalVM would be for nothing.
 
     darwin = {
       lib,

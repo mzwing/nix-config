@@ -1,6 +1,19 @@
-# Schema for the feature/host registry: a feature contributes up to three module fragments, a host picks features by name.
 {lib, ...}: let
   inherit (lib) mkOption types;
+
+  packagesOption = description:
+    mkOption {
+      type = types.nullOr (types.functionTo (types.listOf types.package));
+      default = null;
+      inherit description;
+    };
+
+  moduleOption = description:
+    mkOption {
+      type = types.nullOr types.deferredModule;
+      default = null;
+      inherit description;
+    };
 
   featureType = types.submodule (
     {name, ...}: {
@@ -14,31 +27,25 @@
         requires = mkOption {
           type = types.listOf types.str;
           default = [];
-          description = "Features pulled in transitively when this one is selected. Also how profiles work: a profile is a feature with no modules of its own.";
+          description = "Features pulled in with this one. A profile is a feature with nothing but these.";
         };
 
-        darwin = mkOption {
-          type = types.nullOr types.deferredModule;
-          default = null;
-          description = "Optional nix-darwin module fragment.";
-        };
+        system = moduleOption "Module fragment applied on both platforms.";
+        darwin = moduleOption "nix-darwin module fragment.";
+        nixos = moduleOption "NixOS module fragment.";
+        home = moduleOption "Home Manager module fragment.";
 
-        nixos = mkOption {
-          type = types.nullOr types.deferredModule;
-          default = null;
-          description = "Optional NixOS module fragment.";
-        };
-
-        home = mkOption {
-          type = types.nullOr types.deferredModule;
-          default = null;
-          description = "Optional Home Manager module fragment.";
+        packages = {
+          system = packagesOption "environment.systemPackages on both platforms.";
+          darwin = packagesOption "environment.systemPackages on darwin.";
+          nixos = packagesOption "environment.systemPackages on NixOS.";
+          home = packagesOption "home.packages.";
         };
 
         meta.platforms = mkOption {
           type = types.listOf types.str;
           default = [];
-          description = ''Platforms ("darwin", "nixos") this feature may be selected on. Enforced: selecting it elsewhere is an evaluation error.'';
+          description = ''Platforms ("darwin", "nixos") this feature may be selected on; selecting it elsewhere is an evaluation error.'';
         };
 
         meta.ci.mode = mkOption {
@@ -64,7 +71,7 @@
         "desktop"
         "server"
       ];
-      description = ''What this host is for. Passed to every module as a specialArg, so one feature can serve both roles without being split into separate files — e.g. `lib.mkIf (type == "desktop")` around its GUI parts.'';
+      description = ''What this host is for. A specialArg, so one feature can serve both roles — e.g. `lib.mkIf (type == "desktop")` around its GUI parts.'';
     };
 
     username = mkOption {type = types.str;};
@@ -83,7 +90,7 @@
     modules = mkOption {
       type = types.listOf types.deferredModule;
       default = [];
-      description = "Host-local modules not worth making into features. By convention they sit next to the host with an underscore prefix, which import-tree skips.";
+      description = "Host-local modules, by convention `_`-prefixed neighbours of the host file so import-tree skips them.";
     };
   };
 
@@ -93,10 +100,7 @@
         commonHostOptions name
         // {
           system = mkOption {
-            type = types.enum [
-              "aarch64-darwin"
-              "x86_64-darwin"
-            ];
+            type = types.enum ["aarch64-darwin"];
             default = "aarch64-darwin";
           };
         };
@@ -128,7 +132,6 @@ in {
     features = mkOption {
       type = types.attrsOf featureType;
       default = {};
-      description = "The top-level option of my nix config.";
     };
 
     hosts = {

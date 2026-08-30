@@ -1,13 +1,20 @@
-# pi and its extensions. Skills come from software/skills, MCP and gryph from software/vibecoding.
-{
+let
+  agentContext = import ../../../data/agent-context.nix;
+  endpoint = import ../../../data/cliproxyapiplus.nix;
+in {
   mzwing.features."software/pi-coding-agent" = {
     meta.platforms = [
       "darwin"
       "nixos"
     ];
 
-    # The provider below points at that service.
-    requires = ["software/cliproxyapiplus"];
+    requires = [
+      # The provider below points at that service.
+      "software/cliproxyapiplus"
+      # `programs.git.includes` and `programs.gryph` below.
+      "software/git"
+      "software/gryph"
+    ];
 
     home = {
       config,
@@ -17,12 +24,18 @@
       secrets,
       ...
     }: let
-      endpoint = import ../../../data/cliproxyapiplus.nix;
-
       jsonFormat = pkgs.formats.json {};
 
       # Keyed by plugin directory: each one reads <configDir>/extensions/<plugin>/config.json.
       piExtensionSettings = {
+        pi-model-info = {
+          "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/main/packages/pi-model-info/schemas/config.schema.json";
+          providers = {
+            cliproxyapiplus = {};
+            openai-codex.models."gpt-5.6-sol".override.contextWindow = 1050000;
+          };
+        };
+
         pi-permission-auto-review = {
           "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/main/packages/pi-permission-auto-review/schemas/config.schema.json";
           provider = "openai-codex";
@@ -71,7 +84,7 @@
         inputs.agenix.homeManagerModules.default
       ];
 
-      # The same identity the system module uses, spelled again because Home Manager is a separate agenix instance — clients cannot read the service's copy of the secret.
+      # Home Manager is a separate agenix instance, so it cannot read the service's copy of the secret.
       age.identityPaths = [
         "${config.home.homeDirectory}/.ssh/agenix"
       ];
@@ -88,6 +101,8 @@
         piExtensionSettings;
 
       programs = {
+        gryph.enableIntegration.pi-agent = true;
+
         git.includes = [
           {
             # Internal snapshot commits must not inherit the user's signing policy.
@@ -103,29 +118,18 @@
             pnpm
             rtk
           ];
-          context = "
+          context = ''
             DO NOT use absolute paths when editing (except /tmp or /dev/null), since it will break the permission-system's auto review ability and fall back to let user decide. Use relative paths or workspace-relative paths instead.
 
             NEVER try to `git commit` or `git push`!
 
-            NEVER try to rebuild the whole system!
-
-            NEVER try to build any programs (especially Rust) locally, except the user explicitly approve it in the context. Ask the user to build it themselves instead.
-
+            ${agentContext.rules}
             When possible, ALWAYS use the builtin tools (like read, edit, etc.) instead of shell commands! And when possible, ALWAYS use fffind / fffgrep instead of find / grep, since fffind / fffgrep is much faster and more efficient, but NOTICE: fffind / fffgrep is git-aware, and cannot search files not tracked by git.
 
             NEVER defensive programming! NEVER overthinking!
 
-            <!-- CODEGRAPH_START -->
-            ## CodeGraph
-
-            In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the repo root), reach for it BEFORE grep/find or reading files when you need to understand or locate code:
-
-            - **MCP tool** (when available): `codegraph_explore` answers most code questions in one call — the relevant symbols' verbatim source plus the call paths between them, including dynamic-dispatch hops grep can't follow. Name a file or symbol in the query to read its current line-numbered source. If it's listed but deferred, load it by name via tool search.
-
-            If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
-            <!-- CODEGRAPH_END -->
-          ";
+            ${agentContext.codegraph}
+          '';
           models = {
             providers = {
               cliproxyapiplus = {
@@ -158,6 +162,7 @@
               "npm:@gotgenes/pi-subagents"
               "npm:@gotgenes/pi-subagents-worktrees"
               "npm:@juicesharp/rpiv-ask-user-question"
+              "npm:@mzwing/pi-model-info"
               "npm:@mzwing/pi-permission-auto-review"
               "npm:@narumitw/pi-btw"
               "npm:@narumitw/pi-plan-mode"

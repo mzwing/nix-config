@@ -1,4 +1,3 @@
-# The local CLI proxy: the service and its plugins.
 let
   endpoint = import ../../../data/cliproxyapiplus.nix;
 
@@ -15,32 +14,56 @@ let
       done
     '';
 
-  cliproxyapiplusService = pkgs: {
-    enable = true;
-    settings = {
-      inherit (endpoint) host port;
-
-      debug = false;
-      logging-to-file = true;
-      logs-max-total-size-mb = 10;
-      codex-instructions-enabled = false;
-
-      remote-management = {
-        allow-remote = false;
-        disable-control-panel = false;
+  serviceFor = user: {
+    config,
+    pkgs,
+    secrets,
+    ...
+  }: {
+    age.secrets = {
+      cliproxyapiplus-api-key = {
+        file = secrets."cliproxyapiplus/api-key";
+        owner = user;
+        group = user;
       };
+      cliproxyapiplus-remote-secret-key = {
+        file = secrets."cliproxyapiplus/remote-secret-key";
+        owner = user;
+        group = user;
+      };
+    };
 
-      # A store path, so the plugin set rolls back with the generation. The panel's plugin store cannot write there.
-      plugins = {
-        enabled = true;
-        dir = "${pluginsDir pkgs}";
+    services.cliproxyapiplus = {
+      enable = true;
 
-        configs.antigravity-coding-filter = {
+      apiKeysPaths = [config.age.secrets.cliproxyapiplus-api-key.path];
+      remoteSecretKeyPath = config.age.secrets.cliproxyapiplus-remote-secret-key.path;
+
+      settings = {
+        inherit (endpoint) host port;
+
+        debug = false;
+        logging-to-file = true;
+        logs-max-total-size-mb = 10;
+        codex-instructions-enabled = false;
+
+        remote-management = {
+          allow-remote = false;
+          disable-control-panel = false;
+        };
+
+        # A store path, so the plugin set rolls back with the generation. The panel's plugin store cannot write there.
+        plugins = {
           enabled = true;
-          priority = 1;
-          # "block" would 403 my own clients instead.
-          mode = "rewrite";
-          use_default_keywords = true;
+          dir = "${pluginsDir pkgs}";
+
+          configs.antigravity-coding-filter = {
+            enabled = true;
+            priority = 1;
+            # "block" would 403 my own clients instead.
+            mode = "rewrite";
+            use_default_keywords = true;
+          };
         };
       };
     };
@@ -55,70 +78,24 @@ in {
     darwin = {
       config,
       inputs,
-      pkgs,
-      secrets,
       username,
       ...
     }: {
       imports = [
         inputs.agenix.darwinModules.default
         inputs.nur.repos.mzwing.modules.darwin.cliproxyapiplus
+        (serviceFor "_cliproxyapiplus")
       ];
 
-      # Not the agenix default (/etc/ssh/ssh_host_*): macOS makes those outside nix and may replace them. Root can read this one whatever its mode, and it decrypts secrets and nothing else.
+      # macOS makes /etc/ssh/ssh_host_* outside nix and may replace them; this key only decrypts secrets.
       age.identityPaths = ["${config.users.users.${username}.home}/.ssh/agenix"];
-      age.secrets = {
-        cliproxyapiplus-api-key = {
-          file = secrets."cliproxyapiplus/api-key";
-          owner = "_cliproxyapiplus";
-          group = "_cliproxyapiplus";
-        };
-        cliproxyapiplus-remote-secret-key = {
-          file = secrets."cliproxyapiplus/remote-secret-key";
-          owner = "_cliproxyapiplus";
-          group = "_cliproxyapiplus";
-        };
-      };
-
-      services.cliproxyapiplus =
-        cliproxyapiplusService pkgs
-        // {
-          apiKeysPaths = [config.age.secrets.cliproxyapiplus-api-key.path];
-          remoteSecretKeyPath = config.age.secrets.cliproxyapiplus-remote-secret-key.path;
-        };
     };
 
-    nixos = {
-      config,
-      inputs,
-      pkgs,
-      secrets,
-      ...
-    }: {
+    nixos = {inputs, ...}: {
       imports = [
         inputs.nur.repos.mzwing.modules.nixos.cliproxyapiplus
+        (serviceFor "cliproxyapiplus")
       ];
-
-      # Unlike darwin: nix owns the host keys here, so the agenix default holds. A NixOS host selecting this feature has to be added to the recipients in secrets/registry.nix.
-      age.secrets = {
-        cliproxyapiplus-api-key = {
-          file = secrets."cliproxyapiplus/api-key";
-          owner = "cliproxyapiplus";
-          group = "cliproxyapiplus";
-        };
-        cliproxyapiplus-remote-secret-key = {
-          file = secrets."cliproxyapiplus/remote-secret-key";
-          owner = "cliproxyapiplus";
-          group = "cliproxyapiplus";
-        };
-      };
-
-      services.cliproxyapiplus =
-        cliproxyapiplusService pkgs
-        // {
-          apiKeysPaths = [config.age.secrets.cliproxyapiplus-api-key.path];
-          remoteSecretKeyPath = config.age.secrets.cliproxyapiplus-remote-secret-key.path;
-        };
     };
   };
 }

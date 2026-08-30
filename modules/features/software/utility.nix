@@ -1,47 +1,40 @@
-let
-  systemUtilityPackages = pkgs:
-    with pkgs; [
-      p7zip
-      procps
-      procs
-      rclone
-    ];
-in {
+{
   mzwing.features."software/utility" = {
     meta.platforms = [
       "darwin"
       "nixos"
     ];
 
-    darwin = {pkgs, ...}: {
-      environment.systemPackages =
-        systemUtilityPackages pkgs
-        ++ (with pkgs; [
-          mas
-        ]);
-      homebrew = {
-        brews = [
-          "mole"
+    requires = ["darwin/homebrew"];
+
+    packages = {
+      system = pkgs:
+        with pkgs; [
+          p7zip
+          procps
+          procs
+          rclone
         ];
-        casks = [
-          "jordanbaird-ice@beta"
-          "karabiner-elements"
-          "keepingyouawake"
-          "keka"
-          "kekaexternalhelper"
-          "maccy"
-          "stats"
-          "easydict"
-        ];
-      };
+
+      darwin = pkgs: [pkgs.mas];
+
+      nixos = pkgs: [pkgs.kdePackages.ark];
     };
 
-    nixos = {pkgs, ...}: {
-      environment.systemPackages =
-        systemUtilityPackages pkgs
-        ++ (with pkgs; [
-          kdePackages.ark
-        ]);
+    darwin.homebrew = {
+      brews = [
+        "mole"
+      ];
+      casks = [
+        "jordanbaird-ice@beta"
+        "karabiner-elements"
+        "keepingyouawake"
+        "keka"
+        "kekaexternalhelper"
+        "maccy"
+        "stats"
+        "easydict"
+      ];
     };
 
     home = {

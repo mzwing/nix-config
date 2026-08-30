@@ -1,5 +1,4 @@
-# Route package downloads through Chinese mirrors.
-# flake.nix's nixConfig repeats this list for bootstrap; change both together.
+# flake.nix repeats this list for bootstrap; change both together.
 let
   nixMirrorSubstituters = [
     # "https://mirrors.cernet.edu.cn/nix-channels/store"
@@ -23,6 +22,8 @@ in {
       "darwin"
       "nixos"
     ];
+
+    requires = ["darwin/homebrew"];
 
     darwin = {lib, ...}: {
       mzwing.nix.mirrorSubstituters = nixMirrorSubstituters;
