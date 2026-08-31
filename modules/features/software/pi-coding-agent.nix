@@ -32,7 +32,10 @@ in {
           "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/main/packages/pi-model-info/schemas/config.schema.json";
           providers = {
             cliproxyapiplus = {};
-            openai-codex.models."gpt-5.6-sol".override.contextWindow = 1050000;
+            openai-codex = {
+              allowDynamic = true;
+              models."gpt-5.6-sol".override.contextWindow = 1050000;
+            };
           };
         };
 

@@ -21,6 +21,7 @@
     darwin.homebrew.casks = [
       "antigravity"
       "chatgpt"
+      "magic-context-dashboard"
     ];
 
     home = {
