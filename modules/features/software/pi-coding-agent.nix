@@ -30,13 +30,7 @@ in {
       piExtensionSettings = {
         pi-model-info = {
           "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/main/packages/pi-model-info/schemas/config.schema.json";
-          providers = {
-            cliproxyapiplus = {};
-            openai-codex = {
-              allowDynamic = true;
-              models."gpt-5.6-sol".override.contextWindow = 1050000;
-            };
-          };
+          providers.cliproxyapiplus = {};
         };
 
         pi-permission-auto-review = {
@@ -142,6 +136,9 @@ in {
                 authHeader = true;
                 models = [];
               };
+
+              # Defaults to 272000 to stay in the short-context pricing tier.
+              openai-codex.modelOverrides."gpt-5.6-sol".contextWindow = 1050000;
             };
           };
           settings = {

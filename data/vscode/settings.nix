@@ -1,5 +1,31 @@
 pkgs: let
   inherit (pkgs) lib;
+
+  # Everything oxfmt handles, taken from the extension's own activation events. The JS-family profiles hand it all of them,
+  # which deliberately outranks the core [yaml] entry and the toml/scss formatters those profiles also carry.
+  oxcLanguages = [
+    "astro"
+    "css"
+    "graphql"
+    "handlebars"
+    "html"
+    "javascript"
+    "javascriptreact"
+    "json"
+    "json5"
+    "jsonc"
+    "less"
+    "markdown"
+    "mdx"
+    "mjml"
+    "scss"
+    "svelte"
+    "toml"
+    "typescript"
+    "typescriptreact"
+    "vue"
+    "yaml"
+  ];
 in {
   core =
     {
@@ -28,6 +54,7 @@ in {
       "diffEditor.codeLens" = true;
       "http.systemCertificatesNode" = true;
 
+      "chat.sessionSync.enabled" = true;
       "chat.viewSessions.orientation" = "stacked";
       "chat.tools.terminal.autoApprove" = {
         "/^sips -s format png ref\\.pdf --out ref\\.png$/" = {
@@ -96,14 +123,16 @@ in {
     args.text = "\\\r\n";
   }) ["ctrl+enter" "shift+enter"];
 
-  webJs = {
-    "[typescript]"."editor.defaultFormatter" = "TypeScriptTeam.native-preview";
-    "[javascript]"."editor.defaultFormatter" = "TypeScriptTeam.native-preview";
-    "typescript.updateImportsOnFileMove.enabled" = "always";
-    "js/ts.experimental.useTsgo" = true;
-    "vite.autoStart" = false;
-    "vite.browserType" = "system";
-  };
+  webJs =
+    lib.genAttrs (map (l: "[${l}]") oxcLanguages) (_: {
+      "editor.defaultFormatter" = "oxc.oxc-vscode";
+    })
+    // {
+      "typescript.updateImportsOnFileMove.enabled" = "always";
+      "js/ts.experimental.useTsgo" = true;
+      "vite.autoStart" = false;
+      "vite.browserType" = "system";
+    };
 
   ops = {
     "nginx-conf-hint.syntax" = "sublime";

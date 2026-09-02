@@ -75,6 +75,7 @@ in {
           includeCoAuthoredBy = false;
           model = "opus";
           theme = "dark";
+          outputStyle = "concise";
 
           # `/tui fullscreen` cannot persist this: settings.json is a store symlink.
           tui = "fullscreen";

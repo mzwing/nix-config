@@ -1,5 +1,7 @@
 pkgs: let
-  m = pkgs.vscode-marketplace;
+  # The release channel, which is what the marketplace serves by default and what these extensions were on before Nix
+  # managed them. Plain vscode-marketplace mixes in pre-releases, which silently moved 40 of them onto beta builds.
+  m = pkgs.vscode-marketplace-release;
 in {
   base = with m; [
     aaron-bond.better-comments
@@ -70,7 +72,8 @@ in {
   ];
 
   webJs = [
-    # Via nixpkgs so the version stays in step with the postPatch pointing oxc.path.oxlint/oxfmt at nixpkgs binaries; vscode-marketplace serves a 0.0.2 pre-release that patch cannot parse.
+    # Via nixpkgs so the version stays in step with the postPatch pointing oxc.path.oxlint/oxfmt at nixpkgs binaries;
+    # that patch is written against 1.6x and fails on the older vsix either marketplace channel serves.
     pkgs.vscode-extensions.oxc.oxc-vscode
     m.antfu.browse-lite
     m.antfu.vite

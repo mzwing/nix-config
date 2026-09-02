@@ -31,17 +31,16 @@
       profiles = {
         default = mkProfile core {};
 
-        nodejs = mkProfile (core ++ web ++ ext.solid) settings.webJs;
+        nodejs = mkProfile (core ++ web) settings.webJs;
         react = mkProfile (core ++ web ++ ext.react) settings.webJs;
-        vue = mkProfile (core ++ web ++ ext.vue) (settings.webJs
-          // {
-            "[vue]"."editor.defaultFormatter" = "Vue.volar";
-          });
+        # No [vue] formatter override: oxfmt covers vue, so volar stays the language server and stops being the formatter.
+        vue = mkProfile (core ++ web ++ ext.vue) settings.webJs;
         svelte = mkProfile (core ++ web ++ ext.svelte) (settings.webJs
           // {
             "svelte.enable-ts-plugin" = true;
           });
         lit = mkProfile (core ++ web ++ ext.lit) settings.webJs;
+        solid = mkProfile (core ++ web ++ ext.solid) settings.webJs;
         bun = mkProfile (core ++ web ++ ext.bun) settings.webJs;
         # No webJs: deno's LSP takes over TypeScript and collides with eslint, oxc and tsgo.
         deno = mkProfile (core ++ ext.webUi ++ ext.deno) {};
