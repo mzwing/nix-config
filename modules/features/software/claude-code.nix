@@ -11,6 +11,8 @@ in {
       "darwin/homebrew"
       # `hooks` below reads programs.gryph.
       "software/gryph"
+      # The wakatime plugin below only tracks once ~/.wakatime.cfg carries the key.
+      "software/wakatime"
     ];
 
     packages.nixos = pkgs: [pkgs.cc-switch];
@@ -25,7 +27,7 @@ in {
       pkgs,
       ...
     }: let
-      claude-hud = pkgs.nur.repos.mzwing.claude-hud;
+      inherit (pkgs.nur.repos.mzwing) claude-code-wakatime claude-hud;
 
       jsonFormat = pkgs.formats.json {};
     in {
@@ -69,7 +71,7 @@ in {
           ${agentContext.rules}
           ${agentContext.codegraph}
         '';
-        plugins.claude-hud = claude-hud;
+        plugins = {inherit claude-code-wakatime claude-hud;};
 
         settings = {
           includeCoAuthoredBy = false;

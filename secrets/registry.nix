@@ -44,4 +44,9 @@ in {
     file = ./upcloud-sg/network/utility-ipv4.age;
     recipients = ownedBy "mzwing-upcloud-sg";
   };
+
+  "wakatime/api-key" = {
+    file = ./wakatime/api-key.age;
+    recipients = [mzwing];
+  };
 }

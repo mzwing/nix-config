@@ -14,6 +14,8 @@ in {
       # `programs.git.includes` and `programs.gryph` below.
       "software/git"
       "software/gryph"
+      # `npm:pi-wakatime` below only tracks once ~/.wakatime.cfg carries the key.
+      "software/wakatime"
     ];
 
     home = {
@@ -114,6 +116,7 @@ in {
             nodejs
             pnpm
             rtk
+            wakatime-cli
           ];
           context = ''
             DO NOT use absolute paths when editing (except /tmp or /dev/null), since it will break the permission-system's auto review ability and fall back to let user decide. Use relative paths or workspace-relative paths instead.
@@ -180,6 +183,7 @@ in {
               "npm:pi-simplify"
               "npm:pi-smart-fetch"
               "npm:pi-tool-display"
+              "npm:pi-wakatime"
               "npm:pi-web-access"
               "npm:pi-workspace-history"
               "npm:pi-wtf"

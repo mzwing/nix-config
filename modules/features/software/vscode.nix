@@ -5,7 +5,11 @@
       "nixos"
     ];
 
-    requires = ["darwin/homebrew"];
+    requires = [
+      "darwin/homebrew"
+      # The wakatime extension below only tracks once ~/.wakatime.cfg carries the key.
+      "software/wakatime"
+    ];
 
     darwin.homebrew.casks = ["visual-studio-code"];
 

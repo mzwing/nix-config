@@ -25,6 +25,7 @@ in {
     ultram4rine.vscode-choosealicense
     upstash.context7-mcp
     w88975.code-translate
+    wakatime.vscode-wakatime
     wayou.vscode-todo-highlight
   ];
 
