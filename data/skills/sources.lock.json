@@ -43,16 +43,16 @@
     "pins": {
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-L5xMY7J+z1+wJIvhm2kGxM1b8l4y8L2wZlRDmuywsyM=",
+        "hash": "sha256-3wfB8yRgb6UVypciEwYpS+t+PEbSSBnb+hlE2STg4xE=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "8415f67a1bca80e8cc4952c07b7389bacba2188d",
+        "revision": "513fb4821e2b0c07e713f4fd9dc6df033ce65546",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/8415f67a1bca80e8cc4952c07b7389bacba2188d.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/513fb4821e2b0c07e713f4fd9dc6df033ce65546.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
