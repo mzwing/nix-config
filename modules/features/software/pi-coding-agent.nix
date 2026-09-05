@@ -140,12 +140,11 @@ in {
                 models = [];
               };
 
-              # Defaults to 272000 to stay in the short-context pricing tier.
               openai-codex.modelOverrides."gpt-5.6-sol".contextWindow = 1050000;
             };
           };
           settings = {
-            defaultModel = "gpt-5.6-sol";
+            defaultModel = "gpt-6-astra";
             defaultProvider = "openai-codex";
             defaultThinkingLevel = "xhigh";
             retry = {
