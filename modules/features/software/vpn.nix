@@ -10,21 +10,15 @@
     packages = {
       system = pkgs:
         with pkgs; [
-          wgcf
           nur.repos.mzwing.sing-box-alpha
         ];
 
       nixos = pkgs: [pkgs.tailscale];
     };
 
-    darwin.homebrew = {
-      brews = [
-        "cloudflarewarpspeedtest"
-      ];
-      casks = [
-        "sfm@alpha"
-        "tailscale-app"
-      ];
-    };
+    darwin.homebrew.casks = [
+      "sfm@alpha"
+      "tailscale-app"
+    ];
   };
 }

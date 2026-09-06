@@ -10,9 +10,6 @@
     # Every WakaTime plugin shells out to this one binary, and downloads its own copy into ~/.wakatime when it is not on PATH.
     packages.home = pkgs: [pkgs.wakatime-cli];
 
-    # The menubar tracker for everything outside an editor.
-    darwin.homebrew.casks = ["wakatime"];
-
     home = {
       config,
       inputs,
