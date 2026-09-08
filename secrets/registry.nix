@@ -49,4 +49,9 @@ in {
     file = ./wakatime/api-key.age;
     recipients = [mzwing];
   };
+
+  "wap/network/public" = {
+    file = ./wap/network/public.age;
+    recipients = ownedBy "mzwing-wap";
+  };
 }
