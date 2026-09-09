@@ -22,6 +22,7 @@
       "antigravity"
       "chatgpt"
       "magic-context-dashboard"
+      "paseo"
     ];
 
     home = {
@@ -63,13 +64,13 @@
           settings = {
             historian.pi = {
               model = {
-                model = "openai-codex/gpt-5.6-sol";
+                model = "openai-codex/gpt-6-astra";
                 thinking_level = "xhigh";
               };
-              fallback_models = ["deepseek/deepseek-v4-flash"];
+              fallback_models = ["deepseek/deepseek-v4.1-flash-expires-on-0910"];
             };
             dreamer.pi.model = {
-              model = "openai-codex/gpt-5.6-sol";
+              model = "openai-codex/gpt-6-astra";
               thinking_level = "xhigh";
             };
             sidekick = {
