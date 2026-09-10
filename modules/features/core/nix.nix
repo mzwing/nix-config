@@ -48,7 +48,8 @@ in {
               ++ map (cache: cache.url) nurCaches
             );
 
-            extra-trusted-public-keys = lib.unique (
+            # trusted-public-keys rather than the extra- form: nixos-anywhere seeds the installer from this exact setting, and never reads the other one.
+            trusted-public-keys = lib.unique (
               cacheData.defaultPublicKeys
               ++ cacheData.extraPublicKeys
               ++ map (cache: cache.publicKey) nurCaches
