@@ -9,6 +9,7 @@
     features = [
       "profiles/nixos-server"
       "nixos/server/digitalocean"
+      "nixos/server/disko-vda-ext4"
     ];
 
     modules = [

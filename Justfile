@@ -92,6 +92,7 @@ nixos-anywhere host target no_reboot='':
     --target-host {{target}} \
     {{no_reboot}} \
     --build-on remote \
+    --copy-host-keys \
     --generate-hardware-config nixos-generate-config {{repo_dir}}/modules/hosts/nixos/{{host}}/_hardware.nix
 
 # Names as registry.nix spells them, without the .age suffix that `secret` adds back.

@@ -1,18 +1,19 @@
 {
-  mzwing.hosts.nixos.mzwing-wap = {
-    hostname = "mzwing-wap";
+  mzwing.hosts.nixos.mzwing-azure = {
+    hostname = "mzwing-azure";
     system = "x86_64-linux";
     type = "server";
     username = "mzwing";
     useremail = "mzwing@mzwing.eu.org";
 
-    # No provider feature: a plain QEMU guest, and _hardware.nix imports qemu-guest.nix itself.
     features = [
       "profiles/nixos-server"
-      "nixos/server/disko-vda-ext4"
+      "nixos/server/azure"
     ];
 
+    # No disko feature: the layout spans this VM's own pair of disks, so it lives next to the hardware it describes.
     modules = [
+      ./_disk.nix
       ./_hardware.nix
       ./_network.nix
     ];

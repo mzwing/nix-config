@@ -8,6 +8,7 @@
 
     features = [
       "profiles/nixos-server"
+      "nixos/server/disko-vda-ext4"
       "nixos/server/upcloud"
       "software/pumpkin"
     ];
