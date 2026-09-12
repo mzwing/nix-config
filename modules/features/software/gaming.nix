@@ -11,6 +11,7 @@
 
     darwin.homebrew.casks = [
       "heroic"
+      "pvz-portable"
       "xmcl"
     ];
 

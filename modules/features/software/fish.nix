@@ -35,7 +35,6 @@
               autopair
               done
               fzf-fish
-              wakatime-fish
               z
             ]
           );
