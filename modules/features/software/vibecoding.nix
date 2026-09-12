@@ -67,7 +67,7 @@
                 model = "openai-codex/gpt-6-astra";
                 thinking_level = "xhigh";
               };
-              fallback_models = ["deepseek/deepseek-v4.1-flash-expires-on-0910"];
+              fallback_models = ["deepseek/deepseek-flash"];
             };
             dreamer.pi.model = {
               model = "openai-codex/gpt-6-astra";

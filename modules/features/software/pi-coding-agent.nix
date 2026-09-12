@@ -9,12 +9,9 @@ in {
     ];
 
     requires = [
-      # The provider below points at that service.
       "software/cliproxyapiplus"
-      # `programs.git.includes` and `programs.gryph` below.
       "software/git"
       "software/gryph"
-      # `npm:pi-wakatime` below only tracks once ~/.wakatime.cfg carries the key.
       "software/wakatime"
     ];
 
@@ -121,9 +118,8 @@ in {
           context = ''
             DO NOT use absolute paths when editing (except /tmp or /dev/null), since it will break the permission-system's auto review ability and fall back to let user decide. Use relative paths or workspace-relative paths instead.
 
-            NEVER try to `git commit` or `git push`!
-
             ${agentContext.rules}
+
             When possible, ALWAYS use the builtin tools (like read, edit, etc.) instead of shell commands! And when possible, ALWAYS use fffind / fffgrep instead of find / grep, since fffind / fffgrep is much faster and more efficient, but NOTICE: fffind / fffgrep is git-aware, and cannot search files not tracked by git.
 
             NEVER defensive programming! NEVER overthinking!

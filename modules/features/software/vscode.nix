@@ -7,7 +7,6 @@
 
     requires = [
       "darwin/homebrew"
-      # The wakatime extension below only tracks once ~/.wakatime.cfg carries the key.
       "software/wakatime"
     ];
 
@@ -88,7 +87,6 @@
         // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
           vscodium = {
             enable = true;
-            package = pkgs.vscodium-fhs;
             inherit profiles;
           };
         };

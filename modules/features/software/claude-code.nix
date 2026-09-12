@@ -66,8 +66,6 @@ in {
         enable = true;
         enableMcpIntegration = true;
         context = ''
-          NEVER try to git commit or push!
-
           ${agentContext.rules}
           ${agentContext.codegraph}
         '';

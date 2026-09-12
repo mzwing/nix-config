@@ -6,7 +6,6 @@
       services.pumpkin = {
         enable = true;
 
-        # Reads the port back out of settings.networking.java.address.
         openFirewall = true;
 
         settings = {
