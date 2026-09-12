@@ -2,22 +2,47 @@
 let
   identities = import ../data/identities.nix;
 
+  inherit (identities) hosts;
   inherit (identities.age) mzwing;
 
+  # For a secret one host keeps to itself. Shared ones spell their readers out instead.
   ownedBy = host: [
     mzwing
-    identities.hosts.${host}
+    hosts.${host}
   ];
 in {
-  # One recipient covers both Mac readers: root and Home Manager both use ~/.ssh/agenix.
+  # mzwing covers both Mac readers at once, since root and Home Manager there share ~/.ssh/agenix; each NixOS host running the service adds its own key.
   "cliproxyapiplus/api-key" = {
     file = ./cliproxyapiplus/api-key.age;
-    recipients = [mzwing];
+    recipients = [
+      mzwing
+      hosts.mzwing-azure
+    ];
   };
 
   "cliproxyapiplus/remote-secret-key" = {
     file = ./cliproxyapiplus/remote-secret-key.age;
-    recipients = [mzwing];
+    recipients = [
+      mzwing
+      hosts.mzwing-azure
+    ];
+  };
+
+  # One Origin CA pair for the whole zone (*.mzwing.eu.org), so every host that terminates TLS for it belongs on these lists.
+  "cloudflare/origin-cert" = {
+    file = ./cloudflare/origin-cert.age;
+    recipients = [
+      mzwing
+      hosts.mzwing-azure
+    ];
+  };
+
+  "cloudflare/origin-key" = {
+    file = ./cloudflare/origin-key.age;
+    recipients = [
+      mzwing
+      hosts.mzwing-azure
+    ];
   };
 
   "do-sgp/network/private" = {

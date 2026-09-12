@@ -47,8 +47,9 @@ let
         logs-max-total-size-mb = 10;
         codex-instructions-enabled = false;
 
+        # nginx fronts this on the server, so the panel has to accept non-loopback callers; the bcrypt secret key is what actually gates it.
         remote-management = {
-          allow-remote = false;
+          allow-remote = true;
           disable-control-panel = false;
         };
 

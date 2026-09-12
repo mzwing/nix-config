@@ -11,9 +11,9 @@
 
   # NixOS only: macOS may replace its host key, so the Mac decrypts with the age key above.
   hosts = {
+    mzwing-azure = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPy8vARas7j7pgOS8S5kZhZ9nq4Hoi2Mwttnzmw/gcsV root@mzwing-azure";
     mzwing-do-sgp = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBt5rrGbMYQ1c4dtRrzJpGX5RDyKh5/c5ABdnSgfoGDJ root@mzwing-do-sgp";
     mzwing-upcloud-sg = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFN6u5TVLoI3OzCfCqjVYThl+4UcAXZ8noRJO05aoHcL root@mzwing-upcloud-sg";
-    # Inherited from the Debian install it replaces: pass --copy-host-keys, or it cannot open its own secrets.
     mzwing-wap = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILGW67hQftVipTLuqRhnICn8zYUSQ/hpu0YGjdtCaS8N root@wap.server.mzwing.eu.org";
   };
 }
