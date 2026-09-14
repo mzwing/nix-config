@@ -4,14 +4,16 @@ inputs:
     url: github:cachix/devenv-nixpkgs/rolling
   agenix:
     url: github:ryantm/agenix
-  nur:
-    url: github:nix-community/NUR
-    inputs:
-      nixpkgs:
-        follows: nixpkgs
+  nur-packages:
+    url: github:mzwing/nur-packages
 
 # If you're using non-OSS software, you can set allow_unfree to true.
 allow_unfree: true
+
+secretspec:
+  enable: true
+  provider: keyring
+  cachix_auth_token: true
 
 # If you're not willing to allow unsupported packages:
 # allow_unsupported_system: false

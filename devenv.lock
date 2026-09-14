@@ -60,27 +60,6 @@
         "type": "github"
       }
     },
-    "flake-parts": {
-      "inputs": {
-        "nixpkgs-lib": [
-          "nur",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1733312601,
-        "narHash": "sha256-4pDvzqnegAfRkPwO3wmwBhVi/Sye1mzps0zHWYnP88c=",
-        "owner": "hercules-ci",
-        "repo": "flake-parts",
-        "rev": "205b12d8b7cd4802fbcb8e8ef6a0f1408781a4f9",
-        "type": "github"
-      },
-      "original": {
-        "owner": "hercules-ci",
-        "repo": "flake-parts",
-        "type": "github"
-      }
-    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -154,24 +133,37 @@
         "type": "github"
       }
     },
-    "nur": {
-      "inputs": {
-        "flake-parts": "flake-parts",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
+    "nixpkgs_3": {
       "locked": {
-        "lastModified": 1789318269,
-        "narHash": "sha256-qh8ggTZdirts2wHnrdMMm4lNsQQJyCcwdhHc4a0/9po=",
-        "owner": "nix-community",
-        "repo": "NUR",
-        "rev": "7387fd5cc50c9f8ed69df72bbf85b9e0c577ce48",
+        "lastModified": 1788686502,
+        "narHash": "sha256-C5ETRqK0ji2SGGVpjdsAIv+Yd6m4vB6DOiGPQXP/M34=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "94a0f8d9ca5da101ec1cddbdfecfdc1ae1766d04",
         "type": "github"
       },
       "original": {
-        "owner": "nix-community",
-        "repo": "NUR",
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nur-packages": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_3"
+      },
+      "locked": {
+        "lastModified": 1789317084,
+        "narHash": "sha256-A7QWCooBpCbJz/xhAnG7nENzJMx08etK0Bzvos1Gnas=",
+        "owner": "mzwing",
+        "repo": "nur-packages",
+        "rev": "886b0d6f1cdefb962000ac859c940ccfeecc355a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mzwing",
+        "repo": "nur-packages",
         "type": "github"
       }
     },
@@ -180,7 +172,7 @@
         "agenix": "agenix",
         "devenv": "devenv",
         "nixpkgs": "nixpkgs_2",
-        "nur": "nur"
+        "nur-packages": "nur-packages"
       }
     },
     "systems": {
