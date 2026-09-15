@@ -10,19 +10,19 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 jobs:
   tests:
     name: Test flake and workflows
     runs-on: ubuntu-latest
-    permissions:
-      # actions: write is required to purge stale store cache entries.
-      actions: write
-      contents: read
     defaults:
       run:
         shell: devenv shell bash -- -e {0}
     steps:
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v7
 
       - name: Set up Nix
@@ -31,42 +31,14 @@ jobs:
           cachix-pull: 'false'
           install-devenv: 'true'
 
-      # One cache family (nix-ci-) shared with build.yml and update.yml. The key must hash every job's lock inputs and use the same gc size.
+      # A reader: update.yml is the sole writer of this cache family.
       - name: Restore Nix store
         uses: mzwing/nix-actions/nix/restore-store@master
         with:
-          primary-key: nix-ci-${{ hashFiles('flake.lock', 'devenv.lock', 'devenv.nix', 'devenv.yaml') }}
-          restore-prefix: nix-ci-
-          gc-max-store-size-linux: 4G
+          save: 'false'
 
       - name: Check flake
         run: just flake-check
 
-      - name: Type-check Nix
-        run: just typecheck
-
-      - name: Check feature names match their paths
-        run: bash scripts/ci/check-feature-names.sh
-
-      - name: Lint GitHub Actions
-        run: actionlint
-
-      - name: Lint Python scripts
-        run: |
-          ruff format --check scripts/
-          ruff check scripts/
-          ty check scripts/
-
-      # Only the CI scripts: shfmt rewrites associative-array subscripts as arithmetic, so it must not be pointed at shell embedded in Nix packages.
-      - name: Lint shell scripts
-        run: |
-          git ls-files 'scripts/ci/*.sh' | xargs shfmt --diff
-          git ls-files 'scripts/ci/*.sh' | xargs shellcheck
-
-      - name: Check formatting
-        run: |
-          just fmt
-          if git status --porcelain | grep -q .; then
-            git status --short
-            exit 1
-          fi
+      - name: Lint
+        run: just lint

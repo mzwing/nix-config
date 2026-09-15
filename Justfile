@@ -120,9 +120,37 @@ flake-check:
 ci-targets:
   @nix eval --json .#legacyPackages.x86_64-linux.ci.targets | jq
 
-[group('nix')]
-typecheck:
+# Every check CI runs, `just flake-check` aside.
+[group('lint')]
+lint: lint-nix lint-nix-types lint-actions lint-shell lint-python lint-features
+
+[group('lint')]
+lint-nix:
+  nix fmt -- --check {{flake_ref}}
+
+[group('lint')]
+lint-nix-types:
   typenix --noEmit
+
+[group('lint')]
+lint-actions:
+  actionlint
+
+# Only the CI scripts: shfmt rewrites associative-array subscripts as arithmetic, so it must not be pointed at shell embedded in Nix packages.
+[group('lint')]
+lint-shell:
+  git ls-files 'scripts/ci/*.sh' | xargs shfmt --diff
+  git ls-files 'scripts/ci/*.sh' | xargs shellcheck
+
+[group('lint')]
+lint-python:
+  ruff format --check scripts/
+  ruff check scripts/
+  ty check scripts/
+
+[group('lint')]
+lint-features:
+  bash scripts/ci/check-feature-names.sh
 
 [group('nix')]
 show:

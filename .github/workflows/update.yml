@@ -38,12 +38,10 @@ jobs:
           cachix-pull: 'false'
           install-devenv: 'true'
 
-      # One cache family (nix-ci-) shared with build.yml and tests.yml. The key must hash every job's lock inputs and use the same gc size.
+      # Sole writer of the cache family build.yml and tests.yml restore from.
       - name: Restore Nix store
         uses: mzwing/nix-actions/nix/restore-store@master
         with:
-          primary-key: nix-ci-${{ hashFiles('flake.lock', 'devenv.lock', 'devenv.nix', 'devenv.yaml') }}
-          restore-prefix: nix-ci-
           gc-max-store-size-linux: 4G
 
       - name: Update devenv inputs
@@ -59,7 +57,6 @@ jobs:
         run: just skills-update
 
       - name: Commit and push changes
-        id: commit
         uses: mzwing/nix-actions/git/commit-and-push@master
         with:
           paths: devenv.lock flake.lock data/skills/sources.lock.json
