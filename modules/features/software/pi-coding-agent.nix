@@ -160,6 +160,7 @@ in {
               "npm:@gotgenes/pi-subagents"
               "npm:@gotgenes/pi-subagents-worktrees"
               "npm:@juicesharp/rpiv-ask-user-question"
+              "npm:@mzwing/pi-codex-downgrade-detector"
               "npm:@mzwing/pi-model-info"
               "npm:@mzwing/pi-permission-auto-review"
               "npm:@narumitw/pi-btw"
