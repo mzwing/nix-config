@@ -9,6 +9,7 @@
       "darwin/homebrew"
       "software/claude-code"
       "software/cliproxyapiplus"
+      "software/paseo"
       "software/pi-coding-agent"
       "software/skills"
     ];
@@ -22,7 +23,6 @@
       "antigravity"
       "chatgpt"
       "magic-context-dashboard"
-      "paseo"
     ];
 
     home = {

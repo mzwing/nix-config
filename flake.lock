@@ -416,6 +416,26 @@
         "type": "github"
       }
     },
+    "paseo": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1789594995,
+        "narHash": "sha256-fzKvUN1oc5TVUY4kYxiP80p9Jb+SoLfw9lZBo5ScdhI=",
+        "owner": "getpaseo",
+        "repo": "paseo",
+        "rev": "6830c46e9a277af463515250db30f83edd9d16cd",
+        "type": "github"
+      },
+      "original": {
+        "owner": "getpaseo",
+        "repo": "paseo",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "agenix": "agenix",
@@ -431,6 +451,7 @@
         "nixpkgs": "nixpkgs",
         "nixpkgs-darwin": "nixpkgs-darwin",
         "nur": "nur",
+        "paseo": "paseo",
         "zen-browser": "zen-browser"
       }
     },
