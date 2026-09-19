@@ -65,6 +65,12 @@
     # Deliberately no `follows`: upstream only builds against its own nixpkgs pin, and overriding it means cache.numtide.com misses and everything rebuilds.
     llm-agents.url = "github:numtide/llm-agents.nix";
 
+    # Only for its home-manager module; the omp package still comes from llm-agents.
+    oh-my-pi = {
+      url = "github:can1357/oh-my-pi";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     agenix = {
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
