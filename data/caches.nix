@@ -13,10 +13,12 @@
 
   extraSubstituters = [
     "https://cache.nixos-cuda.org"
+    "https://cache.numtide.com"
   ];
 
   extraPublicKeys = [
     "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
+    "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
   ];
 
   nur = {

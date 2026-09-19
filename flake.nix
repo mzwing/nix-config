@@ -13,6 +13,7 @@
       "https://cache.nixos.org"
       "https://nix-community.cachix.org"
       "https://cache.nixos-cuda.org"
+      "https://cache.numtide.com"
       "https://mzwing.cachix.org"
       "https://so1ve.cachix.org"
       "https://attic.xuyh0120.win/lantian"
@@ -20,6 +21,7 @@
     extra-trusted-public-keys = [
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
+      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
       "mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA="
       "so1ve.cachix.org-1:51jcW4FkJhiLcqPsiUx3nglRP469les8F9zjFxio1nw="
       "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
@@ -59,6 +61,9 @@
       url = "github:getpaseo/paseo";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Deliberately no `follows`: upstream only builds against its own nixpkgs pin, and overriding it means cache.numtide.com misses and everything rebuilds.
+    llm-agents.url = "github:numtide/llm-agents.nix";
 
     agenix = {
       url = "github:ryantm/agenix";

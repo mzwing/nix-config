@@ -29,11 +29,15 @@
       inputs,
       lib,
       pkgs,
+      system,
       ...
     }: {
       imports = [
         inputs.nur.repos.mzwing.modules.homeManager.magic-context
       ];
+
+      # `packages.home` above only gets `pkgs`, and this one comes from a flake input.
+      home.packages = [inputs.llm-agents.packages.${system}.omp];
 
       programs = {
         mcp = {

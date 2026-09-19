@@ -21,6 +21,7 @@ in {
       lib,
       pkgs,
       secrets,
+      system,
       ...
     }: let
       jsonFormat = pkgs.formats.json {};
@@ -108,6 +109,7 @@ in {
         ];
         pi-coding-agent = {
           enable = true;
+          package = inputs.llm-agents.packages.${system}.pi;
           extraPackages = with pkgs; [
             git
             nodejs

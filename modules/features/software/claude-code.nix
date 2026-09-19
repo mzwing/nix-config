@@ -23,8 +23,10 @@ in {
 
     home = {
       config,
+      inputs,
       lib,
       pkgs,
+      system,
       ...
     }: let
       inherit (pkgs.nur.repos.mzwing) claude-code-wakatime claude-hud;
@@ -64,6 +66,7 @@ in {
 
       programs.claude-code = {
         enable = true;
+        package = inputs.llm-agents.packages.${system}.claude-code;
         enableMcpIntegration = true;
         context = ''
           ${agentContext.rules}
