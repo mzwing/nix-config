@@ -11,7 +11,7 @@ in {
 
     darwin = {
       homebrew.taps = map trustedTap [
-        "aninsomniacy/motrix-next"
+        "AnInsomniacy/rayburst"
         "anomalyco/tap"
         "farion1231/ccswitch"
         "jetbrains/utils"

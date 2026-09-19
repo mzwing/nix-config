@@ -24,7 +24,7 @@
 
     darwin.homebrew = {
       casks = [
-        "motrix-next"
+        "rayburst"
         "thunder"
       ];
       masApps = {
