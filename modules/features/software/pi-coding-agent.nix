@@ -149,6 +149,7 @@ in {
               enabled = true;
               maxRetries = 3;
             };
+            transport = "sse";
             theme = "dark";
             tuiMode = "fullscreen";
             npmCommand = [
