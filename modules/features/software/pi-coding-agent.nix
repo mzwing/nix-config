@@ -143,13 +143,12 @@ in {
           };
           settings = {
             defaultModel = "gpt-6-astra";
-            defaultProvider = "openai-codex";
+            defaultProvider = "cliproxyapiplus";
             defaultThinkingLevel = "xhigh";
             retry = {
               enabled = true;
               maxRetries = 3;
             };
-            transport = "sse";
             theme = "dark";
             tuiMode = "fullscreen";
             npmCommand = [
@@ -162,23 +161,20 @@ in {
               "npm:@gotgenes/pi-permission-system"
               "npm:@gotgenes/pi-subagents"
               "npm:@gotgenes/pi-subagents-worktrees"
-              "npm:@juicesharp/rpiv-ask-user-question"
               "npm:@mzwing/pi-codex-downgrade-detector"
-              "npm:@mzwing/pi-codex-enhancer"
               "npm:@mzwing/pi-model-info"
               "npm:@mzwing/pi-permission-auto-review"
               "npm:@narumitw/pi-btw"
               "npm:@narumitw/pi-plan-mode"
               "npm:@narumitw/pi-usage"
               "npm:@pi-lab/notify"
+              "npm:@tylerho/pi-ask-user-question"
               "npm:@upstash/context7-pi"
               "npm:pi-codex-goal"
-              "npm:pi-effort"
               "npm:pi-markdown-preview"
               "npm:pi-mcp-adapter"
               "npm:pi-nano-context"
               "npm:pi-openai-api-models-sync"
-              "npm:pi-provider-kimi-code"
               "npm:pi-rtk-optimizer"
               "npm:pi-simplify"
               "npm:pi-smart-fetch"

@@ -55,6 +55,11 @@ in {
     recipients = ownedBy "mzwing-do-sgp";
   };
 
+  "paseo/password" = {
+    file = ./paseo/password.age;
+    recipients = [mzwing];
+  };
+
   "upcloud-sg/network/public-ipv4" = {
     file = ./upcloud-sg/network/public-ipv4.age;
     recipients = ownedBy "mzwing-upcloud-sg";

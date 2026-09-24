@@ -59,7 +59,7 @@
               useUserPackages = true;
               extraSpecialArgs = specialArgs;
               users.${host.username}.imports = homeModules;
-              backupFileExtension = ".bak";
+              backupFileExtension = "bak";
             };
           }
         ];

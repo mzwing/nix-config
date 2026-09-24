@@ -69,6 +69,7 @@
         zig = mkProfile (core ++ ext.zig) {};
 
         nix = mkProfile (core ++ ext.typenix) {
+          "[nix]"."editor.defaultFormatter" = "ryanrasti.typenix";
           "devenv.profile" = "";
         };
         shell = mkProfile (core ++ ext.ops) settings.ops;
