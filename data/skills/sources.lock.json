@@ -43,29 +43,29 @@
     "pins": {
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-AsacCrRmTkWx9JL0SnwdFHqI7EhqL0Afr6DF5n+wRtk=",
+        "hash": "sha256-hz16wUw8IF52/cfHbO1gCk0ssh2BvbhEwubU5ctUSwM=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "0c77e90b4499a69deb9e04102fae633cd0cb6090",
+        "revision": "c59db4e79131c28bf2c560e4419aa6443df5d30d",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/0c77e90b4499a69deb9e04102fae633cd0cb6090.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/c59db4e79131c28bf2c560e4419aa6443df5d30d.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-WawKQAlEptyNKaTFj0dhC0rA6vDnk42PoBL1Y8n3FkQ=",
+        "hash": "sha256-fXt5TGhQAsyY7ewnjp+42kzxA5RDXHoVAdLj5p9f8ZY=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "f5400c89cad41a315856ca54e8a5042ad9e79d3c",
+        "revision": "3694740352eeef5cdd689af694c485f1ff62eec3",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/f5400c89cad41a315856ca54e8a5042ad9e79d3c.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/3694740352eeef5cdd689af694c485f1ff62eec3.tar.gz"
       }
     },
     "version": 8
