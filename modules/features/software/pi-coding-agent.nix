@@ -45,6 +45,7 @@ in {
           permissionReviewLog = true;
           yoloMode = false;
           authorizerChain = ["auto-review"];
+          promptNotifications = ["osc777"];
         };
 
         pi-rtk-optimizer = {
@@ -95,7 +96,13 @@ in {
               source = jsonFormat.generate "${name}-config.json" settings;
             }
         )
-        piExtensionSettings;
+        piExtensionSettings
+        // {
+          # pi's default exposure hides MCP tools behind codemode; codegraph is meant to be called first.
+          "${config.programs.pi-coding-agent.configDir}/mcp.json".source = jsonFormat.generate "pi-mcp.json" {
+            mcpServers = lib.mapAttrs (_: server: lib.hm.mcp.transformMcpServer {inherit server;} // {exposure = "direct";}) config.programs.mcp.servers;
+          };
+        };
 
       programs = {
         gryph.enableIntegration.pi-agent = true;
@@ -122,7 +129,7 @@ in {
 
             ${agentContext.rules}
 
-            When possible, ALWAYS use the builtin tools (like read, edit, etc.) instead of shell commands! And when possible, ALWAYS use fffind / fffgrep instead of find / grep, since fffind / fffgrep is much faster and more efficient, but NOTICE: fffind / fffgrep is git-aware, and cannot search files not tracked by git.
+            When possible, ALWAYS use the builtin tools (like read, edit, etc.) instead of shell commands! And when possible, ALWAYS use fffind / ffgrep instead of find / grep, since fffind / ffgrep is much faster and more efficient, but NOTICE: fffind / ffgrep is git-aware, and cannot search files not tracked by git.
 
             NEVER defensive programming! NEVER overthinking!
 
@@ -145,11 +152,11 @@ in {
             defaultModel = "gpt-6-astra";
             defaultProvider = "cliproxyapiplus";
             defaultThinkingLevel = "xhigh";
+            defaultTools = ["+ls"];
             retry = {
               enabled = true;
               maxRetries = 3;
             };
-            theme = "dark";
             tuiMode = "fullscreen";
             npmCommand = [
               "pnpm"
@@ -172,13 +179,11 @@ in {
               "npm:@upstash/context7-pi"
               "npm:pi-codex-goal"
               "npm:pi-markdown-preview"
-              "npm:pi-mcp-adapter"
               "npm:pi-nano-context"
               "npm:pi-openai-api-models-sync"
               "npm:pi-rtk-optimizer"
               "npm:pi-simplify"
               "npm:pi-smart-fetch"
-              "npm:pi-tool-display"
               "npm:pi-wakatime"
               "npm:pi-web-access"
               "npm:pi-workspace-history"
