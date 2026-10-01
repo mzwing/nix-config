@@ -53,6 +53,7 @@ in {
     }: let
       jsonFormat = pkgs.formats.json {};
       yamlFormat = pkgs.formats.yaml {};
+      proxyModel = id: "cliproxyapiplus/${id}";
     in {
       imports = [
         inputs.agenix.homeManagerModules.default
@@ -79,28 +80,32 @@ in {
         '';
 
         ".omp/agent/models.yml".source = yamlFormat.generate "omp-models.yml" {
-          providers = {
-            cliproxyapiplus = {
-              api = "openai-completions";
-              apiKey = "!cat ${config.age.secrets."cliproxyapiplus-api-key".path}";
-              inherit (endpoint) baseUrl;
-              authHeader = true;
-              # pi had a plugin sync its model list; omp asks the proxy itself.
-              discovery.type = "openai-models-list";
-              # omp's catalog has no entry for codex-auto-review, so it would otherwise drop pi-automode's reasoning effort.
-              modelOverrides = {
-                codex-auto-review = {
-                  reasoning = true;
-                  compat.supportsReasoningEffort = true;
+          providers.cliproxyapiplus = {
+            api = "openai-completions";
+            apiKey = "!cat ${config.age.secrets."cliproxyapiplus-api-key".path}";
+            inherit (endpoint) baseUrl;
+            authHeader = true;
+            # pi had a plugin sync its model list; omp asks the proxy itself.
+            discovery.type = "openai-models-list";
+            # omp's catalog has no entry for codex-auto-review, so it would otherwise drop pi-automode's reasoning effort.
+            modelOverrides = {
+              codex-auto-review = {
+                reasoning = true;
+                compat.supportsReasoningEffort = true;
+              };
+              # Too new for omp's catalog; mirrors gpt-6-sol.
+              "gpt-6.1-sol" = {
+                reasoning = true;
+                thinking = {
+                  mode = "effort";
+                  efforts = ["low" "medium" "high" "xhigh" "max"];
                 };
-                gpt-6-astra = {
-                  reasoning = true;
-                  compat.supportsReasoningEffort = true;
-                };
+                input = ["text" "image"];
+                contextWindow = 1050000;
+                maxTokens = 128000;
+                compat.supportsReasoningEffort = true;
               };
             };
-
-            openai-codex.modelOverrides."gpt-5.6-sol".contextWindow = 1050000;
           };
         };
 
@@ -112,7 +117,7 @@ in {
         # pi-automode reads its config from pi's directory even under omp.
         ".pi/agent/extensions/pi-automode/config.json".source = jsonFormat.generate "pi-automode-config.json" {
           autoMode = {
-            classifierModel = "cliproxyapiplus/codex-auto-review";
+            classifierModel = proxyModel "codex-auto-review";
             # The effort Codex itself reviews with.
             classifierReasoningLevel = "medium";
           };
@@ -124,13 +129,37 @@ in {
         package = inputs.llm-agents.packages.${system}.omp;
         plugins = ["@czottmann/pi-automode"];
         settings = {
-          modelRoles.default = "cliproxyapiplus/gpt-6-astra";
+          # config.yml is reinstalled on every switch, so without this omp reruns its setup wizard each time.
+          setupVersion = 2;
+
+          modelRoles = {
+            default = proxyModel "gpt-6-astra";
+            slow = proxyModel "gpt-6-astra:max";
+            plan = proxyModel "gpt-6-astra:max";
+            task = proxyModel "gpt-6-astra";
+            smol = proxyModel "gpt-6.1-sol:medium";
+            commit = proxyModel "gpt-6.1-sol:low";
+            tiny = proxyModel "gpt-6.1-sol:low";
+          };
           defaultThinkingLevel = "xhigh";
           symbolPreset = "nerd";
+
+          edit.mode = "apply_patch";
 
           retry = {
             enabled = true;
             maxRetries = 3;
+            fallbackChains = {
+              default = map proxyModel ["gpt-6.1-sol" "k3" "deepseek-flash"];
+              smol = [(proxyModel "deepseek-flash:high")];
+              commit = [(proxyModel "deepseek-flash:low")];
+              tiny = [(proxyModel "deepseek-flash:low")];
+            };
+          };
+
+          task = {
+            agentModelOverrides.security-reviewer = map proxyModel ["k3:high" "deepseek-flash:max"];
+            showResolvedModelBadge = true;
           };
 
           tools.approvalMode = "yolo";

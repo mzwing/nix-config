@@ -15,7 +15,7 @@
     }: let
       agentLib = inputs.agent-skills.lib.agent-skills;
 
-      # `structure = "link"` needs a literal path under $HOME, but upstream's dests are shell expressions and its own extraction only handles the `${VAR:-$HOME/...}` form, not pi's plain `$HOME/...`.
+      # `structure = "link"` needs a literal path under $HOME, but upstream's dests are shell expressions and its own extraction only handles the `${VAR:-$HOME/...}` form, not the plain `$HOME/...` that agents uses.
       staticDest = name: let
         dest = agentLib.defaultTargets.${name}.dest;
         # Brackets rather than backslashes: builtins.match is POSIX ERE, where \{ and \} are undefined — glibc rejects them outright, so \$\{...\} evaluated on macOS but blew up on Linux.
@@ -39,15 +39,17 @@
         };
 
         skills.enable = [
+          "find-code-simplifications"
           "find-skills"
           "refactor-for-simplicity"
         ];
 
+        # pi and omp both read ~/.agents/skills, so neither needs a target of its own.
         # `link` gives each skill its own home.file entry; the default `symlink-tree` would rsync --delete the agents' own plugins away.
         targets =
           lib.genAttrs [
+            "agents"
             "claude"
-            "pi"
           ] (name: {
             enable = true;
             structure = "link";
