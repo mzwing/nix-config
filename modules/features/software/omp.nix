@@ -1,6 +1,35 @@
 let
   agentContext = import ../../../data/agent-context.nix;
   endpoint = import ../../../data/cliproxyapiplus.nix;
+
+  ompPlugins = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: let
+    cfg = config.programs.omp;
+  in {
+    options.programs.omp.plugins = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "npm plugins installed and upgraded on every activation; any other npm plugin gets uninstalled.";
+    };
+
+    config = lib.mkIf cfg.enable {
+      home.activation.ompPlugins = lib.hm.dag.entryAfter ["linkGeneration"] ''
+        (
+          # omp shells out to bun for plugin installs.
+          export PATH=${lib.makeBinPath [cfg.package pkgs.bun]}:$PATH
+          for plugin in $(omp plugin list --json | jq -r --argjson declared ${lib.escapeShellArg (builtins.toJSON cfg.plugins)} '.npm[].name | select(IN($declared[]) | not)'); do
+            run omp plugin uninstall "$plugin"
+          done
+          # Reinstalling is how omp upgrades an npm plugin.
+          ${lib.optionalString (cfg.plugins != []) ''run omp plugin install ${lib.escapeShellArgs cfg.plugins} || warnEcho "omp plugin install failed; the next activation retries it."''}
+        )
+      '';
+    };
+  };
 in {
   mzwing.features."software/omp" = {
     meta.platforms = [
@@ -22,11 +51,13 @@ in {
       system,
       ...
     }: let
+      jsonFormat = pkgs.formats.json {};
       yamlFormat = pkgs.formats.yaml {};
     in {
       imports = [
         inputs.agenix.homeManagerModules.default
         inputs.oh-my-pi.homeManagerModules.default
+        ompPlugins
       ];
 
       # Home Manager is a separate agenix instance, so it cannot read the service's copy of the secret.
@@ -56,6 +87,17 @@ in {
               authHeader = true;
               # pi had a plugin sync its model list; omp asks the proxy itself.
               discovery.type = "openai-models-list";
+              # omp's catalog has no entry for codex-auto-review, so it would otherwise drop pi-automode's reasoning effort.
+              modelOverrides = {
+                codex-auto-review = {
+                  reasoning = true;
+                  compat.supportsReasoningEffort = true;
+                };
+                gpt-6-astra = {
+                  reasoning = true;
+                  compat.supportsReasoningEffort = true;
+                };
+              };
             };
 
             openai-codex.modelOverrides."gpt-5.6-sol".contextWindow = 1050000;
@@ -66,13 +108,23 @@ in {
         ".omp/agent/mcp.json" = lib.mkIf (config.programs.mcp.servers != {}) {
           source = config.xdg.configFile."mcp/mcp.json".source;
         };
+
+        # pi-automode reads its config from pi's directory even under omp.
+        ".pi/agent/extensions/pi-automode/config.json".source = jsonFormat.generate "pi-automode-config.json" {
+          autoMode = {
+            classifierModel = "cliproxyapiplus/codex-auto-review";
+            # The effort Codex itself reviews with.
+            classifierReasoningLevel = "medium";
+          };
+        };
       };
 
       programs.omp = {
         enable = true;
         package = inputs.llm-agents.packages.${system}.omp;
+        plugins = ["@czottmann/pi-automode"];
         settings = {
-          modelRoles.default = "openai-codex/gpt-6-astra";
+          modelRoles.default = "cliproxyapiplus/gpt-6-astra";
           defaultThinkingLevel = "xhigh";
           symbolPreset = "nerd";
 
