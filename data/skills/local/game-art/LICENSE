@@ -1,0 +1,27 @@
+SKILL.md and references/animation.md, characters.md, tilesets.md, and ui-icons.md are ported from the skills shipped with Grok Build Web (game-asset-core, game-animation-frames, game-character-consistency, game-tilesets, game-ui-icons).
+
+Source: https://t.me/hatschannel/6077
+
+references/sprites.md, sprite-modes.md, sprite-prompts.md, maps.md, map-strategies.md, layered-maps.md, props.md, side-scroll.md, and the terrain atlas section of tilesets.md, together with scripts/generate2dsprite.py, make_layout_guide.py, make_anchor_layout.py, extract_prop_pack.py, extract_terrain_tiles.py, and compose_layered_preview.py, are adapted from agent-sprite-forge (https://github.com/0x0funky/agent-sprite-forge, commit 64fd0b5) under its license:
+
+MIT License
+
+Copyright (c) 2026 0x0funky
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
