@@ -60,7 +60,6 @@ in {
           showClaudeCodeVersion = true;
           showMemoryUsage = true;
           showPromptCache = true;
-          promptCacheTtlSeconds = 3600; # The fxxking cc hud hardcodes cache TTL to 5 mins, so we have to set it to 1 hour for Claude Coding Plan manually.
         };
       };
 
