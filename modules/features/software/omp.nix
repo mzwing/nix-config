@@ -74,7 +74,7 @@ in {
 
           When possible, ALWAYS use the builtin tools (like read, edit, etc.) instead of shell commands!
 
-          NEVER defensive programming! NEVER overthinking!
+          NEVER overthinking!
 
           ${agentContext.codegraph}
         '';

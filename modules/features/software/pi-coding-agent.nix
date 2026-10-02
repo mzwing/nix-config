@@ -131,7 +131,7 @@ in {
 
             When possible, ALWAYS use the builtin tools (like read, edit, etc.) instead of shell commands! And when possible, ALWAYS use fffind / ffgrep instead of find / grep, since fffind / ffgrep is much faster and more efficient, but NOTICE: fffind / ffgrep is git-aware, and cannot search files not tracked by git.
 
-            NEVER defensive programming! NEVER overthinking!
+            NEVER overthinking!
 
             ${agentContext.codegraph}
           '';

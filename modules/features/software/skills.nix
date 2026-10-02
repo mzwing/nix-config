@@ -75,6 +75,7 @@ in {
           "game-art"
           "game-dev"
           "refactor-for-simplicity"
+          "write-docs"
         ];
 
         # pi and omp both read ~/.agents/skills, so neither needs a target of its own.
