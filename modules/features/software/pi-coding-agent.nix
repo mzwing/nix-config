@@ -9,10 +9,15 @@ in {
     ];
 
     requires = [
+      "darwin/homebrew"
       "software/cliproxyapiplus"
       "software/git"
       "software/gryph"
       "software/wakatime"
+    ];
+
+    darwin.homebrew.casks = [
+      "magic-context-dashboard"
     ];
 
     home = {
@@ -80,6 +85,7 @@ in {
     in {
       imports = [
         inputs.agenix.homeManagerModules.default
+        inputs.nur.repos.mzwing.modules.homeManager.magic-context
       ];
 
       # Home Manager is a separate agenix instance, so it cannot read the service's copy of the secret.
@@ -106,6 +112,23 @@ in {
 
       programs = {
         gryph.enableIntegration.pi-agent = true;
+
+        magic-context = {
+          enable = true;
+          settings = {
+            historian.pi = {
+              model = {
+                model = "openai-codex/gpt-6.1-sol";
+                thinking_level = "xhigh";
+              };
+              fallback_models = ["deepseek/deepseek-flash"];
+            };
+            dreamer.pi.model = {
+              model = "openai-codex/gpt-6.1-sol";
+              thinking_level = "xhigh";
+            };
+          };
+        };
 
         git.includes = [
           {
@@ -149,7 +172,7 @@ in {
             };
           };
           settings = {
-            defaultModel = "gpt-6-astra";
+            defaultModel = "gpt-6.1-sol";
             defaultProvider = "cliproxyapiplus";
             defaultThinkingLevel = "xhigh";
             defaultTools = ["+ls"];

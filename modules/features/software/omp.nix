@@ -57,6 +57,7 @@ in {
     in {
       imports = [
         inputs.agenix.homeManagerModules.default
+        inputs.nur.repos.mzwing.modules.homeManager.magic-context
         inputs.oh-my-pi.homeManagerModules.default
         ompPlugins
       ];
@@ -93,18 +94,6 @@ in {
                 reasoning = true;
                 compat.supportsReasoningEffort = true;
               };
-              # Too new for omp's catalog; mirrors gpt-6-sol.
-              "gpt-6.1-sol" = {
-                reasoning = true;
-                thinking = {
-                  mode = "effort";
-                  efforts = ["low" "medium" "high" "xhigh" "max"];
-                };
-                input = ["text" "image"];
-                contextWindow = 1050000;
-                maxTokens = 128000;
-                compat.supportsReasoningEffort = true;
-              };
             };
           };
         };
@@ -124,19 +113,43 @@ in {
         };
       };
 
+      programs.magic-context = {
+        enable = true;
+        settings = {
+          historian.omp = {
+            model = {
+              model = proxyModel "gpt-6.1-sol";
+              thinking_level = "xhigh";
+            };
+            fallback_models = [(proxyModel "deepseek-flash")];
+          };
+          dreamer.omp.model = {
+            model = proxyModel "gpt-6.1-sol";
+            thinking_level = "xhigh";
+          };
+        };
+      };
+
       programs.omp = {
         enable = true;
         package = inputs.llm-agents.packages.${system}.omp;
-        plugins = ["@czottmann/pi-automode"];
+        plugins = [
+          "@cortexkit/pi-magic-context"
+          "@czottmann/pi-automode"
+        ];
         settings = {
           # config.yml is reinstalled on every switch, so without this omp reruns its setup wizard each time.
           setupVersion = 2;
 
+          # Magic Context owns compaction and automatic memory injection.
+          compaction.enabled = false;
+          memory.backend = "off";
+
           modelRoles = {
-            default = proxyModel "gpt-6-astra";
-            slow = proxyModel "gpt-6-astra:max";
-            plan = proxyModel "gpt-6-astra:max";
-            task = proxyModel "gpt-6-astra";
+            default = proxyModel "gpt-6.1-sol";
+            slow = proxyModel "gpt-6.1-sol:max";
+            plan = proxyModel "gpt-6.1-sol:max";
+            task = proxyModel "gpt-6.1-sol";
             smol = proxyModel "gpt-6.1-sol:medium";
             commit = proxyModel "gpt-6.1-sol:low";
             tiny = proxyModel "gpt-6.1-sol:low";
