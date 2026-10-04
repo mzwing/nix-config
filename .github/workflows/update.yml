@@ -6,8 +6,6 @@ on:
       - master
     paths:
       - .github/workflows/update.yml
-  schedule:
-    - cron: "0 13 * * *"
   workflow_dispatch:
 
 permissions:
