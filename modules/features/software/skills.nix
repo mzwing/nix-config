@@ -69,6 +69,8 @@ in {
           };
 
         skills.enable = [
+          "cnb-docs"
+          "cnb-pipeline"
           "design-ui"
           "find-code-simplifications"
           "find-skills"

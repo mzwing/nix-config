@@ -1,5 +1,24 @@
 {
   "manifests": {
+    "cnb-skills": {
+      "filter": {
+        "maxDepth": 1,
+        "nameRegex": "cnb-docs"
+      },
+      "idPrefix": null,
+      "pin": {
+        "at": null,
+        "branch": "main",
+        "forge": "none",
+        "preReleases": false,
+        "releasePrefix": null,
+        "submodules": false,
+        "type": "git",
+        "url": "https://cnb.cool/cnb/skills/cnb-skill.git",
+        "versionUpperBound": null
+      },
+      "subdir": "skills"
+    },
     "dcspirit-skills": {
       "filter": {
         "maxDepth": 1,
@@ -60,6 +79,18 @@
   },
   "npins": {
     "pins": {
+      "cnb-skills": {
+        "branch": "main",
+        "hash": "sha256-5CwGrIHbUmsDx7cabfpGVkdoUIjQeWzUzYJro1+kLAo=",
+        "repository": {
+          "type": "Git",
+          "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
+        },
+        "revision": "afc08522912b006f66c5fbc5752f68b071a361da",
+        "submodules": false,
+        "type": "Git",
+        "url": null
+      },
       "dcspirit-skills": {
         "branch": "main",
         "hash": "sha256-sQiTD2vDp/9cnos5HXWsFBSLOaPSVW7Bqwv+N8pj2T4=",
