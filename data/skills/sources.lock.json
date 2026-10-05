@@ -81,12 +81,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-5CwGrIHbUmsDx7cabfpGVkdoUIjQeWzUzYJro1+kLAo=",
+        "hash": "sha256-CGxfQ3IbbkSv3l2zhTCCBYZp2jsMzvuT6kIDZeLwUNI=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "afc08522912b006f66c5fbc5752f68b071a361da",
+        "revision": "cff60de9a7dbd16fe6a4fccef93eefa7463d3930",
         "submodules": false,
         "type": "Git",
         "url": null
