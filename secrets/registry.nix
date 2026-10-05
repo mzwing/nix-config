@@ -77,7 +77,10 @@ in {
 
   "wakatime/api-key" = {
     file = ./wakatime/api-key.age;
-    recipients = [mzwing];
+    recipients = [
+      mzwing
+      hosts.mzwing-cnb
+    ];
   };
 
   "wap/network/public" = {

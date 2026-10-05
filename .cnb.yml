@@ -1,0 +1,28 @@
+master:
+  push:
+    - name: mzwing-cnb
+      services:
+        - docker
+      env:
+        IMAGE: &image ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/mzwing-cnb:latest
+      lock:
+        key: mzwing-cnb-image
+        wait: true
+        cancel-in-wait: true
+      stages:
+        - name: build image
+          script: docker build -f modules/hosts/nixos/mzwing-cnb/Dockerfile -t "$IMAGE" .
+        - name: push image
+          script: docker push "$IMAGE"
+
+$:
+  vscode:
+    - docker:
+        image: *image
+      services:
+        - vscode
+        - docker
+      stages:
+        # AGENIX_KEY comes from the personal env vars set in CNB's workspace settings.
+        - name: unlock secrets
+          script: agenix-unlock

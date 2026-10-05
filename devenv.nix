@@ -24,6 +24,7 @@
     ])
     ++ (with inputs.nur-packages.packages.${pkgs.stdenv.hostPlatform.system}; [
       typenix
+      cnb-cli
     ]);
 
   cachix.pull = ["mzwing"];

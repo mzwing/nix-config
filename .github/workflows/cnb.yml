@@ -1,0 +1,35 @@
+name: Mirror to CNB
+
+on:
+  workflow_run:
+    workflows:
+      - Populate CI cache
+    types:
+      - completed
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror-cnb
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    name: Push master to CNB
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Push to CNB
+        env:
+          CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
+        run: git push --force "https://cnb:${CNB_TOKEN}@cnb.cool/MZWNET/nix-config.git" HEAD:refs/heads/master

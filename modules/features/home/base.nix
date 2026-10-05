@@ -6,20 +6,9 @@
     ];
 
     home = {
-      lib,
-      system,
-      username,
-      ...
-    }: let
-      homeDirectory =
-        if lib.hasSuffix "-darwin" system
-        then "/Users/${username}"
-        else "/home/${username}";
-    in {
       programs.home-manager.enable = true;
 
       home = {
-        inherit username homeDirectory;
         stateVersion = "26.11";
 
         sessionVariables = {

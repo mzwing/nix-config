@@ -17,11 +17,7 @@
 
       darwin = pkgs: [pkgs.tuist];
 
-      nixos = pkgs:
-        with pkgs; [
-          licensed
-          jetbrains.idea
-        ];
+      nixos = pkgs: [pkgs.licensed];
     };
 
     darwin.homebrew = {
@@ -39,14 +35,23 @@
       };
     };
 
-    nixos.programs.ccache.enable = true;
+    nixos = {
+      lib,
+      pkgs,
+      type,
+      ...
+    }: {
+      programs.ccache.enable = true;
+      environment.systemPackages = lib.mkIf (type == "desktop") [pkgs.jetbrains.idea];
+    };
 
     home = {
       lib,
       pkgs,
+      type,
       ...
     }:
-      lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+      lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && type == "desktop") {
         programs.jetbrains-remote = {
           enable = true;
           ides = with pkgs.jetbrains; [

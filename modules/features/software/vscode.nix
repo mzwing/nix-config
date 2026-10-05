@@ -13,6 +13,7 @@
     darwin.homebrew.casks = ["visual-studio-code"];
 
     home = {
+      config,
       lib,
       pkgs,
       ...
@@ -23,9 +24,18 @@
       core = with ext; base ++ git ++ remote ++ nixTools ++ shellTools;
       web = ext.webUi ++ ext.webJs;
 
+      signs = config.programs.git.signing.signByDefault;
+
       mkProfile = extensions: userSettings: {
         inherit extensions;
-        userSettings = settings.core // userSettings;
+        userSettings =
+          settings.core
+          // {
+            "git.enableCommitSigning" = signs;
+            "git-graph.repository.sign.commits" = signs;
+            "git-graph.repository.sign.tags" = signs;
+          }
+          // userSettings;
         inherit (settings) keybindings;
         # programs.mcp comes from software/vibecoding; profiles do not inherit it, so every one asks for it.
         enableMcpIntegration = true;

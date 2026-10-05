@@ -103,11 +103,8 @@ in {
       "git.confirmSync" = false;
       "git.autofetch" = true;
       "git.enableSmartCommit" = true;
-      "git.enableCommitSigning" = true;
       "git.replaceTagsWhenPull" = true;
       "git-graph.repository.commits.showSignatureStatus" = true;
-      "git-graph.repository.sign.commits" = true;
-      "git-graph.repository.sign.tags" = true;
 
       "remoteHub.commitDirectlyWarning" = "off";
     }
