@@ -11,6 +11,7 @@
       "software/git"
       "software/gpg"
       "software/java"
+      "software/jujutsu"
       "software/ssh"
     ];
 

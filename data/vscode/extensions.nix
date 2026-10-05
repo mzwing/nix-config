@@ -34,6 +34,7 @@ in {
     donjayamanne.githistory
     eamodio.gitlens
     github.vscode-github-actions
+    jjk.jjk
     mhutchie.git-graph
   ];
 
