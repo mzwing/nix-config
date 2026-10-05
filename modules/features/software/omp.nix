@@ -94,6 +94,18 @@ in {
                 reasoning = true;
                 compat.supportsReasoningEffort = true;
               };
+              # Too new for omp's catalog; mirrors gpt-6-sol.
+              "gpt-6.1-sol" = {
+                reasoning = true;
+                thinking = {
+                  mode = "effort";
+                  efforts = ["low" "medium" "high" "xhigh" "max"];
+                };
+                input = ["text" "image"];
+                contextWindow = 1050000;
+                maxTokens = 128000;
+                compat.supportsReasoningEffort = true;
+              };
             };
           };
         };
