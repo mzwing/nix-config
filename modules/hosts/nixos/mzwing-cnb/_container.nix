@@ -21,9 +21,11 @@ in {
       ${config.services.openssh.package}/bin/ssh-keygen -A
     '';
 
-    # CNB's own scripts assume Debian paths.
-    binBash = lib.stringAfter ["binsh"] ''
+    # CNB expects the Debian layout its docs install into, e.g. sshd at /usr/sbin/sshd.
+    debianPaths = lib.stringAfter ["binsh"] ''
       ln -sfn ${pkgs.bashInteractive}/bin/bash /bin/bash
+      mkdir -p /usr/sbin
+      ln -sfn ${config.services.openssh.package}/bin/sshd /usr/sbin/sshd
     '';
 
     # CNB skips roaming a ~/.gitconfig that already exists, and its tools write to it with `git config --global`.
