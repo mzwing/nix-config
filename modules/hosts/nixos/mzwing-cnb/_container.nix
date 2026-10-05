@@ -9,9 +9,16 @@
 in {
   boot.isContainer = true;
 
+  # boot.isContainer points Nix at a host daemon; here root owns the store and no daemon runs.
+  environment.variables.NIX_REMOTE = lib.mkForce "local";
+
   services.openssh.enable = true;
 
-  users.users.root.createHome = true;
+  users.users.root = {
+    createHome = true;
+    # CNB starts sshd with UsePAM=no, which refuses accounts whose shadow entry starts with "!" (NixOS's default) even for key logins.
+    hashedPassword = "*";
+  };
 
   system.activationScripts = {
     # The container runtime owns the mounts.

@@ -25,3 +25,22 @@ jobs:
       TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
       TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
       CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+  # A job here rather than a workflow_run listener: runs dispatched by update.yml's GITHUB_TOKEN never fire workflow_run.
+  mirror:
+    name: Push master to CNB
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Push to CNB
+        env:
+          CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
+        run: git push --force "https://cnb:${CNB_TOKEN}@cnb.cool/MZWNET/nix-config.git" HEAD:refs/heads/master

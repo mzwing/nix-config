@@ -98,7 +98,11 @@
         // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
           vscodium = {
             enable = true;
-            inherit profiles;
+            # code-server's web UI keeps its profile list in browser storage, so it would never see the others.
+            profiles =
+              if lib.getName config.programs.vscodium.package == "code-server"
+              then {inherit (profiles) default;}
+              else profiles;
           };
         };
 

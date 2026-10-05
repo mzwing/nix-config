@@ -10,10 +10,8 @@ master:
         wait: true
         cancel-in-wait: true
       stages:
-        - name: build image
-          script: docker build -f modules/hosts/nixos/mzwing-cnb/Dockerfile -t "$IMAGE" .
-        - name: push image
-          script: docker push "$IMAGE"
+        - name: build and push image
+          script: docker buildx build -f modules/hosts/nixos/mzwing-cnb/Dockerfile -t "$IMAGE" --output type=registry,compression=zstd,oci-mediatypes=true .
 
 $:
   vscode:

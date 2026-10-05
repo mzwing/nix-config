@@ -9,7 +9,11 @@
       pkgs,
       ...
     }: {
-      programs.vscodium.package = pkgs.code-server;
+      programs.vscodium = {
+        package = pkgs.code-server;
+        # With only the default profile Home Manager would make the dir mutable and run code-server during docker build.
+        mutableExtensionsDir = false;
+      };
 
       # CNB starts code-server on its own; this points it at the VSCodium directories software/vscode manages, away from the user dir CNB roams.
       xdg.configFile."code-server/config.yaml".text = ''
