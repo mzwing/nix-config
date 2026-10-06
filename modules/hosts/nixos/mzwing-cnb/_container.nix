@@ -12,13 +12,18 @@ in {
   # boot.isContainer points Nix at a host daemon; here root owns the store and no daemon runs.
   environment.variables.NIX_REMOTE = lib.mkForce "local";
 
-  services.openssh.enable = true;
+  # CNB's containers lack the namespaces the build sandbox needs, as in Nix's own container image.
+  nix.settings.sandbox = false;
 
-  users.users.root = {
-    createHome = true;
-    # CNB starts sshd with UsePAM=no, which refuses accounts whose shadow entry starts with "!" (NixOS's default) even for key logins.
-    hashedPassword = "*";
+  services.openssh = {
+    enable = true;
+    # CNB runs sshd with UsePAM=no and logs in by password; without libxcrypt sshd falls back to OpenSSL's DES-only crypt and rejects every yescrypt hash.
+    package = pkgs.openssh.overrideAttrs (old: {
+      buildInputs = old.buildInputs ++ [pkgs.libxcrypt];
+    });
   };
+
+  users.users.root.createHome = true;
 
   system.activationScripts = {
     # The container runtime owns the mounts.
