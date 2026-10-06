@@ -25,6 +25,9 @@ in {
 
   users.users.root.createHome = true;
 
+  # Remote-SSH downloads a VS Code server built for ordinary distros, matched to whatever version the client runs.
+  programs.nix-ld.enable = true;
+
   system.activationScripts = {
     # The container runtime owns the mounts.
     specialfs = lib.mkForce "";
@@ -33,11 +36,12 @@ in {
       ${config.services.openssh.package}/bin/ssh-keygen -A
     '';
 
-    # CNB expects the Debian layout its docs install into, e.g. sshd at /usr/sbin/sshd.
+    # CNB expects the Debian layout its docs install into, e.g. sshd at /usr/sbin/sshd; the loader link is normally systemd-tmpfiles' job.
     debianPaths = lib.stringAfter ["binsh"] ''
       ln -sfn ${pkgs.bashInteractive}/bin/bash /bin/bash
-      mkdir -p /usr/sbin
+      mkdir -p /usr/sbin /lib64
       ln -sfn ${config.services.openssh.package}/bin/sshd /usr/sbin/sshd
+      ln -sfn ${config.environment.ldso} /lib64/ld-linux-x86-64.so.2
     '';
 
     # CNB skips roaming a ~/.gitconfig that already exists, and its tools write to it with `git config --global`.
