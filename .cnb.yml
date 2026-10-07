@@ -21,6 +21,8 @@ $:
         - vscode
         - docker
       stages:
+        - name: register vscode server extensions
+          script: vscode-server-extensions
         # AGENIX_KEY comes from the personal env vars set in CNB's workspace settings.
         - name: unlock secrets
           script: agenix-unlock

@@ -6,6 +6,16 @@
   ...
 }: let
   hm = config.home-manager.users.root;
+
+  # Where Remote-SSH's server keeps each profile's extension list; without relativeLocation it loads them from the store instead of its own extensions dir.
+  vscodeServer = pkgs.linkFarm "vscode-server" (lib.mapAttrsToList (name: profile: {
+      name =
+        if name == "default"
+        then "extensions/extensions.json"
+        else "data/User/profiles/${name}/extensions.json";
+      path = pkgs.writeText "${name}-extensions.json" (builtins.toJSON (map (ext: removeAttrs (pkgs.vscode-utils.toExtensionJsonEntry ext) ["relativeLocation"]) profile.extensions));
+    })
+    hm.programs.vscodium.profiles);
 in {
   boot.isContainer = true;
 
@@ -56,8 +66,11 @@ in {
     signing.signByDefault = lib.mkForce false;
   };
 
-  # Run by the vscode pipeline in .cnb.yml once CNB has injected AGENIX_KEY.
+  # Run by the vscode pipeline in .cnb.yml, once CNB has injected AGENIX_KEY and mounted its own /root/.vscode-server over the image's.
   environment.systemPackages = [
+    (pkgs.writeShellScriptBin "vscode-server-extensions" ''
+      cp -rLT --no-preserve=mode ${vscodeServer} /root/.vscode-server
+    '')
     (pkgs.writeShellScriptBin "agenix-unlock" ''
       install -D -m 600 /dev/stdin /root/.ssh/agenix <<<"$AGENIX_KEY"
       exec ${lib.escapeShellArgs hm.systemd.user.services.agenix.Service.ExecStart}
