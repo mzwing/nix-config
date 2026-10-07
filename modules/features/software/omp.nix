@@ -54,6 +54,14 @@ in {
       jsonFormat = pkgs.formats.json {};
       yamlFormat = pkgs.formats.yaml {};
       proxyModel = id: "cliproxyapiplus/${id}";
+      solModel = {
+        model = proxyModel "gpt-6.1-sol";
+        thinking_level = "high";
+      };
+      flashModel = {
+        model = proxyModel "deepseek-flash";
+        thinking_level = "high";
+      };
     in {
       imports = [
         inputs.agenix.homeManagerModules.default
@@ -129,15 +137,16 @@ in {
         enable = true;
         settings = {
           historian.omp = {
-            model = {
-              model = proxyModel "gpt-6.1-sol";
-              thinking_level = "xhigh";
-            };
-            fallback_models = [(proxyModel "deepseek-flash")];
+            model = solModel;
+            fallback_models = [flashModel];
           };
-          dreamer.omp.model = {
-            model = proxyModel "gpt-6.1-sol";
-            thinking_level = "xhigh";
+          dreamer.omp = {
+            model = flashModel;
+            fallback_models = [solModel];
+            tasks = lib.genAttrs ["curate" "retrospective" "review-user-memories"] (_: {
+              model = solModel;
+              fallback_models = [flashModel];
+            });
           };
         };
       };
@@ -158,13 +167,13 @@ in {
           memory.backend = "off";
 
           modelRoles = {
-            default = proxyModel "gpt-6.1-sol";
-            slow = proxyModel "gpt-6.1-sol:max";
-            plan = proxyModel "gpt-6.1-sol:max";
-            task = proxyModel "gpt-6.1-sol";
-            smol = proxyModel "gpt-6.1-sol:medium";
-            commit = proxyModel "gpt-6.1-sol:low";
-            tiny = proxyModel "gpt-6.1-sol:low";
+            default = proxyModel "claude-opus-5-5";
+            slow = proxyModel "claude-opus-5-5:max";
+            plan = proxyModel "claude-opus-5-5:max";
+            task = proxyModel "claude-opus-5-5";
+            smol = proxyModel "claude-opus-5-5:medium";
+            commit = proxyModel "claude-opus-5-5:low";
+            tiny = proxyModel "claude-opus-5-5:low";
           };
           defaultThinkingLevel = "xhigh";
           symbolPreset = "nerd";

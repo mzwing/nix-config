@@ -30,6 +30,14 @@ in {
       ...
     }: let
       jsonFormat = pkgs.formats.json {};
+      solModel = {
+        model = "cliproxyapiplus/gpt-6.1-sol";
+        thinking_level = "high";
+      };
+      flashModel = {
+        model = "cliproxyapiplus/deepseek-flash";
+        thinking_level = "high";
+      };
 
       # Keyed by plugin directory: each one reads <configDir>/extensions/<plugin>/config.json.
       piExtensionSettings = {
@@ -51,6 +59,23 @@ in {
           yoloMode = false;
           authorizerChain = ["auto-review"];
           promptNotifications = ["osc777"];
+          # Read-only and pi-task-governor tools skip auto-review. pi-permission-system never lets auto-review approve access outside the working directory, so reads there are allowed outright, as is everything under /tmp (/private/tmp on macOS), and other writes there still ask you.
+          permission = {
+            "*" = "ask";
+            external_directory = {
+              "*" = "ask";
+              "/tmp/*" = "allow";
+              "/private/tmp/*" = "allow";
+            };
+            external_directory_read = "allow";
+            read = "allow";
+            grep = "allow";
+            find = "allow";
+            ls = "allow";
+            "task_*" = "allow";
+            session_list = "allow";
+            session_read = "allow";
+          };
         };
 
         pi-rtk-optimizer = {
@@ -79,6 +104,27 @@ in {
             aggregateLinterOutput = true;
             groupSearchOutput = true;
             trackSavings = true;
+          };
+        };
+
+        pi-task-governor = {
+          "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/master/packages/pi-task-governor/schemas/config.schema.json";
+          roles = {
+            coordinator.instructions = "Never rebuild the whole system, and never ask a task to. A Rust project is built only with the user's explicit authorization: put a check or instruction that compiles Rust code into a brief only after the user authorizes it for that task, and then say in the brief that the user authorized it. In other projects, tasks may run checks, tests and builds on their own.";
+            executor = {
+              model = "cliproxyapiplus/deepseek-flash";
+              thinking = "max";
+              instructions = "In a Rust project, never ask the developer to compile Rust code unless the brief says the user explicitly authorized it through the coordinator.";
+            };
+            developer = {
+              model = "cliproxyapiplus/claude-opus-5-5";
+              thinking = "max";
+              instructions = "Never rebuild the whole system. In a Rust project, never compile Rust code, whether with cargo build, check, clippy, test, run or anything like them, unless the brief says the user explicitly authorized it through the coordinator. In other projects, run checks, tests and builds on your own. These rules override the general rule on building.";
+            };
+            reviewer = {
+              model = "cliproxyapiplus/gpt-6.1-sol";
+              thinking = "xhigh";
+            };
           };
         };
       };
@@ -117,15 +163,16 @@ in {
           enable = true;
           settings = {
             historian.pi = {
-              model = {
-                model = "openai-codex/gpt-6.1-sol";
-                thinking_level = "xhigh";
-              };
-              fallback_models = ["deepseek/deepseek-flash"];
+              model = solModel;
+              fallback_models = [flashModel];
             };
-            dreamer.pi.model = {
-              model = "openai-codex/gpt-6.1-sol";
-              thinking_level = "xhigh";
+            dreamer.pi = {
+              model = flashModel;
+              fallback_models = [solModel];
+              tasks = lib.genAttrs ["curate" "retrospective" "review-user-memories"] (_: {
+                model = solModel;
+                fallback_models = [flashModel];
+              });
             };
           };
         };
@@ -172,9 +219,9 @@ in {
             };
           };
           settings = {
-            defaultModel = "gpt-6.1-sol";
+            defaultModel = "claude-opus-5-5";
             defaultProvider = "cliproxyapiplus";
-            defaultThinkingLevel = "xhigh";
+            defaultThinkingLevel = "max";
             defaultTools = ["+ls"];
             retry = {
               enabled = true;
@@ -194,6 +241,8 @@ in {
               "npm:@mzwing/pi-codex-downgrade-detector"
               "npm:@mzwing/pi-model-info"
               "npm:@mzwing/pi-permission-auto-review"
+              "npm:@mzwing/pi-session-hub"
+              "npm:@mzwing/pi-task-governor"
               "npm:@narumitw/pi-btw"
               "npm:@narumitw/pi-plan-mode"
               "npm:@narumitw/pi-usage"
