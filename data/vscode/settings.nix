@@ -34,8 +34,8 @@ in {
       "editor.tabSize" = 2;
       "editor.wordWrap" = "on";
       "editor.fontSize" = 13;
-      "editor.fontFamily" = "'JetBrains Mono', Menlo, Monaco, 'Courier New', monospace";
-      "editor.codeLensFontFamily" = "'JetBrains Mono'";
+      "editor.fontFamily" = "'JetBrainsMono Nerd Font', Menlo, Monaco, 'Courier New', monospace";
+      "editor.codeLensFontFamily" = "'JetBrainsMono Nerd Font'";
       "editor.gotoLocation.multipleDefinitions" = "goto";
 
       "files.autoSave" = "onFocusChange";
@@ -110,6 +110,7 @@ in {
 
       # The local server feeds commands to the remote login shell one by one, and fish runs nothing until stdin closes; this way Remote-SSH starts sh itself.
       "remote.SSH.useLocalServer" = false;
+      "remote.SSH.remotePlatform"."cnb.space" = "linux";
     }
     // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
       "terminal.external.osxExec" = "Ghostty.app";
