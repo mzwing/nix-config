@@ -107,6 +107,9 @@ in {
       "git-graph.repository.commits.showSignatureStatus" = true;
 
       "remoteHub.commitDirectlyWarning" = "off";
+
+      # The local server feeds commands to the remote login shell one by one, and fish runs nothing until stdin closes; this way Remote-SSH starts sh itself.
+      "remote.SSH.useLocalServer" = false;
     }
     // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
       "terminal.external.osxExec" = "Ghostty.app";
