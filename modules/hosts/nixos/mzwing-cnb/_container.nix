@@ -1,6 +1,7 @@
 # CNB execs into this image instead of booting it, so `docker build` activates it once and nothing here runs under systemd.
 {
   config,
+  hostname,
   lib,
   pkgs,
   ...
@@ -18,6 +19,8 @@
     hm.programs.vscodium.profiles);
 in {
   boot.isContainer = true;
+
+  networking.hostName = hostname;
 
   # boot.isContainer points Nix at a host daemon; here root owns the store and no daemon runs.
   environment.variables.NIX_REMOTE = lib.mkForce "local";
