@@ -119,16 +119,16 @@
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-ZkUKUo7Tm0FR8KRJU8N1KgX3FF2irp88KCkNXoVYjek=",
+        "hash": "sha256-f1WRq7UGKQkjurX+Fx4/TRDLhdBPhompo13ZQooe7so=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "87a266971d9460a3d2606075b8e91edc83325472",
+        "revision": "2a7dc2a56f1c687fa6d65c9b50471e152ea1f6cf",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/87a266971d9460a3d2606075b8e91edc83325472.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/2a7dc2a56f1c687fa6d65c9b50471e152ea1f6cf.tar.gz"
       }
     },
     "version": 8
