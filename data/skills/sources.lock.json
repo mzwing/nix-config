@@ -81,12 +81,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-dp3Zu1ndBA+PeCS/isUQBMGrCtDxivvrAGlPVW5ttUI=",
+        "hash": "sha256-ppo/cfToiPP3S2ASrp/c6RIpcjKElp+GrID873Ltqxs=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "b259439aefc91f34c452ebdc316ad317eeece2c4",
+        "revision": "b361765fa51aefe3c725aef8b764b25552f49ee1",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -106,29 +106,29 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-+WC2x2/MWn66vgMRcoECanKVH0a7QZ2/1NC3G5f/Las=",
+        "hash": "sha256-s5JYe0uslVctBuLCUCDZQR7PJ9BBk7d3hzA5K8h6yoo=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "8cb2383056cd905181ee5f270346249be2b65ea2",
+        "revision": "4e9c4db4ca76d1ef2cc87e4385f03e715d49423f",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/8cb2383056cd905181ee5f270346249be2b65ea2.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/4e9c4db4ca76d1ef2cc87e4385f03e715d49423f.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-QEfu1DzOFAlsV16zpMtQrCj7+eDNRYUk8eGIYSnXUSs=",
+        "hash": "sha256-ZkUKUo7Tm0FR8KRJU8N1KgX3FF2irp88KCkNXoVYjek=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "14cf84aa922cccc7e5b11fee5af9a01b3750fddf",
+        "revision": "87a266971d9460a3d2606075b8e91edc83325472",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/14cf84aa922cccc7e5b11fee5af9a01b3750fddf.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/87a266971d9460a3d2606075b8e91edc83325472.tar.gz"
       }
     },
     "version": 8
