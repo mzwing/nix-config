@@ -48,7 +48,7 @@ in {
 
         pi-permission-auto-review = {
           "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/main/packages/pi-permission-auto-review/schemas/config.schema.json";
-          provider = "openai-codex";
+          provider = "cliproxyapiplus";
           reasoning = "medium";
           additionalPolicy = "At any time, any execution that would result in `git commit` and `git push` operations is strictly prohibited! (Please note that this rule only prohibits these two operations. Read-only viewing is not included in this list and should be allowed in the correct context. `git add` can also be executed under reasonable circumstances)";
         };
@@ -117,13 +117,14 @@ in {
               instructions = "In a Rust project, never ask the developer to compile Rust code unless the brief says the user explicitly authorized it through the coordinator.";
             };
             developer = {
-              model = "cliproxyapiplus/claude-opus-5-5";
+              model = "cliproxyapiplus/kimi-k3";
               thinking = "max";
               instructions = "Never rebuild the whole system. In a Rust project, never compile Rust code, whether with cargo build, check, clippy, test, run or anything like them, unless the brief says the user explicitly authorized it through the coordinator. In other projects, run checks, tests and builds on your own. These rules override the general rule on building.";
             };
             reviewer = {
               model = "cliproxyapiplus/gpt-6.1-sol";
               thinking = "xhigh";
+              instructions = "NEVER try to write so many meaningless smoke tests!!!!!";
             };
           };
         };
@@ -219,7 +220,7 @@ in {
             };
           };
           settings = {
-            defaultModel = "claude-opus-5-5";
+            defaultModel = "deepseek-v4-pro";
             defaultProvider = "cliproxyapiplus";
             defaultThinkingLevel = "max";
             defaultTools = ["+ls"];
