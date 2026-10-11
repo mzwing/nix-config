@@ -23,6 +23,7 @@
     darwin.homebrew.casks = [
       "antigravity"
       "chatgpt"
+      "cursor"
     ];
 
     home = {
