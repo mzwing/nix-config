@@ -1,23 +1,15 @@
 let
-  # timonwong.shellcheck 0.43 made contributes.configuration an array, which the jq in nixpkgs' postInstall cannot index. Drop once nix-community/nix-vscode-extensions#196 is fixed.
-  vscodeShellcheckConfigArray = final: prev: {
-    vscode-marketplace-release =
-      final.lib.updateManyAttrsByPath [
-        {
-          path = [
-            "timonwong"
-            "shellcheck"
-          ];
-          update = extension:
-            extension.overrideAttrs {
-              postInstall = ''
-                cd "$out/$installPrefix"
-                jq '(.contributes.configuration[].properties."shellcheck.executablePath" | select(.)).default = "${final.shellcheck}/bin/shellcheck"' package.json | sponge package.json
-              '';
-            };
-        }
-      ]
-      prev.vscode-marketplace-release;
+  # nixpkgs hardcodes lldb's store path into debugpy on darwin, but test_lldb_command still expects a bare `lldb`. Drop once NixOS/nixpkgs#572564 reaches nixpkgs-unstable.
+  debugpyLldbTest = _: prev: {
+    pythonPackagesExtensions =
+      prev.pythonPackagesExtensions
+      ++ [
+        (_: pyPrev: {
+          debugpy = pyPrev.debugpy.overridePythonAttrs (old: {
+            disabledTests = old.disabledTests ++ ["test_lldb_command"];
+          });
+        })
+      ];
   };
 in {
   mzwing.features."core/overlays" = {
@@ -30,8 +22,9 @@ in {
       nixpkgs.overlays = [
         inputs.nur.overlays.default
         inputs.nix-vscode-extensions.overlays.default
-        vscodeShellcheckConfigArray
       ];
     };
+
+    darwin.nixpkgs.overlays = [debugpyLldbTest];
   };
 }
