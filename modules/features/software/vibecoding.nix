@@ -8,7 +8,8 @@
     requires = [
       "darwin/homebrew"
       "software/claude-code"
-      "software/cliproxyapiplus"
+      "software/cliproxyapi"
+      "software/magpie"
       "software/omp"
       "software/paseo"
       "software/pi-coding-agent"

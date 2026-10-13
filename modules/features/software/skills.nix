@@ -1,5 +1,5 @@
 let
-  endpoint = import ../../../data/cliproxyapiplus.nix;
+  endpoint = import ../../../data/cliproxyapi.nix;
 in {
   mzwing.features."software/skills" = {
     meta.platforms = [
@@ -9,7 +9,7 @@ in {
 
     requires = [
       # game-art's imagegen.py draws through the proxy, found via the session variables below.
-      "software/cliproxyapiplus"
+      "software/cliproxyapi"
     ];
 
     # Discovery only (`skills find`, `skills use`); its mutable lock would fight Home Manager during activation.
@@ -46,11 +46,11 @@ in {
       age.identityPaths = [
         "${config.home.homeDirectory}/.ssh/agenix"
       ];
-      age.secrets."cliproxyapiplus-api-key".file = secrets."cliproxyapiplus/api-key";
+      age.secrets."cliproxyapi-api-key".file = secrets."cliproxyapi/api-key";
 
       home.sessionVariables = {
         IMAGEGEN_BASE_URL = endpoint.baseUrl;
-        IMAGEGEN_API_KEY_FILE = config.age.secrets."cliproxyapiplus-api-key".path;
+        IMAGEGEN_API_KEY_FILE = config.age.secrets."cliproxyapi-api-key".path;
       };
 
       programs.agent-skills = {

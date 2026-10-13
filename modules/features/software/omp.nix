@@ -1,6 +1,6 @@
 let
   agentContext = import ../../../data/agent-context.nix;
-  endpoint = import ../../../data/cliproxyapiplus.nix;
+  endpoint = import ../../../data/cliproxyapi.nix;
 
   ompPlugins = {
     config,
@@ -38,7 +38,7 @@ in {
     ];
 
     requires = [
-      "software/cliproxyapiplus"
+      "software/cliproxyapi"
       "software/git"
     ];
 
@@ -53,7 +53,7 @@ in {
     }: let
       jsonFormat = pkgs.formats.json {};
       yamlFormat = pkgs.formats.yaml {};
-      proxyModel = id: "cliproxyapiplus/${id}";
+      proxyModel = id: "cliproxyapi/${id}";
       solModel = {
         model = proxyModel "gpt-6.1-sol";
         thinking_level = "high";
@@ -74,7 +74,7 @@ in {
       age.identityPaths = [
         "${config.home.homeDirectory}/.ssh/agenix"
       ];
-      age.secrets."cliproxyapiplus-api-key".file = secrets."cliproxyapiplus/api-key";
+      age.secrets."cliproxyapi-api-key".file = secrets."cliproxyapi/api-key";
 
       # Only config.yml is rewritten at runtime, and programs.omp installs that one as a writable copy. The rest can be store symlinks.
       home.file = {
@@ -89,9 +89,9 @@ in {
         '';
 
         ".omp/agent/models.yml".source = yamlFormat.generate "omp-models.yml" {
-          providers.cliproxyapiplus = {
+          providers.cliproxyapi = {
             api = "openai-completions";
-            apiKey = "!cat ${config.age.secrets."cliproxyapiplus-api-key".path}";
+            apiKey = "!cat ${config.age.secrets."cliproxyapi-api-key".path}";
             inherit (endpoint) baseUrl;
             authHeader = true;
             # pi had a plugin sync its model list; omp asks the proxy itself.

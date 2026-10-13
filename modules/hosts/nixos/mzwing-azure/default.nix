@@ -9,7 +9,8 @@
     features = [
       "profiles/nixos-server"
       "nixos/server/azure"
-      "software/cliproxyapiplus"
+      "software/cliproxyapi"
+      "software/magpie"
       "software/nginx"
     ];
 

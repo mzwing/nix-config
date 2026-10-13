@@ -45,5 +45,13 @@
         publicKey = "so1ve.cachix.org-1:51jcW4FkJhiLcqPsiUx3nglRP469les8F9zjFxio1nw=";
       };
     };
+
+    xyenon = {
+      author = "XYenon";
+      cache = {
+        url = "https://nur-xyenon.cachix.org";
+        publicKey = "nur-xyenon.cachix.org-1:fZ3SGJ3E1p34JSG5j4etfF9+vjJGMZxe1dDBNliKx5U=";
+      };
+    };
   };
 }

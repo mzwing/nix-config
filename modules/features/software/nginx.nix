@@ -1,5 +1,5 @@
 let
-  endpoint = import ../../../data/cliproxyapiplus.nix;
+  endpoint = import ../../../data/cliproxyapi.nix;
 
   # Cloudflare proxies the record, so this is the only name that ever reaches the origin. One label deep, because that is all the zone's wildcard covers.
   domain = "ai.mzwing.eu.org";
@@ -35,7 +35,7 @@ in {
   mzwing.features."software/nginx" = {
     meta.platforms = ["nixos"];
 
-    requires = ["software/cliproxyapiplus"];
+    requires = ["software/cliproxyapi"];
 
     nixos = {
       config,
@@ -56,6 +56,9 @@ in {
           group = "nginx";
         };
       };
+
+      # Otherwise v8 ignores X-Forwarded-For and sees every visitor as 127.0.0.1, so one stranger's failed management keys lock everyone out.
+      services.cliproxyapi.settings.server.trusted-proxies = ["127.0.0.1"];
 
       services.nginx = {
         enable = true;
@@ -114,7 +117,7 @@ in {
               extraConfig = ''
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
-                # $remote_addr, not $proxy_add_x_forwarded_for: the management gate reads this to decide who is local, and a client-sent hop would forge 127.0.0.1 past it.
+                # $remote_addr, not $proxy_add_x_forwarded_for: the service trusts this header from nginx, so it carries only the client Cloudflare vouched for.
                 proxy_set_header X-Forwarded-For $remote_addr;
                 proxy_set_header X-Forwarded-Proto $scheme;
                 proxy_set_header X-Forwarded-Host $host;
@@ -135,10 +138,10 @@ in {
       # No 80: with the Origin CA certificate Cloudflare only ever dials the origin over TLS.
       networking.firewall.allowedTCPPorts = [443];
 
-      # The store path moves whenever the pair is re-encrypted, so a rekey reloads nginx.
-      systemd.services.nginx.reloadTriggers = [
-        config.age.secrets.cloudflare-origin-cert.file
-        config.age.secrets.cloudflare-origin-key.file
+      # Reloads once the pair is re-encrypted. Hashed, since the .age paths move with every change to the flake.
+      systemd.services.nginx.reloadTriggers = map (secret: builtins.hashFile "sha256" secret.file) [
+        config.age.secrets.cloudflare-origin-cert
+        config.age.secrets.cloudflare-origin-key
       ];
     };
   };
