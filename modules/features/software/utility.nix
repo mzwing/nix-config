@@ -26,7 +26,6 @@
         "mole"
       ];
       casks = [
-        "jordanbaird-ice@beta"
         "karabiner-elements"
         "keepingyouawake"
         "keka"

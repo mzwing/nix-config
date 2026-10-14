@@ -23,7 +23,6 @@
     };
 
     darwin.homebrew.casks = [
-      "bakamusic"
       "kid3"
       "mac-music-player"
       "piliplus"

@@ -15,12 +15,6 @@ in {
       "software/wakatime"
     ];
 
-    packages.nixos = pkgs: [pkgs.cc-switch];
-
-    darwin.homebrew.casks = [
-      "cc-switch"
-    ];
-
     home = {
       config,
       inputs,

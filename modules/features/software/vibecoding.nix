@@ -16,14 +16,11 @@
     ];
 
     packages = {
-      nixos = pkgs: [pkgs.antigravity];
       home = pkgs: [pkgs.nur.repos.mzwing.codegraph];
     };
 
     darwin.homebrew.casks = [
-      "antigravity"
       "chatgpt"
-      "cursor"
     ];
 
     home = {
