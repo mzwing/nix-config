@@ -11,32 +11,6 @@ let
     hosts.${host}
   ];
 in {
-  # mzwing covers both Mac readers at once, since root and Home Manager there share ~/.ssh/agenix; each NixOS host running the service adds its own key.
-  "cliproxyapi/api-key" = {
-    file = ./cliproxyapi/api-key.age;
-    recipients = [
-      mzwing
-      hosts.mzwing-azure
-    ];
-  };
-
-  "cliproxyapi/management-key" = {
-    file = ./cliproxyapi/management-key.age;
-    recipients = [
-      mzwing
-      hosts.mzwing-azure
-    ];
-  };
-
-  # The whole v8 `api-keys` section as JSON: every upstream channel with its keys and models.
-  "cliproxyapi/providers" = {
-    file = ./cliproxyapi/providers.age;
-    recipients = [
-      mzwing
-      hosts.mzwing-azure
-    ];
-  };
-
   # One Origin CA pair for the whole zone (*.mzwing.eu.org), so every host that terminates TLS for it belongs on these lists.
   "cloudflare/origin-cert" = {
     file = ./cloudflare/origin-cert.age;

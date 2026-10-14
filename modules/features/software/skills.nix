@@ -1,5 +1,5 @@
 let
-  endpoint = import ../../../data/cliproxyapi.nix;
+  endpoint = import ../../../data/magpie.nix;
 in {
   mzwing.features."software/skills" = {
     meta.platforms = [
@@ -9,17 +9,15 @@ in {
 
     requires = [
       # game-art's imagegen.py draws through the proxy, found via the session variables below.
-      "software/cliproxyapi"
+      "software/magpie"
     ];
 
     # Discovery only (`skills find`, `skills use`); its mutable lock would fight Home Manager during activation.
     packages.home = pkgs: [pkgs.skills];
 
     home = {
-      config,
       inputs,
       lib,
-      secrets,
       ...
     }: let
       agentLib = inputs.agent-skills.lib.agent-skills;
@@ -38,19 +36,13 @@ in {
         else throw "software/skills: cannot derive a static destination for target '${name}' from '${dest}'";
     in {
       imports = [
-        inputs.agenix.homeManagerModules.default
         inputs.agent-skills.homeManagerModules.default
       ];
 
-      # Home Manager is a separate agenix instance, so it cannot read the service's copy of the secret.
-      age.identityPaths = [
-        "${config.home.homeDirectory}/.ssh/agenix"
-      ];
-      age.secrets."cliproxyapi-api-key".file = secrets."cliproxyapi/api-key";
-
       home.sessionVariables = {
         IMAGEGEN_BASE_URL = endpoint.baseUrl;
-        IMAGEGEN_API_KEY_FILE = config.age.secrets."cliproxyapi-api-key".path;
+        # Loopback takes any key.
+        IMAGEGEN_API_KEY = "magpie";
       };
 
       programs.agent-skills = {

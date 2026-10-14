@@ -1,6 +1,6 @@
 let
   agentContext = import ../../../data/agent-context.nix;
-  endpoint = import ../../../data/cliproxyapi.nix;
+  endpoint = import ../../../data/magpie.nix;
 in {
   mzwing.features."software/pi-coding-agent" = {
     meta.platforms = [
@@ -10,9 +10,9 @@ in {
 
     requires = [
       "darwin/homebrew"
-      "software/cliproxyapi"
       "software/git"
       "software/gryph"
+      "software/magpie"
       "software/wakatime"
     ];
 
@@ -25,17 +25,16 @@ in {
       inputs,
       lib,
       pkgs,
-      secrets,
       system,
       ...
     }: let
       jsonFormat = pkgs.formats.json {};
       solModel = {
-        model = "cliproxyapi/gpt-6.1-sol";
+        model = "magpie/gpt-6.1-sol";
         thinking_level = "high";
       };
       flashModel = {
-        model = "cliproxyapi/deepseek-flash";
+        model = "magpie/deepseek-flash";
         thinking_level = "high";
       };
 
@@ -43,12 +42,14 @@ in {
       piExtensionSettings = {
         pi-model-info = {
           "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/main/packages/pi-model-info/schemas/config.schema.json";
-          providers.cliproxyapi = {};
+          providers.magpie = {};
         };
 
         pi-permission-auto-review = {
           "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/main/packages/pi-permission-auto-review/schemas/config.schema.json";
-          provider = "cliproxyapi";
+          provider = "magpie";
+          # magpie answers the bare id with a 404.
+          model = "codex/codex-auto-review";
           reasoning = "medium";
           additionalPolicy = "At any time, any execution that would result in `git commit` and `git push` operations is strictly prohibited! (Please note that this rule only prohibits these two operations. Read-only viewing is not included in this list and should be allowed in the correct context. `git add` can also be executed under reasonable circumstances)";
         };
@@ -112,17 +113,17 @@ in {
           roles = {
             coordinator.instructions = "Never rebuild the whole system, and never ask a task to. A Rust project is built only with the user's explicit authorization: put a check or instruction that compiles Rust code into a brief only after the user authorizes it for that task, and then say in the brief that the user authorized it. In other projects, tasks may run checks, tests and builds on their own.";
             executor = {
-              model = "cliproxyapi/deepseek-flash";
+              model = "magpie/deepseek-flash";
               thinking = "max";
               instructions = "In a Rust project, never ask the developer to compile Rust code unless the brief says the user explicitly authorized it through the coordinator.";
             };
             developer = {
-              model = "cliproxyapi/kimi-k3";
+              model = "magpie/kimi-k3";
               thinking = "max";
               instructions = "Never rebuild the whole system. In a Rust project, never compile Rust code, whether with cargo build, check, clippy, test, run or anything like them, unless the brief says the user explicitly authorized it through the coordinator. In other projects, run checks, tests and builds on your own. These rules override the general rule on building.";
             };
             reviewer = {
-              model = "cliproxyapi/gpt-6.1-sol";
+              model = "magpie/gpt-6.1-sol";
               thinking = "xhigh";
               instructions = "NEVER try to write so many meaningless smoke tests!!!!!";
             };
@@ -131,15 +132,8 @@ in {
       };
     in {
       imports = [
-        inputs.agenix.homeManagerModules.default
         inputs.nur.repos.mzwing.modules.homeManager.magic-context
       ];
-
-      # Home Manager is a separate agenix instance, so it cannot read the service's copy of the secret.
-      age.identityPaths = [
-        "${config.home.homeDirectory}/.ssh/agenix"
-      ];
-      age.secrets."cliproxyapi-api-key".file = secrets."cliproxyapi/api-key";
 
       # No Home Manager option for plugin settings, so link the files. Editing them inside pi replaces the link, and the next activation backs that up as `config.json..bak` and relinks.
       home.file =
@@ -208,9 +202,10 @@ in {
           '';
           models = {
             providers = {
-              cliproxyapi = {
+              magpie = {
                 api = "openai-completions";
-                apiKey = "!cat ${config.age.secrets."cliproxyapi-api-key".path}";
+                # Loopback takes any key; this is the one magpie names pi's requests by.
+                apiKey = "magpie-pi";
                 inherit (endpoint) baseUrl;
                 authHeader = true;
                 models = [];
@@ -221,7 +216,7 @@ in {
           };
           settings = {
             defaultModel = "deepseek-v4-pro";
-            defaultProvider = "cliproxyapi";
+            defaultProvider = "magpie";
             defaultThinkingLevel = "max";
             defaultTools = ["+ls"];
             retry = {

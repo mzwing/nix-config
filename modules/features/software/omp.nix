@@ -1,6 +1,6 @@
 let
   agentContext = import ../../../data/agent-context.nix;
-  endpoint = import ../../../data/cliproxyapi.nix;
+  endpoint = import ../../../data/magpie.nix;
 
   ompPlugins = {
     config,
@@ -38,8 +38,8 @@ in {
     ];
 
     requires = [
-      "software/cliproxyapi"
       "software/git"
+      "software/magpie"
     ];
 
     home = {
@@ -47,13 +47,12 @@ in {
       inputs,
       lib,
       pkgs,
-      secrets,
       system,
       ...
     }: let
       jsonFormat = pkgs.formats.json {};
       yamlFormat = pkgs.formats.yaml {};
-      proxyModel = id: "cliproxyapi/${id}";
+      proxyModel = id: "magpie/${id}";
       solModel = {
         model = proxyModel "gpt-6.1-sol";
         thinking_level = "high";
@@ -64,17 +63,10 @@ in {
       };
     in {
       imports = [
-        inputs.agenix.homeManagerModules.default
         inputs.nur.repos.mzwing.modules.homeManager.magic-context
         inputs.oh-my-pi.homeManagerModules.default
         ompPlugins
       ];
-
-      # Home Manager is a separate agenix instance, so it cannot read the service's copy of the secret.
-      age.identityPaths = [
-        "${config.home.homeDirectory}/.ssh/agenix"
-      ];
-      age.secrets."cliproxyapi-api-key".file = secrets."cliproxyapi/api-key";
 
       # Only config.yml is rewritten at runtime, and programs.omp installs that one as a writable copy. The rest can be store symlinks.
       home.file = {
@@ -89,31 +81,33 @@ in {
         '';
 
         ".omp/agent/models.yml".source = yamlFormat.generate "omp-models.yml" {
-          providers.cliproxyapi = {
+          providers.magpie = {
             api = "openai-completions";
-            apiKey = "!cat ${config.age.secrets."cliproxyapi-api-key".path}";
+            # Loopback takes any key; this is the one magpie names omp's requests by.
+            apiKey = "magpie-omp";
             inherit (endpoint) baseUrl;
             authHeader = true;
             # pi had a plugin sync its model list; omp asks the proxy itself.
             discovery.type = "openai-models-list";
-            # omp's catalog has no entry for codex-auto-review, so it would otherwise drop pi-automode's reasoning effort.
-            modelOverrides = {
-              codex-auto-review = {
+            # magpie serves codex-auto-review but leaves it out of its list. Without reasoning, pi-automode's effort would be dropped.
+            models = [
+              {
+                id = "codex/codex-auto-review";
                 reasoning = true;
                 compat.supportsReasoningEffort = true;
+              }
+            ];
+            # Too new for omp's catalog; mirrors gpt-6-sol.
+            modelOverrides."gpt-6.1-sol" = {
+              reasoning = true;
+              thinking = {
+                mode = "effort";
+                efforts = ["low" "medium" "high" "xhigh" "max"];
               };
-              # Too new for omp's catalog; mirrors gpt-6-sol.
-              "gpt-6.1-sol" = {
-                reasoning = true;
-                thinking = {
-                  mode = "effort";
-                  efforts = ["low" "medium" "high" "xhigh" "max"];
-                };
-                input = ["text" "image"];
-                contextWindow = 1050000;
-                maxTokens = 128000;
-                compat.supportsReasoningEffort = true;
-              };
+              input = ["text" "image"];
+              contextWindow = 1050000;
+              maxTokens = 128000;
+              compat.supportsReasoningEffort = true;
             };
           };
         };
@@ -126,7 +120,7 @@ in {
         # pi-automode reads its config from pi's directory even under omp.
         ".pi/agent/extensions/pi-automode/config.json".source = jsonFormat.generate "pi-automode-config.json" {
           autoMode = {
-            classifierModel = proxyModel "codex-auto-review";
+            classifierModel = proxyModel "codex/codex-auto-review";
             # The effort Codex itself reviews with.
             classifierReasoningLevel = "medium";
           };

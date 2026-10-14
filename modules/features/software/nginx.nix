@@ -1,5 +1,5 @@
 let
-  endpoint = import ../../../data/cliproxyapi.nix;
+  endpoint = import ../../../data/magpie.nix;
 
   # Cloudflare proxies the record, so this is the only name that ever reaches the origin. One label deep, because that is all the zone's wildcard covers.
   domain = "ai.mzwing.eu.org";
@@ -35,7 +35,7 @@ in {
   mzwing.features."software/nginx" = {
     meta.platforms = ["nixos"];
 
-    requires = ["software/cliproxyapi"];
+    requires = ["software/magpie"];
 
     nixos = {
       config,
@@ -57,8 +57,11 @@ in {
         };
       };
 
-      # Otherwise v8 ignores X-Forwarded-For and sees every visitor as 127.0.0.1, so one stranger's failed management keys lock everyone out.
-      services.cliproxyapi.settings.server.trusted-proxies = ["127.0.0.1"];
+      services.magpie = {
+        env.MAGPIE_PUBLIC_URL = "https://${domain}";
+        # Unshared, magpie refuses every request nginx forwards.
+        settings.lan = true;
+      };
 
       services.nginx = {
         enable = true;
@@ -105,19 +108,15 @@ in {
             '';
 
             locations."/" = {
-              # 127.0.0.1, not endpoint.host: nginx resolves "localhost" once at startup and may land on a ::1 the service never binds.
-              proxyPass = "http://127.0.0.1:${toString endpoint.port}";
-
-              # /v1/realtime, /v1/responses and the panel's log stream all upgrade.
-              proxyWebsockets = true;
+              proxyPass = "http://${endpoint.host}:${toString endpoint.port}";
 
               # One proxy_set_header here drops every inherited one, so this block owns the whole set.
               recommendedProxySettings = false;
 
               extraConfig = ''
+                # These mark visitors as remote, so they need a gateway key; magpie lets loopback in with any.
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
-                # $remote_addr, not $proxy_add_x_forwarded_for: the service trusts this header from nginx, so it carries only the client Cloudflare vouched for.
                 proxy_set_header X-Forwarded-For $remote_addr;
                 proxy_set_header X-Forwarded-Proto $scheme;
                 proxy_set_header X-Forwarded-Host $host;
