@@ -18,7 +18,7 @@
       nixos = pkgs:
         with pkgs; [
           motrix-next
-          nur.repos.xddxdd.baidunetdisk
+          nur.repos.so1ve.baidunetdisk
         ];
     };
 

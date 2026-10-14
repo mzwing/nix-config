@@ -16,7 +16,10 @@
     ];
 
     packages = {
-      home = pkgs: [pkgs.nur.repos.mzwing.codegraph];
+      home = pkgs: with pkgs.nur.repos.mzwing; [
+        codegraph
+        lmfpd
+      ];
     };
 
     darwin.homebrew.casks = [

@@ -32,17 +32,85 @@ in {
     };
 
     nixos = {
+      config,
       inputs,
+      lib,
       pkgs,
       type,
       username,
       ...
-    }: {
+    }: let
+      lmfpd = pkgs.nur.repos.mzwing.lmfpd;
+
+      verifyConfig = (pkgs.formats.json {}).generate "magpie-verify.json" {
+        gateway = endpoint.baseUrl;
+        magpie = lib.getExe config.services.magpie.package;
+        fpd = lib.getExe lmfpd;
+        bank = "${lmfpd}/lib/node_modules/lmfpd/data/unified_bank.json";
+        threshold = 0.7;
+        # Signed-in subscriptions and vendors' own APIs are trusted, and checking them would spend their quota.
+        excludeProviders = [
+          "antigravity"
+          "claude"
+          "cline"
+          "codex"
+          "copilot"
+          "cursor"
+          "deepseek"
+          "devin"
+          "nvidia-nim"
+          "opencode-zen-free"
+          "openrouter"
+          "trae-cn"
+          "trae-global"
+          "typesafe"
+          "workbuddy"
+          "workbuddy-ai"
+          "rikki-glm"
+          "qiqi-kimi"
+          "rmqg-gpt"
+          "lbyxiaolizi-opencode-zen"
+          "dzmm"
+          ""
+        ];
+        aliases = {
+          # lm-detector fingerprints GPT-6 Astra and GPT-6.1 Sol as one model.
+          "gpt-6.1-sol" = "gpt-6-astra";
+          k3 = "kimi-k3";
+        };
+      };
+
+      verify = pkgs.writers.writePython3 "magpie-verify" {
+        flakeIgnore = [
+          "E501"
+          "W503"
+        ];
+      } (builtins.readFile ../../../scripts/magpie_verify.py);
+    in {
       imports = [inputs.nur.repos.mzwing.modules.nixos.magpie];
 
       services.magpie = {
         package = pkgs.nur.repos.xyenon.magpie.override {guiSupport = type == "desktop";};
         user = username;
+      };
+
+      # Runs as magpie's own user, so `magpie model disable` edits the settings the gateway reads.
+      systemd.services.magpie-verify = {
+        description = "Disable magpie models whose fingerprint isn't the model they claim";
+        after = ["magpie.service"];
+        serviceConfig = {
+          Type = "oneshot";
+          User = username;
+          ExecStart = "${verify} ${verifyConfig}";
+        };
+      };
+
+      systemd.timers.magpie-verify = {
+        wantedBy = ["timers.target"];
+        timerConfig = {
+          OnCalendar = "*-*-* 04,16:00:00";
+          Persistent = true;
+        };
       };
     };
   };
