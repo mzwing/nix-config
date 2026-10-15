@@ -20,8 +20,30 @@ in {
     }: let
       typenix = lib.getExe pkgs.nur.repos.mzwing.typenix;
 
+      jsLanguages = ["JavaScript" "TypeScript" "TSX"];
       # typescript-ls is tsgo, standing in for vtsls as useTsgo does in VSCode.
-      typescriptServers = ["typescript-ls" "!vtsls" "!typescript-language-server" "..."];
+      typescriptServers = ["typescript-ls" "!vtsls" "!typescript-language-server" "!deno" "..."];
+      oxfmtLanguages = [
+        "CSS"
+        "GraphQL"
+        "Handlebars"
+        "HTML"
+        "JavaScript"
+        "JSON"
+        "JSON5"
+        "JSONC"
+        "JSX"
+        "LESS"
+        "Markdown"
+        "MDX"
+        "SCSS"
+        "Svelte"
+        "TOML"
+        "TSX"
+        "TypeScript"
+        "Vue.js"
+        "YAML"
+      ];
 
       magpieModel = lib.recursiveUpdate {
         reasoning_effort = "high";
@@ -48,12 +70,14 @@ in {
       programs.zed-editor = {
         enable = true;
         extensions = [
+          "assembly"
           "bookmark"
           "caddyfile"
+          "crates-lsp"
           "dart"
           "deno"
           "desktop"
-          "docker-compose"
+          "dockerfile"
           "editorconfig"
           "emmet"
           "env"
@@ -67,6 +91,7 @@ in {
           "graphql"
           "java"
           "javascript-snippets"
+          "json5"
           "jsonl"
           "just"
           "kotlin"
@@ -75,14 +100,17 @@ in {
           "markdownlint"
           "mcp-server-context7"
           "neocmake"
+          "nginx"
           "nix"
           "oxc"
+          "path-server-lsp"
           "powershell"
           "python-autodoc-lsp"
           "python-snippets"
           "rainbow-csv"
           "rlsp-yaml"
           "ruby"
+          "scss"
           "seti-icons"
           "solid-typescript-snippets"
           "svelte"
@@ -170,23 +198,36 @@ in {
           };
 
           # Not extraPackages: macOS starts Zed.app directly, past the PATH wrapper, so tools go in by store path.
-          # Zed has no typenix extension, so it runs in the nix extension's nil slot.
-          lsp.nil.binary = {
-            path = typenix;
-            arguments = ["--lsp" "--stdio"];
+          lsp = {
+            # Zed has no typenix extension, so it runs in the nix extension's nil slot.
+            nil.binary = {
+              path = typenix;
+              arguments = ["--lsp" "--stdio"];
+            };
+            nginx.binary.path = lib.getExe pkgs.nginx-language-server;
           };
           prettier.allowed = true;
-          languages = {
-            Nix = {
-              language_servers = ["nil" "!nixd" "..."];
-              formatter.external = {
-                command = lib.getExe pkgs.alejandra;
-                arguments = ["--quiet"];
+          languages =
+            lib.genAttrs jsLanguages (_: {language_servers = typescriptServers;})
+            // {
+              Nix = {
+                language_servers = ["nil" "!nixd" "..."];
+                formatter.external = {
+                  command = lib.getExe pkgs.alejandra;
+                  arguments = ["--quiet"];
+                };
               };
+              Python.language_servers = ["ty" "ruff" "!basedpyright" "!pyright" "!pylsp" "..."];
             };
-            JavaScript.language_servers = typescriptServers;
-            TypeScript.language_servers = typescriptServers;
-            TSX.language_servers = typescriptServers;
+          profiles = {
+            Deno.settings = {
+              lsp.deno.settings.deno.enable = true;
+              languages = lib.genAttrs jsLanguages (_: {
+                language_servers = ["deno" "!typescript-ls" "!vtsls" "!typescript-language-server" "!eslint" "!oxlint" "!oxfmt" "..."];
+                formatter.language_server.name = "deno";
+              });
+            };
+            Web.settings.languages = lib.genAttrs oxfmtLanguages (_: {formatter.language_server.name = "oxfmt";});
           };
         };
         userTasks = [
