@@ -19,6 +19,25 @@
       },
       "subdir": "skills"
     },
+    "conventional-changelog-skills": {
+      "filter": {
+        "maxDepth": 1,
+        "nameRegex": null
+      },
+      "idPrefix": null,
+      "pin": {
+        "at": null,
+        "branch": "master",
+        "owner": "conventional-changelog",
+        "preReleases": false,
+        "releasePrefix": null,
+        "repo": "conventional-changelog",
+        "submodules": false,
+        "type": "github",
+        "versionUpperBound": null
+      },
+      "subdir": "skills"
+    },
     "dcspirit-skills": {
       "filter": {
         "maxDepth": 1,
@@ -90,6 +109,19 @@
         "submodules": false,
         "type": "Git",
         "url": null
+      },
+      "conventional-changelog-skills": {
+        "branch": "master",
+        "hash": "sha256-lxKc1CHJjoO8k8gMtwB0GfBclkblQ8Wp95O11CJeM80=",
+        "repository": {
+          "owner": "conventional-changelog",
+          "repo": "conventional-changelog",
+          "type": "GitHub"
+        },
+        "revision": "6ecad012487bc20e457a5bd45cc6710ec22651ff",
+        "submodules": false,
+        "type": "Git",
+        "url": "https://github.com/conventional-changelog/conventional-changelog/archive/6ecad012487bc20e457a5bd45cc6710ec22651ff.tar.gz"
       },
       "dcspirit-skills": {
         "branch": "main",

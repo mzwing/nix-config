@@ -63,12 +63,15 @@ in {
         skills.enable = [
           "cnb-docs"
           "cnb-pipeline"
+          "conventional-commit-message"
           "design-ui"
           "find-code-simplifications"
           "find-skills"
           "game-art"
           "game-dev"
           "refactor-for-simplicity"
+          "semver"
+          "speak-plainly"
           "write-docs"
         ];
 
