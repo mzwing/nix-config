@@ -51,7 +51,7 @@ in {
           # magpie answers the bare id with a 404.
           model = "codex/codex-auto-review";
           reasoning = "medium";
-          additionalPolicy = "At any time, any execution that would result in `git commit` and `git push` operations is strictly prohibited! (Please note that this rule only prohibits these two operations. Read-only viewing is not included in this list and should be allowed in the correct context. `git add` can also be executed under reasonable circumstances)";
+          additionalPolicy = "At any time, any execution that would result in `git commit` and `git push` operations is strictly prohibited! The only exception is committing in a pi-task-governor coordinator session, recognizable by its `task_*` tool calls and task notices; pushing stays prohibited there too. (Please note that this rule only prohibits these two operations. Read-only viewing is not included in this list and should be allowed in the correct context. `git add` can also be executed under reasonable circumstances)";
         };
 
         pi-permission-system = {
@@ -111,7 +111,7 @@ in {
         pi-task-governor = {
           "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/master/packages/pi-task-governor/schemas/config.schema.json";
           roles = {
-            coordinator.instructions = "Never rebuild the whole system, and never ask a task to. A Rust project is built only with the user's explicit authorization: put a check or instruction that compiles Rust code into a brief only after the user authorizes it for that task, and then say in the brief that the user authorized it. In other projects, tasks may run checks, tests and builds on their own.";
+            coordinator.instructions = "Never rebuild the whole system, and never ask a task to. A Rust project is built only with the user's explicit authorization: put a check or instruction that compiles Rust code into a brief only after the user authorizes it for that task, and then say in the brief that the user authorized it. In other projects, tasks may run checks, tests and builds on their own. Once every task is finished, you may turn the merged task commits into commits that follow the conventional-commit-message and semver skills; doing it earlier leaves the workspaces of open tasks stale. This overrides the general rule for `git commit` only: never push with `git push`, `jj git push` or anything else that sends commits, bookmarks or tags to a remote.";
             executor = {
               model = "magpie/deepseek-flash";
               thinking = "max";
