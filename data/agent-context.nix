@@ -22,7 +22,7 @@
 
     Skills carry the details of their domain; these rules apply everywhere and win when a skill disagrees. Load the matching skill before the work, even when it is only part of a bigger task: write-docs before writing or editing a README or other project docs, design-ui before adding or restyling any UI.
 
-    After writing code and before reporting back, load find-code-simplifications and refactor-for-simplicity and review your own change with them: find what you did poorly, then refactor and fix it. This standing instruction is the explicit request both skills wait for. Review only what you changed in this task and fix what you find without asking, except changes to behavior or interfaces the task didn't ask for, which you report instead. Sum up the fixes in a line or two rather than the skills' full reports.
+    After writing code and before reporting back, load find-code-simplifications, refactor-for-simplicity, and clarify-code-names (plus improve-test-suite if you touched tests) and review your own change with them: find what you did poorly, then refactor and fix it. This standing instruction is the explicit request these skills wait for. Review only what you changed in this task and fix what you find without asking, except changes to behavior or interfaces the task didn't ask for, which you report instead. Sum up the fixes in a line or two rather than the skills' full reports.
   '';
 
   codegraph = ''

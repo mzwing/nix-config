@@ -61,6 +61,7 @@ in {
           };
 
         skills.enable = [
+          "clarify-code-names"
           "cnb-docs"
           "cnb-pipeline"
           "conventional-commit-message"
@@ -69,6 +70,8 @@ in {
           "find-skills"
           "game-art"
           "game-dev"
+          "improve-codebase"
+          "improve-test-suite"
           "refactor-for-simplicity"
           "semver"
           "speak-plainly"
