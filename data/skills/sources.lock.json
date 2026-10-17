@@ -100,12 +100,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-UvnS9SScGlmIgCVXVgLW4HvqAv91+P9vId0L8QnJ7oM=",
+        "hash": "sha256-dfh578VAv84tTsxbidRnLBGwQZrvt5VIWTVjlG7pbSY=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "d34d3eab20e6bf9c2c0bbaaf03d16dc7a09904b4",
+        "revision": "e5a2caca7329a779cd1cf75f7cc7ea00c69d22a9",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -138,16 +138,16 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-tHJn0zjYMFkvJP1TXaAA01V5XEcxVeTXyudyfeQwAgA=",
+        "hash": "sha256-S9gxrrIuOZLC/ary+whNZ+aFK4lEQn3TfhaPKuF7hRc=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "b088415055651752ff51dfc8bf6d7589ae2f738c",
+        "revision": "8a9f3253eb30a8a08aef149c995eb431cbd1a2b1",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/b088415055651752ff51dfc8bf6d7589ae2f738c.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/8a9f3253eb30a8a08aef149c995eb431cbd1a2b1.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
