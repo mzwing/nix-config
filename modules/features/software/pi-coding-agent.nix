@@ -185,7 +185,7 @@ in {
           extraPackages = with pkgs; [
             git
             nodejs
-            pnpm
+            pnpm-bin.latest
             rtk
             wakatime-cli
           ];

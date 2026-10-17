@@ -22,6 +22,7 @@ in {
       nixpkgs.overlays = [
         inputs.nur.overlays.default
         inputs.nix-vscode-extensions.overlays.default
+        inputs.js-toolchain-overlay.overlays.default
       ];
     };
 
