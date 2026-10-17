@@ -1,4 +1,4 @@
-let
+{lib, ...}: let
   endpoint = import ../../../data/magpie.nix;
 
   # Cloudflare proxies the record, so this is the only name that ever reaches the origin. One label deep, because that is all the zone's wildcard covers.
@@ -30,7 +30,7 @@ let
     "2c0f:f248::/32"
   ];
 
-  perRange = line: builtins.concatStringsSep "\n" (map line cloudflareRanges);
+  perRange = line: lib.concatMapStringsSep "\n" line cloudflareRanges;
 in {
   mzwing.features."software/nginx" = {
     meta.platforms = ["nixos"];
