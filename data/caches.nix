@@ -22,14 +22,6 @@
   ];
 
   nur = {
-    xddxdd = {
-      author = "xddxdd";
-      cache = {
-        url = "https://attic.xuyh0120.win/lantian";
-        publicKey = "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=";
-      };
-    };
-
     mzwing = {
       author = "mzwing";
       cache = {
