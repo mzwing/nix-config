@@ -1,6 +1,6 @@
 ---
 name: semver
-description: Choose and apply SemVer version numbers under a policy that reserves majors for significant changes, and write dependency version requirements. Covers the public API, which bump a change gets, 0.y.z, pre-releases and build metadata, deprecations, immutable releases, tags, and where Cargo, npm, Go, and Python differ. Use when cutting a release, bumping or proposing a version, judging whether a change is breaking, tagging, or editing a dependency's version requirement.
+description: Choose and apply SemVer version numbers under a policy that reserves majors for significant changes, and write dependency version requirements. Covers the public API, which bump a change gets, 0.y.z, pre-releases and build metadata, deprecations, immutable releases, tags, and where Cargo, npm, Go, and Python differ. Use when cutting a release, bumping or proposing a version, adding a changeset, judging whether a change is breaking, tagging, or editing a dependency's version requirement.
 ---
 
 # SemVer
@@ -11,6 +11,7 @@ A version number tells whoever depends on the code how much an upgrade changes. 
 
 - Read the project's release process before touching a version: release docs, existing tags, the changelog, and release tooling such as release-please, semantic-release, changesets, or cargo-release.
 - When a tool derives the version from commits or changeset files, never edit the version by hand; give the tool its input, such as a commit type or a changeset. If its rules would cut a major for a change that isn't significant, raise it with the user.
+- In a project with a `.changeset` directory, create each changeset by running `changeset add` through the project's package manager, never by writing a Markdown file into `.changeset` yourself. Pass each package's bump and the summary as flags, as in `pnpm changeset add --minor pkg-a --patch pkg-b -m 'Add the retry option'`; before `@changesets/cli` 3.0 the bumps can only be picked interactively, so give the user the command to run, with the bumps to pick and the summary to enter.
 - A version changes when a release is cut, not as a side effect of an ordinary change, unless the project's process says otherwise.
 - Bump through the project's own release command or script when it has one, so every copy of the version moves together; otherwise update every file that records this package's version.
 - In a monorepo, follow its scheme: lockstep versions move together, independent ones move by each package's own changes.
