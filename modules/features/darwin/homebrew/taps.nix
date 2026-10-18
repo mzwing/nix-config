@@ -16,7 +16,6 @@ in {
           "anomalyco/tap"
           "farion1231/ccswitch"
           "jetbrains/utils"
-          "leoafarias/fvm"
           "libkrun/krun"
           "mzwnet/tap"
           "octane0411/tap"
