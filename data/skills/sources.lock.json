@@ -112,16 +112,16 @@
       },
       "conventional-changelog-skills": {
         "branch": "master",
-        "hash": "sha256-lxKc1CHJjoO8k8gMtwB0GfBclkblQ8Wp95O11CJeM80=",
+        "hash": "sha256-tmW7RAe7L1fDgeW0vBM3+uC7zpesi4szPBfrwY2JjSU=",
         "repository": {
           "owner": "conventional-changelog",
           "repo": "conventional-changelog",
           "type": "GitHub"
         },
-        "revision": "6ecad012487bc20e457a5bd45cc6710ec22651ff",
+        "revision": "e2c4c3f6bfb746e1de3955c333d8f5a65b46942a",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/conventional-changelog/conventional-changelog/archive/6ecad012487bc20e457a5bd45cc6710ec22651ff.tar.gz"
+        "url": "https://github.com/conventional-changelog/conventional-changelog/archive/e2c4c3f6bfb746e1de3955c333d8f5a65b46942a.tar.gz"
       },
       "dcspirit-skills": {
         "branch": "main",
@@ -138,29 +138,29 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-S9gxrrIuOZLC/ary+whNZ+aFK4lEQn3TfhaPKuF7hRc=",
+        "hash": "sha256-EGnkkxlZBVLBbuDABUU8fh+23D8ZEcaIv+NkL4Wvf0I=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "8a9f3253eb30a8a08aef149c995eb431cbd1a2b1",
+        "revision": "a73ccb78c4d3ce1848b4f12840b6f96ec3f2c65e",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/8a9f3253eb30a8a08aef149c995eb431cbd1a2b1.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/a73ccb78c4d3ce1848b4f12840b6f96ec3f2c65e.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-djzSciYX530uc1Xk4+Vdf2IHmNotC0bb6YU/peF0UK4=",
+        "hash": "sha256-+7iT1eRLo33oTSVW8j+A89nJ2/gKzOz+BBPukFm++ac=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "13e4063a1cf913f5606d57d42ab83a86f5001e04",
+        "revision": "b4659087ef401e67f1432997885fb048167bdcac",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/13e4063a1cf913f5606d57d42ab83a86f5001e04.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/b4659087ef401e67f1432997885fb048167bdcac.tar.gz"
       }
     },
     "version": 8
