@@ -20,6 +20,7 @@ in {
     darwin = {
       config,
       inputs,
+      system,
       username,
       ...
     }: {
@@ -27,6 +28,16 @@ in {
 
       # Keep the app's own launch at login off: it would fight the agent for the port.
       homebrew.casks = ["magpie-app"];
+
+      launchd.user.agents.magpie.path = [
+        # A Claude subscription is answered through Claude Code.
+        inputs.llm-agents.packages.${system}.claude-code
+        # `path` replaces launchd's PATH instead of adding to it.
+        "/usr/bin"
+        "/bin"
+        "/usr/sbin"
+        "/sbin"
+      ];
 
       services.magpie.logFile = "${config.users.users.${username}.home}/Library/Logs/magpie.log";
     };
@@ -36,10 +47,12 @@ in {
       inputs,
       lib,
       pkgs,
+      system,
       type,
       username,
       ...
     }: let
+      inherit (inputs.llm-agents.packages.${system}) claude-code;
       lmfpd = pkgs.nur.repos.mzwing.lmfpd;
 
       verifyConfig = (pkgs.formats.json {}).generate "magpie-verify.json" {
@@ -93,6 +106,10 @@ in {
         package = pkgs.nur.repos.xyenon.magpie.override {guiSupport = type == "desktop";};
         user = username;
       };
+
+      # A Claude subscription is answered through Claude Code, and `magpie accounts add claude` signs in with it from a shell.
+      environment.systemPackages = [claude-code];
+      systemd.services.magpie.path = [claude-code];
 
       # Runs as magpie's own user, so `magpie model disable` edits the settings the gateway reads.
       systemd.services.magpie-verify = {
