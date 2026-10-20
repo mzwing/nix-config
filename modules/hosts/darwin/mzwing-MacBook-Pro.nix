@@ -17,6 +17,7 @@
       "software/android-sdk"
       "software/bitwarden"
       "software/browser"
+      "software/cad"
       "software/communication"
       "software/creative"
       "software/ctf"
