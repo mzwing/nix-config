@@ -30,6 +30,7 @@
       "software/network"
       "software/server"
       "software/shell"
+      "software/tailscale"
       "software/utility"
       "software/vibecoding"
       "software/virtualization"

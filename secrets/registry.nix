@@ -43,6 +43,19 @@ in {
     recipients = [mzwing];
   };
 
+  # Every NixOS host selecting software/tailscale belongs on this list.
+  "tailscale/oauth-secret" = {
+    file = ./tailscale/oauth-secret.age;
+    recipients = [
+      mzwing
+      hosts.mzwing-azure
+      hosts.mzwing-cnb
+      hosts.mzwing-do-sgp
+      hosts.mzwing-upcloud-sg
+      hosts.mzwing-wap
+    ];
+  };
+
   "upcloud-sg/network/public-ipv4" = {
     file = ./upcloud-sg/network/public-ipv4.age;
     recipients = ownedBy "mzwing-upcloud-sg";

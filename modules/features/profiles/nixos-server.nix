@@ -12,6 +12,7 @@
       "software/neovim"
       "software/server"
       "software/shell"
+      "software/tailscale"
       "software/vpn"
       "users/mzwing"
       "users/root"

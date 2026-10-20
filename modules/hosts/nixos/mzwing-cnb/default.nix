@@ -2,7 +2,7 @@
   mzwing.hosts.nixos.mzwing-cnb = {
     hostname = "mzwing-cnb";
     system = "x86_64-linux";
-    type = "server";
+    type = "workspace";
     # CNB runs everything in the workspace as root.
     username = "root";
     useremail = "mzwing@mzwing.eu.org";
@@ -15,6 +15,7 @@
       "software/development"
       "software/neovim"
       "software/shell"
+      "software/tailscale"
     ];
 
     modules = [

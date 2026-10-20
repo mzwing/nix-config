@@ -70,8 +70,9 @@
       type = types.enum [
         "desktop"
         "server"
+        "workspace"
       ];
-      description = ''What this host is for. A specialArg, so one feature can serve both roles — e.g. `lib.mkIf (type == "desktop")` around its GUI parts.'';
+      description = ''What this host is for. A specialArg, so one feature can serve several roles — e.g. `lib.mkIf (type == "desktop")` around its GUI parts.'';
     };
 
     username = mkOption {type = types.str;};

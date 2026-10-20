@@ -7,18 +7,8 @@
 
     requires = ["darwin/homebrew"];
 
-    packages = {
-      system = pkgs:
-        with pkgs; [
-          nur.repos.mzwing.sing-box-alpha
-        ];
+    packages.system = pkgs: [pkgs.nur.repos.mzwing.sing-box-alpha];
 
-      nixos = pkgs: [pkgs.tailscale];
-    };
-
-    darwin.homebrew.casks = [
-      "sfm@alpha"
-      "tailscale-app"
-    ];
+    darwin.homebrew.casks = ["sfm@alpha"];
   };
 }
