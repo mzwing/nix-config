@@ -38,12 +38,26 @@ in {
     recipients = ownedBy "mzwing-do-sgp";
   };
 
-  "paseo/password" = {
-    file = ./paseo/password.age;
-    recipients = [mzwing];
+  # magpie/<server>/<client>: the key `magpie gateway-key add` printed on that server, for one machine without a gateway of its own.
+  "magpie/mzwing-azure/mzwing-cnb" = {
+    file = ./magpie/mzwing-azure/mzwing-cnb.age;
+    recipients = ownedBy "mzwing-cnb";
   };
 
-  # Every NixOS host selecting software/tailscale belongs on this list.
+  "magpie/mzwing-huaweicloud-gz/mzwing-cnb" = {
+    file = ./magpie/mzwing-huaweicloud-gz/mzwing-cnb.age;
+    recipients = ownedBy "mzwing-cnb";
+  };
+
+  "paseo/password" = {
+    file = ./paseo/password.age;
+    recipients = [
+      mzwing
+      hosts.mzwing-azure
+    ];
+  };
+
+  # Every NixOS host selecting software/network/tailscale belongs on this list.
   "tailscale/oauth-secret" = {
     file = ./tailscale/oauth-secret.age;
     recipients = [
@@ -51,6 +65,7 @@ in {
       hosts.mzwing-azure
       hosts.mzwing-cnb
       hosts.mzwing-do-sgp
+      hosts.mzwing-huaweicloud-gz
       hosts.mzwing-upcloud-sg
       hosts.mzwing-wap
     ];
@@ -75,6 +90,7 @@ in {
     file = ./wakatime/api-key.age;
     recipients = [
       mzwing
+      hosts.mzwing-azure
       hosts.mzwing-cnb
     ];
   };

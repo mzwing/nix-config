@@ -7,9 +7,23 @@
     useremail = "mzwing@mzwing.eu.org";
 
     features = [
-      "profiles/nixos-server"
+      "core/nix"
+      "home/base"
+      "nixos/server/base"
       "nixos/server/digitalocean"
       "nixos/server/disko-vda-ext4"
+      "nixos/server/ssh"
+      "nixos/server/zram"
+      "software/editor/neovim"
+      "software/network/tailscale"
+      "software/network/vpn"
+      "software/security/gpg"
+      "software/security/ssh"
+      "software/server/caddy"
+      "software/shell"
+      "software/vcs"
+      "users/mzwing"
+      "users/root"
     ];
 
     modules = [

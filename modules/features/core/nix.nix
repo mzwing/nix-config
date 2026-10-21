@@ -15,6 +15,12 @@
       default = cacheData.extraSubstituters;
       description = "Substituters after the public caches, before the NUR ones.";
     };
+
+    unreachableSubstituters = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "Substituters this host cannot reach, dropped from every layer.";
+    };
   };
 in {
   mzwing.features."core/nix" = {
@@ -42,10 +48,12 @@ in {
             ];
 
             substituters = lib.mkForce (
-              config.mzwing.nix.mirrorSubstituters
-              ++ cacheData.defaultSubstituters
-              ++ config.mzwing.nix.extraSubstituters
-              ++ map (cache: cache.url) nurCaches
+              lib.subtractLists config.mzwing.nix.unreachableSubstituters (
+                config.mzwing.nix.mirrorSubstituters
+                ++ cacheData.defaultSubstituters
+                ++ config.mzwing.nix.extraSubstituters
+                ++ map (cache: cache.url) nurCaches
+              )
             );
 
             # trusted-public-keys rather than the extra- form: nixos-anywhere seeds the installer from this exact setting, and never reads the other one.

@@ -7,10 +7,29 @@
     useremail = "mzwing@mzwing.eu.org";
 
     features = [
-      "profiles/nixos-server"
+      "core/nix"
+      "home/base"
       "nixos/server/azure"
-      "software/magpie"
-      "software/nginx"
+      "nixos/server/base"
+      "nixos/server/ssh"
+      "nixos/server/zram"
+      "software/ai/harness/mcp"
+      "software/ai/harness/omp"
+      "software/ai/harness/pi-coding-agent"
+      "software/ai/harness/skills"
+      "software/ai/magpie"
+      "software/ai/paseo"
+      "software/editor/neovim"
+      "software/network/tailscale"
+      "software/network/vpn"
+      "software/security/gpg"
+      "software/security/ssh"
+      "software/server/caddy"
+      "software/server/nginx"
+      "software/shell"
+      "software/vcs"
+      "users/mzwing"
+      "users/root"
     ];
 
     # No disko feature: the layout spans this VM's own pair of disks, so it lives next to the hardware it describes.

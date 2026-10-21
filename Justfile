@@ -55,9 +55,9 @@ nixos host target action='switch' debug='':
 
   flake_path="$(nix flake metadata --no-write-lock-file --json {{flake_ref}} | jq -r .path)"
   nix copy --to "ssh-ng://{{target}}" "$flake_path"
+  # No --accept-flake-config: flake.nix's China-first bootstrap list would replace the host's own substituters.
   ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "{{target}}" nixos-rebuild \
     --flake "path:$flake_path#{{host}}" \
-    --accept-flake-config \
     --show-trace \
     ${flags} \
     "{{action}}"
@@ -84,16 +84,16 @@ nixos-anywhere-preflight target:
   ip -6 route
   REMOTE
 
+# Extra flags go to nixos-anywhere as is, e.g. --no-reboot or --kexec <tarball>.
 [group('nixos')]
-nixos-anywhere host target no_reboot='':
-  if [ -n '{{no_reboot}}' ] && [ '{{no_reboot}}' != '--no-reboot' ]; then echo 'nixos-anywhere only accepts --no-reboot as its optional argument' >&2; exit 2; fi
+nixos-anywhere host target *flags:
   nix run {{flake_ref}}#nixos-anywhere -- \
     --flake {{flake_ref}}#{{host}} \
     --target-host {{target}} \
-    {{no_reboot}} \
     --build-on remote \
     --copy-host-keys \
-    --generate-hardware-config nixos-generate-config {{repo_dir}}/modules/hosts/nixos/{{host}}/_hardware.nix
+    --generate-hardware-config nixos-generate-config {{repo_dir}}/modules/hosts/nixos/{{host}}/_hardware.nix \
+    {{flags}}
 
 # Names as registry.nix spells them, without the .age suffix that `secret` adds back.
 [group('secrets')]

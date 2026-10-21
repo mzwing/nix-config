@@ -1,4 +1,4 @@
-# The caches core/nix.nix gives every host, mirrors aside. Evaluated by mzwing/nix-actions' plan-builds, whose `caches-file` input defaults to this path:
+# The caches core/nix.nix gives every host, mirrors and unreachable ones aside. Evaluated by mzwing/nix-actions' plan-builds, whose `caches-file` input defaults to this path:
 #   nix eval --json --file ci/caches.nix
 let
   cacheData = import ../data/caches.nix;

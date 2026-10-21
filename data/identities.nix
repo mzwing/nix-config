@@ -15,6 +15,7 @@
     # Not its sshd key: a CNB secret puts it at ~/.ssh/agenix when a workspace starts.
     mzwing-cnb = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKd1HoyltXel2f7Wn7vg1VVzJHVVivv0VBUwgStSyoWK root@mzwing-cnb";
     mzwing-do-sgp = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBt5rrGbMYQ1c4dtRrzJpGX5RDyKh5/c5ABdnSgfoGDJ root@mzwing-do-sgp";
+    mzwing-huaweicloud-gz = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINFsTKkd54S65FTuvtE/NFDCCJFvN1h/OvWk5WJsjHSW root@hcss-ecs-ec93";
     mzwing-upcloud-sg = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFN6u5TVLoI3OzCfCqjVYThl+4UcAXZ8noRJO05aoHcL root@mzwing-upcloud-sg";
     mzwing-wap = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILGW67hQftVipTLuqRhnICn8zYUSQ/hpu0YGjdtCaS8N root@wap.server.mzwing.eu.org";
   };

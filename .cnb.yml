@@ -27,4 +27,4 @@ $:
         - name: unlock secrets
           script: agenix-unlock
         - name: join tailnet
-          script: tailscale-join
+          script: systemctl3 start tailscaled tailscaled-autoconnect

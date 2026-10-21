@@ -3,28 +3,35 @@
   lib,
   ...
 }: let
-  inherit (lib) attrNames attrValues concatMap concatStringsSep elem filter listToAttrs optional sort;
+  inherit (lib) attrNames attrValues concatMap concatStringsSep elem filter hasPrefix listToAttrs optional sort;
 
   featureTable = config.mzwing.features;
 
-  featureByName = name:
-    featureTable.${name}
-    or (throw "Unknown feature '${name}'. Available features: ${concatStringsSep ", " (attrNames featureTable)}");
+  featureNames = attrNames featureTable;
 
   item = name: {
     key = name;
-    value = featureByName name;
+    value = featureTable.${name};
   };
 
-  appliesTo = platform: name: elem platform (featureByName name).meta.platforms;
+  appliesTo = platform: name: elem platform featureTable.${name}.meta.platforms;
+
+  # A name selects its own feature and every one beneath it, so a directory's name selects all of it. Those beneath are dropped where they do not apply.
+  expand = platform: name: let
+    own = optional (featureTable ? ${name}) name;
+    beneath = filter (hasPrefix "${name}/") featureNames;
+  in
+    if own == [] && beneath == []
+    then throw "Unknown feature '${name}'. Available features: ${concatStringsSep ", " featureNames}"
+    else own ++ filter (appliesTo platform) beneath;
 
   # Sorted by name so module order does not depend on where a feature was selected from; use mkBefore/mkAfter if you need ordering.
   closeOver = platform: names:
     sort (a: b: a.name < b.name)
     (map (entry: entry.value) (builtins.genericClosure {
-      startSet = map item names;
+      startSet = map item (concatMap (expand platform) names);
       # Requirements that do not apply here are dropped, so a cross-platform feature can require a darwin-only one.
-      operator = entry: map item (filter (appliesTo platform) entry.value.requires);
+      operator = entry: map item (filter (appliesTo platform) (concatMap (expand platform) entry.value.requires));
     }));
 
   # Nested exactly as types.deferredModule nests its own: modules are flattened breadth-first, so depth decides merge order.

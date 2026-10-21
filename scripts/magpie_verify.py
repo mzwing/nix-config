@@ -1,6 +1,6 @@
 """Disable magpie models whose number fingerprint isn't the model they claim to be.
 
-Run on a timer by the software/magpie feature, with the JSON config it generates. Each model is asked through magpie's own gateway, ranked by lm-detector's fpd against its reference bank, and disabled with `magpie model disable` after two failing rounds. Models disabled here are kept in the state directory and tried again on every run, so a relay that serves the real model again gets it back.
+Run on a timer by the software/ai/magpie feature, with the JSON config it generates. Each model is asked through magpie's own gateway, ranked by lm-detector's fpd against its reference bank, and disabled with `magpie model disable` after two failing rounds. Models disabled here are kept in the state directory and tried again on every run, so a relay that serves the real model again gets it back.
 """
 
 import json

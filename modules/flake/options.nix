@@ -27,7 +27,7 @@
         requires = mkOption {
           type = types.listOf types.str;
           default = [];
-          description = "Features pulled in with this one. A profile is a feature with nothing but these.";
+          description = "Features pulled in with this one.";
         };
 
         system = moduleOption "Module fragment applied on both platforms.";
@@ -68,9 +68,9 @@
 
     type = mkOption {
       type = types.enum [
+        "container"
         "desktop"
         "server"
-        "workspace"
       ];
       description = ''What this host is for. A specialArg, so one feature can serve several roles — e.g. `lib.mkIf (type == "desktop")` around its GUI parts.'';
     };
@@ -85,7 +85,7 @@
     features = mkOption {
       type = types.listOf types.str;
       default = [];
-      description = "Feature names to select; their `requires` come along.";
+      description = "Feature names to select, where a directory's name selects every feature in it; their `requires` come along.";
     };
 
     modules = mkOption {
