@@ -51,7 +51,8 @@ in {
               lib.subtractLists config.mzwing.nix.unreachableSubstituters (
                 config.mzwing.nix.mirrorSubstituters
                 ++ cacheData.defaultSubstituters
-                ++ config.mzwing.nix.extraSubstituters
+                # Caches rank by the priority they advertise (numtide 30, cuda 50) before list position; pin these to the cachix caches' 41.
+                ++ map (url: "${url}?priority=41") config.mzwing.nix.extraSubstituters
                 ++ map (cache: cache.url) nurCaches
               )
             );

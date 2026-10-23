@@ -1,7 +1,7 @@
 {
   description = "mzwing's nix config";
 
-  # Nix wants a literal here, so this duplicates data/caches.nix and network/china-mirrors. Keep in step by hand.
+  # Nix wants a literal here, so this duplicates the list core/nix.nix builds from data/caches.nix and network/china-mirrors. Keep in step by hand.
   nixConfig = {
     substituters = [
       # "https://mirrors.cernet.edu.cn/nix-channels/store"
@@ -12,9 +12,10 @@
       # "https://mirrors.cqupt.edu.cn/nix-channels/store"
       "https://cache.nixos.org"
       "https://nix-community.cachix.org"
-      "https://cache.nixos-cuda.org"
-      "https://cache.numtide.com"
-      "https://mzwing.cachix.org"
+      "https://cache.nixos-cuda.org?priority=41"
+      "https://cache.numtide.com?priority=41"
+      # "https://mzwing.cachix.org"
+      "https://cachix.service.mzwing.eu.org"
       "https://so1ve.cachix.org"
       "https://nur-xyenon.cachix.org"
     ];

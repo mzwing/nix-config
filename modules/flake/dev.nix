@@ -12,7 +12,12 @@
   }: {
     apps.nixos-anywhere = {
       type = "app";
-      program = "${inputs.nixos-anywhere.packages.${system}.default}/bin/nixos-anywhere";
+      # Upstream appends the host's substituters to the installer's, keeping its default cache.nixos.org in front.
+      program = "${inputs.nixos-anywhere.packages.${system}.default.overrideAttrs {
+        postPatch = ''
+          substituteInPlace src/nixos-anywhere.sh --replace-fail 'echo "extra-substituters = ' 'echo "substituters = '
+        '';
+      }}/bin/nixos-anywhere";
       meta.description = "Install NixOS hosts with nixos-anywhere.";
     };
 

@@ -25,7 +25,7 @@
     mzwing = {
       author = "mzwing";
       cache = {
-        url = "https://mzwing.cachix.org";
+        url = "https://cachix.service.mzwing.eu.org";
         publicKey = "mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA=";
       };
     };
