@@ -60,7 +60,7 @@
     "so1ve-skills": {
       "filter": {
         "maxDepth": 1,
-        "nameRegex": null
+        "nameRegex": "clarify-code-names|improve-codebase|improve-test-suite|refactor-for-simplicity|speak-plainly"
       },
       "idPrefix": null,
       "pin": {

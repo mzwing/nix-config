@@ -9,5 +9,9 @@
 
   subdir = "dotfiles/agents/skills";
 
-  filter.maxDepth = 1;
+  # Only what we enable: so1ve's design-ui is a different skill that would clash with ours in data/skills/local.
+  filter = {
+    maxDepth = 1;
+    nameRegex = "clarify-code-names|improve-codebase|improve-test-suite|refactor-for-simplicity|speak-plainly";
+  };
 }
