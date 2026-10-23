@@ -161,6 +161,16 @@ show:
 skills-update:
   nix run {{flake_ref}}#skills-sources-lock
 
+# Pass the extension's Chrome Web Store or addons.mozilla.org page; the name defaults to the one in its URL.
+[group('nix')]
+browser-extension-add page *name:
+  python3 scripts/browser_extensions.py add '{{page}}' {{name}}
+
+# Re-resolve the pinned Chromium extensions; a rebuild never does.
+[group('nix')]
+chromium-extensions-update:
+  python3 scripts/browser_extensions.py update
+
 [group('nix')]
 up:
   nix flake update

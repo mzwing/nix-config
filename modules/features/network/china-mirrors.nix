@@ -14,7 +14,7 @@ let
     HOMEBREW_BOTTLE_DOMAIN = "https://mirrors.cernet.edu.cn/homebrew-bottles";
     HOMEBREW_BREW_GIT_REMOTE = "https://mirror.nju.edu.cn/git/homebrew/brew.git";
     HOMEBREW_CORE_GIT_REMOTE = "https://mirror.nju.edu.cn/git/homebrew/homebrew-core.git";
-    HOMEBREW_PIP_INDEX_URL = "https://mirrors.aliyun.com/pypi/simple/";
+    HOMEBREW_PIP_INDEX_URL = "https://mirrors.sustech.edu.cn/pypi/web/simple/";
   };
 in {
   mzwing.features."network/china-mirrors" = {

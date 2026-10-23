@@ -12,6 +12,7 @@
       "home/base"
       "network/china-mirrors"
       "software/ai"
+      "software/browser"
       "software/development"
       "software/editor"
       "software/media"
