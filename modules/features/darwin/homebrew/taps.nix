@@ -20,6 +20,7 @@ in {
           "mzwnet/tap"
           "octane0411/tap"
           "samzong/tap"
+          "sinhong2011/tap"
           "tw93/tap"
         ]
         ++ [

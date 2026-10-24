@@ -1,8 +1,8 @@
 let
-  # The App Store build is sandboxed, so its socket sits inside the container.
-  bitwardenSocket = pkgs: home:
+  # Triwarden is macOS-only, so Linux desktops keep Bitwarden's agent.
+  vaultSocket = pkgs: home:
     if pkgs.stdenv.hostPlatform.isDarwin
-    then "${home}/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock"
+    then "${home}/Library/Group Containers/FX3VR69P5K.io.github.sinhong2011.triwarden/agent.sock"
     else "${home}/.bitwarden-ssh-agent.sock";
 in {
   mzwing.features."software/security/ssh" = {
@@ -18,13 +18,13 @@ in {
       type,
       ...
     }: let
-      viaBitwarden = type == "desktop";
+      viaVault = type == "desktop";
 
-      socket = bitwardenSocket pkgs config.home.homeDirectory;
+      socket = vaultSocket pkgs config.home.homeDirectory;
     in {
-      services.gpg-agent.enableSshSupport = !viaBitwarden;
+      services.gpg-agent.enableSshSupport = !viaVault;
 
-      home.sessionVariables = lib.optionalAttrs viaBitwarden {
+      home.sessionVariables = lib.optionalAttrs viaVault {
         SSH_AUTH_SOCK = socket;
       };
 
@@ -39,9 +39,10 @@ in {
           lib.optional pkgs.stdenv.hostPlatform.isDarwin "${config.home.homeDirectory}/.orbstack/ssh/config"
           ++ ["${config.home.homeDirectory}/.ssh/config.d/*"];
 
-        settings = lib.optionalAttrs viaBitwarden {
+        settings = lib.optionalAttrs viaVault {
           "*" = {
-            IdentityAgent = socket;
+            # Home Manager writes values unquoted, and the macOS path has a space.
+            IdentityAgent = ''"${socket}"'';
             AddKeysToAgent = false;
           };
         };
