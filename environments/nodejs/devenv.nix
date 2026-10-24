@@ -26,7 +26,12 @@
 
   scripts.pnpm-up.exec = let
     major = lib.versions.major config.languages.javascript.pnpm.package.version;
-  in "pnpm pkg set packageManager=pnpm@${pkgs.pnpm-bin.majors.${major}.version}";
+    latestInMajor = pkgs.pnpm-bin.majors.${major};
+  in ''
+    pnpm pkg set packageManager=pnpm@${latestInMajor.version}
+    # The wrapper's pm-on-fail=ignore skips recording the pin in pnpm-lock.yaml; running the pinned version avoids pnpm downloading itself
+    ${lib.getExe latestInMajor} install --lockfile-only --pm-on-fail=download
+  '';
 
   enterTest = ''
     node --version
