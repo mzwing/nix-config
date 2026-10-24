@@ -49,6 +49,16 @@ in {
     recipients = ownedBy "mzwing-cnb";
   };
 
+  "magpie-web/mzwing-azure" = {
+    file = ./magpie-web/mzwing-azure.age;
+    recipients = ownedBy "mzwing-azure";
+  };
+
+  "magpie-web/mzwing-huaweicloud-gz" = {
+    file = ./magpie-web/mzwing-huaweicloud-gz.age;
+    recipients = ownedBy "mzwing-huaweicloud-gz";
+  };
+
   "paseo/password" = {
     file = ./paseo/password.age;
     recipients = [

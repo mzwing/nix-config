@@ -49,9 +49,11 @@ in {
 
     nixos = {
       config,
+      hostname,
       inputs,
       lib,
       pkgs,
+      secrets,
       system,
       type,
       username,
@@ -140,12 +142,28 @@ in {
 
         # Machines without a gateway of their own call the servers' over the tailnet, each with its own gateway key: magpie only takes keyless requests from plain loopback.
         (lib.mkIf (type == "server") {
+          age.secrets.magpie-web-key.file = secrets."magpie-web/${hostname}";
+
           services.magpie = {
             host = "0.0.0.0";
-            settings.lan = true;
+            settings = {
+              lan = true;
+              # On by itself only with no agent here, and the Claude Code installed for subscriptions counts as one.
+              gatewayMode = "on";
+            };
+            web = {
+              enable = true;
+              host = "0.0.0.0";
+            };
           };
 
-          networking.firewall.interfaces.tailscale0.allowedTCPPorts = [endpoint.port];
+          # Holds MAGPIE_WEB_KEY=…, out of the world-readable store; one fixed key keeps the browser signed in across restarts.
+          systemd.services.magpie.serviceConfig.EnvironmentFile = config.age.secrets.magpie-web-key.path;
+
+          networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+            endpoint.port
+            config.services.magpie.web.port
+          ];
         })
       ];
     };
