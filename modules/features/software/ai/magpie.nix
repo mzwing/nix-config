@@ -86,12 +86,13 @@ in {
           "typesafe"
           "workbuddy"
           "workbuddy-ai"
-          "rikki-glm"
           "qiqi-kimi"
           "rmqg-gpt"
           "lbyxiaolizi-opencode-zen"
           "dzmm"
-          ""
+          "modelscope"
+          "siliconflow"
+          "codearts"
         ];
         aliases = {
           # lm-detector fingerprints GPT-6 Astra and GPT-6.1 Sol as one model.
