@@ -93,6 +93,7 @@ in {
           "modelscope"
           "siliconflow"
           "codearts"
+          "zed"
         ];
         aliases = {
           # lm-detector fingerprints GPT-6 Astra and GPT-6.1 Sol as one model.
