@@ -1,6 +1,6 @@
-"""Disable magpie models whose number fingerprint isn't the model they claim to be.
+"""Disable magpie models that error or whose number fingerprint isn't the model they claim to be.
 
-Run on a timer by the software/ai/magpie feature, with the JSON config it generates. Each model is asked through magpie's own gateway, ranked by lm-detector's fpd against its reference bank, and disabled with `magpie model disable` after two failing rounds. Models disabled here are kept in the state directory and tried again on every run, so a relay that serves the real model again gets it back.
+Run on a timer by the software/ai/magpie feature, with the JSON config it generates. Each model is asked through magpie's own gateway, ranked by lm-detector's fpd against its reference bank, and disabled with `magpie model disable` after two failing rounds, or one where it errored. Models disabled here are kept in the state directory and tried again on every run, so a relay that serves the real model again gets it back.
 """
 
 import json
@@ -53,8 +53,8 @@ def served(gateway: str) -> list[str]:
 
 def check(
     config: dict[str, Any], model: str, claimed: str
-) -> tuple[dict[str, Any] | None, float | None, str]:
-    """One fpd round: its report, the share of it the claimed identity and its snapshots hold, and what it found. The share is None without a calibrated ranking."""
+) -> tuple[str, dict[str, Any] | None, str]:
+    """One fpd round: its verdict, its report, and what it found. The verdict is error when the model fails any sample, and inconclusive when fpd couldn't rank the round otherwise."""
     try:
         run = subprocess.run(
             [config["fpd"], *FPD_ARGS, "-b", config["gateway"], "-m", model],
@@ -66,15 +66,17 @@ def check(
             timeout=600,
         )
     except subprocess.TimeoutExpired:
-        return None, None, "fpd took over 10 minutes"
+        return "error", None, "fpd took over 10 minutes"
     if not run.stdout:
-        return None, None, run.stderr.strip()
+        return "inconclusive", None, run.stderr.strip()
     report = json.loads(run.stdout)
     round_ = report["rounds"][0]
-    analysis = round_.get("analysis")
-    if not analysis or analysis["probability_status"] != "reference_calibrated":
-        errors = [s["error"] for s in round_["samples"] if s.get("error")]
-        return report, None, errors[0] if errors else analysis["evidence"]["reason"]
+    errors = [s["error"] for s in round_["samples"] if s.get("error")]
+    if errors:
+        return "error", report, errors[0]
+    analysis = round_["analysis"]
+    if analysis["probability_status"] != "reference_calibrated":
+        return "inconclusive", report, analysis["evidence"]["reason"]
     base = SNAPSHOT.sub("", claimed)
     results = analysis["results"]
     share = sum(
@@ -82,8 +84,8 @@ def check(
     )
     top = results[0]
     return (
+        "ok" if share >= config["threshold"] else "fake",
         report,
-        share,
         f"{claimed} {share:.0%}, top {top['model']} {top['probability']:.0%}",
     )
 
@@ -91,15 +93,13 @@ def check(
 def judge(
     config: dict[str, Any], model: str, claimed: str, rounds: int
 ) -> tuple[str, list[dict[str, Any] | None], str]:
-    """Up to rounds fpd rounds, stopping at the first that passes or can't be ranked. Fake only when every one fell under the threshold."""
+    """Up to rounds fpd rounds, stopping at the first that isn't fake."""
     reports = []
     for _ in range(rounds):
-        report, share, found = check(config, model, claimed)
+        verdict, report, found = check(config, model, claimed)
         reports.append(report)
-        if share is None:
-            return "inconclusive", reports, found
-        if share >= config["threshold"]:
-            return "ok", reports, found
+        if verdict != "fake":
+            return verdict, reports, found
     return "fake", reports, found
 
 
@@ -157,7 +157,7 @@ def main() -> None:
             log("skipped", model, "not in the reference bank")
             continue
         verdict, reports, found = judge(config, model, claimed, 2)
-        if verdict == "fake":
+        if verdict in ("fake", "error"):
             disable(config, model, reports)
             verdict = "disabled"
         log(verdict, model, found)

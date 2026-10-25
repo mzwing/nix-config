@@ -123,7 +123,7 @@ in {
 
           # Runs as magpie's own user, so `magpie model disable` edits the settings the gateway reads.
           systemd.services.magpie-verify = {
-            description = "Disable magpie models whose fingerprint isn't the model they claim";
+            description = "Disable magpie models that error or whose fingerprint isn't the model they claim";
             after = ["magpie.service"];
             serviceConfig = {
               Type = "oneshot";
