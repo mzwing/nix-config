@@ -47,6 +47,12 @@ in {
             extraSetFlags = ["--relay-server-port=${toString relayPort}"];
           };
 
+          # `tailscale up` swaps the OAuth secret for an auth key at api.tailscale.com, once, and tailscaled starts before the network is up.
+          systemd.services.tailscaled-autoconnect = {
+            wants = ["network-online.target"];
+            after = ["network-online.target"];
+          };
+
           networking.firewall.allowedUDPPorts = [relayPort];
         })
 
