@@ -10,7 +10,8 @@ in {
     requires = [
       "darwin/homebrew"
       "software/vcs/git"
-      "software/ai/harness/gryph"
+      "software/vcs/jujutsu"
+      "software/ai/gryph"
       "software/ai/magpie-client"
       "software/development/wakatime"
     ];

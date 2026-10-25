@@ -10,7 +10,7 @@ in {
     requires = [
       "darwin/homebrew"
       # `hooks` below reads programs.gryph.
-      "software/ai/harness/gryph"
+      "software/ai/gryph"
       # The wakatime plugin below only tracks once ~/.wakatime.cfg carries the key.
       "software/development/wakatime"
     ];

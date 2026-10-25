@@ -1,5 +1,5 @@
 {
-  mzwing.features."software/ai/harness/gryph" = {
+  mzwing.features."software/ai/gryph" = {
     meta.platforms = [
       "darwin"
       "nixos"

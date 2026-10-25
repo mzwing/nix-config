@@ -37,7 +37,7 @@
           }
           // userSettings;
         inherit (settings) keybindings;
-        # programs.mcp comes from software/ai/harness/mcp; profiles do not inherit it, so every one asks for it.
+        # programs.mcp comes from software/ai/mcp; profiles do not inherit it, so every one asks for it.
         enableMcpIntegration = true;
       };
 

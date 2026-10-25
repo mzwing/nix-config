@@ -1,5 +1,5 @@
 {
-  mzwing.features."software/ai/harness/skills" = {
+  mzwing.features."software/ai/skills" = {
     meta.platforms = [
       "darwin"
       "nixos"
@@ -34,7 +34,7 @@
         then (builtins.elemAt expanded 0) + (builtins.elemAt expanded 1)
         else if plain != null
         then builtins.elemAt plain 0
-        else throw "software/ai/harness/skills: cannot derive a static destination for target '${name}' from '${dest}'";
+        else throw "software/ai/skills: cannot derive a static destination for target '${name}' from '${dest}'";
     in {
       imports = [
         inputs.agent-skills.homeManagerModules.default
@@ -56,12 +56,12 @@
 
         sources =
           agentLib.sourcesFromLock {
-            manifestsDir = ../../../../../data/skills/sources;
-            lockFile = ../../../../../data/skills/sources.lock.json;
+            manifestsDir = ../../../../data/skills/sources;
+            lockFile = ../../../../data/skills/sources.lock.json;
           }
           // {
             local = {
-              path = ../../../../../data/skills/local;
+              path = ../../../../data/skills/local;
               filter.maxDepth = 1;
             };
           };

@@ -1,5 +1,5 @@
 {
-  mzwing.features."software/ai/harness/mcp" = {
+  mzwing.features."software/ai/mcp" = {
     meta.platforms = [
       "darwin"
       "nixos"
