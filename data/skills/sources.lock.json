@@ -100,12 +100,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-UuyAvrbZ8yYVp1o7E/Uj+D5uDSSneXLk042VT3F5lHg=",
+        "hash": "sha256-GW94FGFTmioeGQhVllNRFnjPLMBB9sbzK6hUYGJdiy4=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "8afbd9421b8e816eb9a5846e26869d0f5ced73f3",
+        "revision": "97956004d29f0f99e33c8657908223fa2e5425ea",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -138,29 +138,29 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-g3hU/s8ThvCvp/rwTddAA+/Himppi40bK0aOcciBmDM=",
+        "hash": "sha256-rXP4KTxH8Ex2QeG/VhHQ0lcS95CJdkPFW3lRLkSACbs=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "a85b73046d309be33dc923af1abbb5c2f3baf9fb",
+        "revision": "b90fcb4b4c246d0465a8e43fd937c2bd1fea960b",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/a85b73046d309be33dc923af1abbb5c2f3baf9fb.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/b90fcb4b4c246d0465a8e43fd937c2bd1fea960b.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-YfWThEnWqsb1Dy3D/2m+VwLZdTjglEocyuD58WlZSrY=",
+        "hash": "sha256-XH2puNcwjkvnYUuj6eB4I/CWVZNgGO4MKgIkBzy16sQ=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "a80e4c9d12d607631249d4d7d059f835d4b2f13a",
+        "revision": "65d20cb6e3d951434bf408215309bb8aa094135a",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/a80e4c9d12d607631249d4d7d059f835d4b2f13a.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/65d20cb6e3d951434bf408215309bb8aa094135a.tar.gz"
       }
     },
     "version": 8
