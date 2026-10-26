@@ -27,6 +27,7 @@
       "software/server/caddy"
       "software/server/nginx"
       "software/shell"
+      "software/utility/karakeep"
       "software/vcs"
       "users/mzwing"
       "users/root"

@@ -2,7 +2,7 @@
   mzwing.features."nixos/server/disko-vda-ext4" = {
     meta.platforms = ["nixos"];
 
-    nixos = {lib, ...}: {
+    nixos = {
       disko.devices.disk.main = {
         type = "disk";
         device = "/dev/vda";
@@ -40,9 +40,6 @@
           };
         };
       };
-
-      # mkForce: nixpkgs' digital-ocean-config.nix sets the grub device itself.
-      boot.loader.grub.devices = lib.mkForce ["/dev/vda"];
     };
   };
 }

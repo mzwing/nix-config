@@ -1,5 +1,5 @@
 {
-  mzwing.features."software/media/creative" = {
+  mzwing.features."software/utility/creative" = {
     meta.platforms = [
       "darwin"
       "nixos"

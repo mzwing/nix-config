@@ -74,8 +74,7 @@ in {
   ];
 
   webJs = [
-    # Via nixpkgs so the version stays in step with the postPatch pointing oxc.path.oxlint/oxfmt at nixpkgs binaries;
-    # that patch is written against 1.6x and fails on the older vsix either marketplace channel serves.
+    # Via nixpkgs, whose postPatch pointing oxc.path.oxlint/oxfmt at nixpkgs binaries is written against its own vsix version.
     pkgs.vscode-extensions.oxc.oxc-vscode
     m.antfu.browse-lite
     m.antfu.vite
@@ -122,7 +121,7 @@ in {
   bun = [m.oven.bun-vscode];
 
   lldb = [
-    # vscode-marketplace carries 1.12.3, which the input's own version map rejects; open-vsx builds the identical drv but its fork of node_deps.nix still calls the deprecated stdenv.isDarwin.
+    # vscode-marketplace's 1.12.3 builds through the input's own package, whose node_deps.nix still calls the deprecated stdenv.isDarwin.
     pkgs.vscode-extensions.vadimcn.vscode-lldb
     m.llvm-vs-code-extensions.lldb-dap
   ];
@@ -159,14 +158,13 @@ in {
     msyrus.go-doc
   ];
 
-  cpp = [
-    # nix-vscode-extensions removed cpptools on aarch64-darwin; nixpkgs still packages it. Drop once it returns.
-    pkgs.vscode-extensions.ms-vscode.cpptools
-    m.cheshirekow.cmake-format
-    m.ms-vscode.cmake-tools
-    m.ms-vscode.cpp-devtools
-    m.ms-vscode.cpptools-themes
-    m.ms-vscode.makefile-tools
+  cpp = with m; [
+    cheshirekow.cmake-format
+    ms-vscode.cmake-tools
+    ms-vscode.cpp-devtools
+    ms-vscode.cpptools
+    ms-vscode.cpptools-themes
+    ms-vscode.makefile-tools
   ];
 
   java = with m; [

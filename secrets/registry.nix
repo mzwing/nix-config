@@ -74,10 +74,7 @@ in {
       mzwing
       hosts.mzwing-azure
       hosts.mzwing-cnb
-      hosts.mzwing-do-sgp
       hosts.mzwing-huaweicloud-gz
-      hosts.mzwing-upcloud-sg
-      hosts.mzwing-wap
     ];
   };
 

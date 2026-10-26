@@ -17,11 +17,11 @@
       "software/ai/mcp"
       "software/ai/skills"
       "software/development/tools"
+      "software/editor/code-server"
       "software/editor/neovim"
       "software/network/tailscale"
       "software/security/gpg"
       "software/security/ssh"
-      "software/server/code-server"
       "software/shell"
       "software/vcs"
     ];

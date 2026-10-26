@@ -1,5 +1,5 @@
 {
-  mzwing.features."software/server/code-server" = {
+  mzwing.features."software/editor/code-server" = {
     meta.platforms = ["nixos"];
 
     requires = ["software/editor/vscode"];

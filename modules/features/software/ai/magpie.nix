@@ -1,5 +1,6 @@
 {lib, ...}: let
   endpoint = import ../../../../data/magpie.nix;
+  publicDomain = "ai.mzwing.eu.org";
 in {
   mzwing.features."software/ai/magpie" = {
     meta.platforms = [
@@ -166,6 +167,38 @@ in {
             endpoint.port
             config.services.magpie.web.port
           ];
+        })
+
+        (lib.mkIf config.services.nginx.enable {
+          services.magpie = {
+            env.MAGPIE_PUBLIC_URL = "https://${publicDomain}";
+            # Unshared, magpie refuses every request nginx forwards.
+            settings.lan = true;
+          };
+
+          services.nginx.virtualHosts.${publicDomain}.locations."/" = {
+            proxyPass = "http://${endpoint.host}:${toString endpoint.port}";
+
+            # One proxy_set_header here drops every inherited one, so this block owns the whole set.
+            recommendedProxySettings = false;
+
+            extraConfig = ''
+              # These mark visitors as remote, so they need a gateway key; magpie lets loopback in with any.
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $remote_addr;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_set_header X-Forwarded-Host $host;
+
+              # Token-at-a-time SSE: nothing may wait in a buffer.
+              proxy_buffering off;
+              proxy_request_buffering off;
+
+              # A model can think for minutes before the first token.
+              proxy_read_timeout 1h;
+              proxy_send_timeout 1h;
+            '';
+          };
         })
       ];
     };

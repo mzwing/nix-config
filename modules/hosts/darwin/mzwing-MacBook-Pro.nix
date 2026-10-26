@@ -15,6 +15,7 @@
       "software/browser"
       "software/development"
       "software/editor"
+      "software/games"
       "software/media"
       "software/network"
       "software/office"

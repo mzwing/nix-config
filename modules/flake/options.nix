@@ -147,6 +147,12 @@ in {
       };
     };
 
+    patches = mkOption {
+      type = types.attrsOf types.raw;
+      default = {};
+      description = "Overlays fixing broken packages, one per file in modules/patches.";
+    };
+
     lib = mkOption {
       type = types.attrsOf types.raw;
       default = {};

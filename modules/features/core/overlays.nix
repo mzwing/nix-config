@@ -1,4 +1,4 @@
-{
+{config, ...}: {
   mzwing.features."core/overlays" = {
     meta.platforms = [
       "darwin"
@@ -6,11 +6,13 @@
     ];
 
     system = {inputs, ...}: {
-      nixpkgs.overlays = [
-        inputs.nur.overlays.default
-        inputs.nix-vscode-extensions.overlays.default
-        inputs.js-toolchain-overlay.overlays.default
-      ];
+      nixpkgs.overlays =
+        [
+          inputs.nur.overlays.default
+          inputs.nix-vscode-extensions.overlays.default
+          inputs.js-toolchain-overlay.overlays.default
+        ]
+        ++ builtins.attrValues config.mzwing.patches;
     };
   };
 }

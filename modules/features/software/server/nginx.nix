@@ -1,9 +1,4 @@
 {lib, ...}: let
-  endpoint = import ../../../../data/magpie.nix;
-
-  # Cloudflare proxies the record, so this is the only name that ever reaches the origin. One label deep, because that is all the zone's wildcard covers.
-  domain = "ai.mzwing.eu.org";
-
   # https://www.cloudflare.com/ips/ — Cloudflare announces changes in advance; refresh by hand.
   cloudflareRanges = [
     "173.245.48.0/20"
@@ -35,65 +30,15 @@ in {
   mzwing.features."software/server/nginx" = {
     meta.platforms = ["nixos"];
 
-    requires = ["software/ai/magpie"];
-
     nixos = {
       config,
       secrets,
       ...
     }: {
-      # nginx runs as its own user, not root, so it has to own both halves itself.
-      age.secrets = {
-        cloudflare-origin-cert = {
-          file = secrets."cloudflare/origin-cert";
-          owner = "nginx";
-          group = "nginx";
-        };
-
-        cloudflare-origin-key = {
-          file = secrets."cloudflare/origin-key";
-          owner = "nginx";
-          group = "nginx";
-        };
-      };
-
-      services.magpie = {
-        env.MAGPIE_PUBLIC_URL = "https://${domain}";
-        # Unshared, magpie refuses every request nginx forwards.
-        settings.lan = true;
-      };
-
-      services.nginx = {
-        enable = true;
-
-        recommendedGzipSettings = true;
-        recommendedOptimisation = true;
-        recommendedProxySettings = true;
-        recommendedTlsSettings = true;
-
-        # Image and video endpoints carry real payloads, and Cloudflare drops anything past 100M anyway.
-        clientMaxBodySize = "100m";
-
-        commonHttpConfig = ''
-          ${perRange (range: "set_real_ip_from ${range};")}
-          real_ip_header CF-Connecting-IP;
-
-          # $realip_remote_addr is the peer nginx actually accepted, before the header above replaced it.
-          geo $realip_remote_addr $from_cloudflare {
-            default 0;
-            ${perRange (range: "${range} 1;")}
-          }
-        '';
-
-        virtualHosts = {
-          # Origin-IP scans and stray SNI get no certificate and no response.
-          "_" = {
-            default = true;
-            rejectSSL = true;
-            extraConfig = "return 444;";
-          };
-
-          ${domain} = {
+      # Every named site is a record Cloudflare proxies, one label deep since that is all the zone's wildcard covers.
+      options.services.nginx.virtualHosts = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.submodule (vhost: {
+          config = lib.mkIf (!vhost.config.default) {
             onlySSL = true;
 
             # Cloudflare's Origin CA issued this; no public trust store accepts it, which is the point.
@@ -106,42 +51,65 @@ in {
                 return 444;
               }
             '';
-
-            locations."/" = {
-              proxyPass = "http://${endpoint.host}:${toString endpoint.port}";
-
-              # One proxy_set_header here drops every inherited one, so this block owns the whole set.
-              recommendedProxySettings = false;
-
-              extraConfig = ''
-                # These mark visitors as remote, so they need a gateway key; magpie lets loopback in with any.
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $remote_addr;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                proxy_set_header X-Forwarded-Host $host;
-
-                # Token-at-a-time SSE: nothing may wait in a buffer.
-                proxy_buffering off;
-                proxy_request_buffering off;
-
-                # A model can think for minutes before the first token.
-                proxy_read_timeout 1h;
-                proxy_send_timeout 1h;
-              '';
-            };
           };
-        };
+        }));
       };
 
-      # No 80: with the Origin CA certificate Cloudflare only ever dials the origin over TLS.
-      networking.firewall.allowedTCPPorts = [443];
+      config = {
+        # nginx runs as its own user, not root, so it has to own both halves itself.
+        age.secrets = {
+          cloudflare-origin-cert = {
+            file = secrets."cloudflare/origin-cert";
+            owner = "nginx";
+            group = "nginx";
+          };
 
-      # Reloads once the pair is re-encrypted. Hashed, since the .age paths move with every change to the flake.
-      systemd.services.nginx.reloadTriggers = map (secret: builtins.hashFile "sha256" secret.file) [
-        config.age.secrets.cloudflare-origin-cert
-        config.age.secrets.cloudflare-origin-key
-      ];
+          cloudflare-origin-key = {
+            file = secrets."cloudflare/origin-key";
+            owner = "nginx";
+            group = "nginx";
+          };
+        };
+
+        services.nginx = {
+          enable = true;
+
+          recommendedGzipSettings = true;
+          recommendedOptimisation = true;
+          recommendedProxySettings = true;
+          recommendedTlsSettings = true;
+
+          # Sites take images, videos and archives, and Cloudflare drops anything past 100M anyway.
+          clientMaxBodySize = "100m";
+
+          commonHttpConfig = ''
+            ${perRange (range: "set_real_ip_from ${range};")}
+            real_ip_header CF-Connecting-IP;
+
+            # $realip_remote_addr is the peer nginx actually accepted, before the header above replaced it.
+            geo $realip_remote_addr $from_cloudflare {
+              default 0;
+              ${perRange (range: "${range} 1;")}
+            }
+          '';
+
+          # Origin-IP scans and stray SNI get no certificate and no response.
+          virtualHosts."_" = {
+            default = true;
+            rejectSSL = true;
+            extraConfig = "return 444;";
+          };
+        };
+
+        # No 80: with the Origin CA certificate Cloudflare only ever dials the origin over TLS.
+        networking.firewall.allowedTCPPorts = [443];
+
+        # Reloads once the pair is re-encrypted. Hashed, since the .age paths move with every change to the flake.
+        systemd.services.nginx.reloadTriggers = map (secret: builtins.hashFile "sha256" secret.file) [
+          config.age.secrets.cloudflare-origin-cert
+          config.age.secrets.cloudflare-origin-key
+        ];
+      };
     };
   };
 }

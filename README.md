@@ -11,7 +11,7 @@ Reference welcome, but my config is not intended to be used as a template for yo
 - `ci/` - nix shims evaluated by CI
 - `data/` - plain data shared across the config, including the pinned agent skill sources under `data/skills/`
 - `environments/` - [devenv](https://devenv.sh) examples for different languages and tools
-- `modules/` - nix-darwin and NixOS modules
+- `modules/` - nix-darwin and NixOS modules; fixes for broken packages go in `modules/patches/`, retired hosts stay in `modules/hosts/_archived/` for reference
 - `scripts/` - ci / proxy scripts
 - `secrets/` - secrets, managed by [agenix](https://github.com/ryantm/agenix)
 
