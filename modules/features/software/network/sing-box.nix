@@ -1,5 +1,5 @@
 {
-  mzwing.features."software/network/vpn" = {
+  mzwing.features."software/network/sing-box" = {
     meta.platforms = [
       "darwin"
       "nixos"
