@@ -1,0 +1,23 @@
+branch:
+  - buttons:
+      - name: 1 CPU, 2 GiB
+        event: web_trigger_workspace_1
+        openWorkspace: true
+      - name: 2 CPUs, 4 GiB
+        event: web_trigger_workspace_2
+        openWorkspace: true
+      - name: 4 CPUs, 8 GiB
+        event: web_trigger_workspace_4
+        openWorkspace: true
+      - name: 8 CPUs, 16 GiB
+        event: web_trigger_workspace_8
+        openWorkspace: true
+      - name: 16 CPUs, 32 GiB
+        event: web_trigger_workspace_16
+        openWorkspace: true
+      - name: 32 CPUs, 64 GiB
+        event: web_trigger_workspace_32
+        openWorkspace: true
+      - name: 64 CPUs, 128 GiB
+        event: web_trigger_workspace_64
+        openWorkspace: true

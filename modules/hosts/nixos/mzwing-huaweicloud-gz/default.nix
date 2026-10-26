@@ -18,7 +18,6 @@
       "software/ai/magpie"
       "software/editor/neovim"
       "software/network/tailscale"
-      "software/network/vpn"
       "software/security/gpg"
       "software/security/ssh"
       "software/server/caddy"

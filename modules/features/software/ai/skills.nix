@@ -84,7 +84,7 @@
           "write-docs"
         ];
 
-        # pi and omp both read ~/.agents/skills, so neither needs a target of its own.
+        # pi, omp and dsh all read ~/.agents/skills, so none needs a target of its own.
         # `link` gives each skill its own home.file entry; the default `symlink-tree` would rsync --delete the agents' own plugins away.
         targets = lib.genAttrs (["agents"] ++ lib.optional config.programs.claude-code.enable "claude") (name: {
           enable = true;

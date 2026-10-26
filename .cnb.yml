@@ -15,10 +15,14 @@ master:
 
 $:
   vscode:
-    - docker:
+    - &workspace
+      docker:
         image: *image
       services:
-        - vscode
+        - name: vscode
+          options:
+            # How long CNB keeps a workspace with no HTTP or SSH connection, 10 minutes by default; 18h is its lifetime cap anyway.
+            keepAliveTimeout: 18h
         - docker
       stages:
         - name: register vscode server extensions
@@ -28,3 +32,37 @@ $:
           script: agenix-unlock
         - name: join tailnet
           script: systemctl3 start tailscaled tailscaled-autoconnect
+      endStages:
+        # Frees the hostname for the next workspace now; an ephemeral node otherwise lingers 30–60 minutes after going offline.
+        - name: leave tailnet
+          script: tailscale logout
+
+  # One event per size .cnb/web_trigger.yml offers, as runner.cpus takes no variables; arm64 is left out, the image being x86_64 only, and so is GPU, which needs a paid budget.
+  web_trigger_workspace_1:
+    - <<: *workspace
+      runner:
+        cpus: 1
+  web_trigger_workspace_2:
+    - <<: *workspace
+      runner:
+        cpus: 2
+  web_trigger_workspace_4:
+    - <<: *workspace
+      runner:
+        cpus: 4
+  web_trigger_workspace_8:
+    - <<: *workspace
+      runner:
+        cpus: 8
+  web_trigger_workspace_16:
+    - <<: *workspace
+      runner:
+        cpus: 16
+  web_trigger_workspace_32:
+    - <<: *workspace
+      runner:
+        cpus: 32
+  web_trigger_workspace_64:
+    - <<: *workspace
+      runner:
+        cpus: 64

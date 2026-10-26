@@ -21,7 +21,7 @@
       "software/ai/skills"
       "software/editor/neovim"
       "software/network/tailscale"
-      "software/network/vpn"
+      "software/network/sing-box"
       "software/security/gpg"
       "software/security/ssh"
       "software/server/caddy"
