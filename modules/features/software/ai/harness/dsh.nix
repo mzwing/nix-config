@@ -62,10 +62,17 @@ in {
         "dsh-notify-me"
       ];
 
-      # Shipped with dsh but switched off. Adding the running version selects them, and dsh still loads the copy it ships.
+      # Shipped with dsh but switched off. Adding the running version selects them.
       shippedPlugins = [
+        "@deepseek-ai/dsh-experimental-agent-team-profile"
         "@deepseek-ai/dsh-experimental-auto-review"
+        "@deepseek-ai/dsh-experimental-plugin-market-bundle"
+        "@deepseek-ai/dsh-experimental-ralph-bundle"
+        "@deepseek-ai/dsh-experimental-session-search"
+        "@deepseek-ai/dsh-experimental-session-titles-bundle"
+        "@deepseek-ai/dsh-experimental-terminal-bundle"
         "@deepseek-ai/dsh-experimental-tool-worktree"
+        "@deepseek-ai/dsh-experimental-voice-input-bundle"
       ];
 
       efforts = levels: lib.genAttrs levels lib.id;
