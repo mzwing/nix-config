@@ -100,12 +100,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-u02xE5LcyGSjGXFGVrKYUP7tFLj9w6DUCXtbVvzuOjI=",
+        "hash": "sha256-xMFkgROdwhjyXnp29VjXFFtUv6T1p6obwCKrnNfB7Nw=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "f7cd3ca11e84a6d446e37d67152d014e3a717624",
+        "revision": "35b620656a0a9fd5d73412f70e94a81584116966",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -138,29 +138,29 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-Bwec/L/leUjiVjWY/vqoxf+Z4m6PVADB5CX1cjoBs0M=",
+        "hash": "sha256-6vMfeVGWuBY+/xuiFb2W9wnXImRT4f0u7JjydeM3TTw=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "ee10d11dadbe4a1438402946636333ff15f4cd47",
+        "revision": "1155abbf5d291535b77dce4893952f04997fce07",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/ee10d11dadbe4a1438402946636333ff15f4cd47.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/1155abbf5d291535b77dce4893952f04997fce07.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-+AG4A4d6QmjGJRDup0OTNxrPU6gqp9NglmhCBGEsPRE=",
+        "hash": "sha256-mf32aWsDqUkI/pbZiKe5SzxAUqrD1t/tnmIc3ktiQSA=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "533c7df02f9b4d913fb8eba553aa99d86103d1d4",
+        "revision": "699d35b21bd3c97dbc0edeae062b2698898bb2e5",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/533c7df02f9b4d913fb8eba553aa99d86103d1d4.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/699d35b21bd3c97dbc0edeae062b2698898bb2e5.tar.gz"
       }
     },
     "version": 8
