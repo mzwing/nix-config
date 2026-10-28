@@ -35,6 +35,7 @@ in {
     "inbounds/tun/linux.json"
     "outbounds/common.json"
     "endpoints/tailscale/server.json"
+    "http_clients.json"
     "experimental/common.json"
     "routes/rules/server.json"
     "routes/rule-sets/common.json"

@@ -63,6 +63,7 @@
     ],
     "auto_detect_interface": true,
     "final": "direct",
-    "default_domain_resolver": "dns-remote"
+    "default_domain_resolver": "dns-remote",
+    "default_http_client": "default-http-client"
   }
 }
