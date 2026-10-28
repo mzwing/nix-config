@@ -1,0 +1,17 @@
+{
+  "dns": {
+    "servers": [
+      {
+        "type": "hosts",
+        "tag": "dns-google-pin",
+        "predefined": {
+          "dl.google.com": [
+            {
+              "_speedTest": "google-pin"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

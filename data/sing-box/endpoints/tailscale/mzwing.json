@@ -1,0 +1,9 @@
+{
+  "endpoints": [
+    {
+      "type": "tailscale",
+      "tag": "mzwing-tailscale-endpoint",
+      "accept_routes": true
+    }
+  ]
+}

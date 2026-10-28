@@ -1,0 +1,27 @@
+{
+  "dns": {
+    "rules": [
+      {
+        "preferred_by": [
+          "dns-mzwing-tailscale"
+        ],
+        "action": "route",
+        "server": "dns-mzwing-tailscale"
+      },
+      {
+        "inbound": [
+          "tun-in"
+        ],
+        "action": "route",
+        "server": "dns-remote"
+      },
+      {
+        "rule_set": [
+          "geosite-category-ads-all",
+          "geosite-category-games@cn"
+        ],
+        "action": "reject"
+      }
+    ]
+  }
+}

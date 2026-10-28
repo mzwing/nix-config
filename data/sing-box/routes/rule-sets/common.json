@@ -1,0 +1,30 @@
+{
+  "route": {
+    "rule_set": [
+      {
+        "tag": "geoip-cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/srs/cn.srs"
+      },
+      {
+        "tag": "geosite-category-ads-all",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-category-ads-all.srs"
+      },
+      {
+        "tag": "geosite-cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-cn.srs"
+      },
+      {
+        "tag": "geosite-category-games@cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-category-games@cn.srs"
+      }
+    ]
+  }
+}

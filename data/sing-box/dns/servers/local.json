@@ -1,0 +1,11 @@
+{
+  "dns": {
+    "servers": [
+      {
+        "type": "local",
+        "detour": "direct",
+        "tag": "dns-local"
+      }
+    ]
+  }
+}

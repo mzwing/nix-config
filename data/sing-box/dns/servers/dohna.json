@@ -1,0 +1,13 @@
+{
+  "dns": {
+    "servers": [
+      {
+        "type": "https",
+        "tag": "dns-remote",
+        "server": "netlify.dohna.ovh",
+        "server_port": 443,
+        "domain_resolver": "dns-direct"
+      }
+    ]
+  }
+}

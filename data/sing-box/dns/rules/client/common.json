@@ -1,0 +1,151 @@
+{
+  "dns": {
+    "rules": [
+      {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "query_type": [
+              "AAAA"
+            ]
+          },
+          {
+            "type": "logical",
+            "mode": "or",
+            "invert": true,
+            "rules": [
+              {
+                "default_interface_address": [
+                  "2000::/3"
+                ]
+              },
+              {
+                "network_interface_address": {
+                  "wifi": [
+                    "2000::/3"
+                  ]
+                }
+              },
+              {
+                "network_interface_address": {
+                  "cellular": [
+                    "2000::/3"
+                  ]
+                }
+              },
+              {
+                "network_interface_address": {
+                  "ethernet": [
+                    "2000::/3"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "clash_mode": "Global",
+            "invert": true
+          }
+        ],
+        "action": "predefined",
+        "rcode": "NOERROR"
+      },
+      {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "query_type": [
+              "AAAA"
+            ]
+          },
+          {
+            "type": "logical",
+            "mode": "or",
+            "rules": [
+              {
+                "rule_set": [
+                  "geosite-anthropic"
+                ]
+              },
+              {
+                "domain_suffix": [
+                  "anthropic.com",
+                  "claude.ai",
+                  "claude.com",
+                  "claudeusercontent.com"
+                ]
+              }
+            ]
+          }
+        ],
+        "action": "predefined",
+        "rcode": "NOERROR"
+      },
+      {
+        "preferred_by": [
+          "dns-mzwing-tailscale"
+        ],
+        "action": "route",
+        "server": "dns-mzwing-tailscale"
+      },
+      {
+        "clash_mode": "Direct",
+        "action": "route",
+        "server": "dns-direct"
+      },
+      {
+        "clash_mode": "Global",
+        "action": "route",
+        "server": "dns-remote",
+        "client_subnet": "114.114.114.114/24"
+      },
+      {
+        "rule_set": [
+          "geosite-category-ads-all"
+        ],
+        "action": "reject"
+      },
+      {
+        "preferred_by": [
+          "dns-google-pin"
+        ],
+        "action": "route",
+        "server": "dns-google-pin"
+      },
+      {
+        "domain": [
+          "hf-mirror.com",
+          "hybgzs.com"
+        ],
+        "domain_suffix": [
+          ".hf-mirror.com",
+          ".hybgzs.com"
+        ],
+        "action": "route",
+        "server": "dns-direct"
+      },
+      {
+        "rule_set": [
+          "geosite-cn",
+          "geosite-bytedance"
+        ],
+        "action": "route",
+        "server": "dns-direct"
+      },
+      {
+        "action": "evaluate",
+        "server": "dns-direct"
+      },
+      {
+        "rule_set": [
+          "geoip-cn"
+        ],
+        "match_response": true,
+        "action": "route",
+        "server": "dns-direct"
+      }
+    ]
+  }
+}

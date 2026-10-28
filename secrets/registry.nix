@@ -11,21 +11,19 @@ let
     hosts.${host}
   ];
 in {
-  # One Origin CA pair for the whole zone (*.mzwing.eu.org), so every host that terminates TLS for it belongs on these lists.
-  "cloudflare/origin-cert" = {
-    file = ./cloudflare/origin-cert.age;
+  # `CLOUDFLARE_DNS_API_TOKEN=…`, a token that may edit the zone's DNS records for ACME challenges. Every host with a site belongs on this list.
+  "cloudflare/dns-api-token" = {
+    file = ./cloudflare/dns-api-token.age;
     recipients = [
       mzwing
       hosts.mzwing-azure
     ];
   };
 
-  "cloudflare/origin-key" = {
-    file = ./cloudflare/origin-key.age;
-    recipients = [
-      mzwing
-      hosts.mzwing-azure
-    ];
+  # caddy/<server>: Caddyfile sites of that server kept out of the repository, imported at runtime.
+  "caddy/mzwing-azure" = {
+    file = ./caddy/mzwing-azure.age;
+    recipients = ownedBy "mzwing-azure";
   };
 
   "do-sgp/network/private" = {
@@ -36,6 +34,15 @@ in {
   "do-sgp/network/public" = {
     file = ./do-sgp/network/public.age;
     recipients = ownedBy "mzwing-do-sgp";
+  };
+
+  # `EDGEONE_ORIGIN_AUTH=…`, the value EdgeOne's origin-pull rule sends as X-Origin-Auth. Every host with a site belongs on this list.
+  "edgeone/origin-auth" = {
+    file = ./edgeone/origin-auth.age;
+    recipients = [
+      mzwing
+      hosts.mzwing-azure
+    ];
   };
 
   # magpie/<server>/<client>: the key `magpie gateway-key add` printed on that server, for one machine without a gateway of its own.
@@ -67,7 +74,57 @@ in {
     ];
   };
 
-  # Every NixOS host selecting software/network/tailscale belongs on this list.
+  # The sing-box client's, like subs-check/* below. The Mac reads them with the mzwing key, and every NixOS desktop selecting software/network/sing-box belongs on these lists.
+  "sing-box/api-secret" = {
+    file = ./sing-box/api-secret.age;
+    recipients = [mzwing];
+  };
+
+  "sing-box/clash-api-secret" = {
+    file = ./sing-box/clash-api-secret.age;
+    recipients = [mzwing];
+  };
+
+  # sing-box/client/<name>: a whole sing-box fragment merged into every client profile, whose outbounds and endpoints join `proxy`.
+  "sing-box/client/mzwing-azure-naive" = {
+    file = ./sing-box/client/mzwing-azure-naive.age;
+    recipients = [mzwing];
+  };
+
+  "sing-box/client/warp" = {
+    file = ./sing-box/client/warp.age;
+    recipients = [mzwing];
+  };
+
+  # sing-box/<server>/inbounds: that server's proxy inbounds as a whole sing-box fragment, ports included.
+  "sing-box/mzwing-azure/inbounds" = {
+    file = ./sing-box/mzwing-azure/inbounds.age;
+    recipients = ownedBy "mzwing-azure";
+  };
+
+  # YAML merged over data/subs-check/config.yaml: the subscriptions and sub-store-path.
+  "subs-check/config" = {
+    file = ./subs-check/config.age;
+    recipients = [mzwing];
+  };
+
+  # subs-check/self/<name>: a Clash node list checked alongside the subscriptions.
+  "subs-check/self/haru" = {
+    file = ./subs-check/self/haru.age;
+    recipients = [mzwing];
+  };
+
+  "subs-check/self/mzwing-azure" = {
+    file = ./subs-check/self/mzwing-azure.age;
+    recipients = [mzwing];
+  };
+
+  "subs-check/self/sci" = {
+    file = ./subs-check/self/sci.age;
+    recipients = [mzwing];
+  };
+
+  # Every NixOS host selecting software/network/tailscale, or software/network/sing-box as a server, belongs on this list.
   "tailscale/oauth-secret" = {
     file = ./tailscale/oauth-secret.age;
     recipients = [

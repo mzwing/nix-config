@@ -111,6 +111,37 @@ secret name:
 rekey:
   cd {{repo_dir}}/secrets && agenix --rekey -i {{age_identity}}
 
+# Passwords and keys in the shapes sing-box inbounds take.
+[group('sing-box')]
+password-gen subcommand='' *args:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  usage() {
+    printf '%s\n' \
+      'Usage:' \
+      '  just password-gen shadowsocks 128' \
+      '  just password-gen shadowsocks 256' \
+      '  just password-gen shadowsocks chacha20' \
+      '  just password-gen hysteria2' \
+      '  just password-gen trojan' \
+      '  just password-gen uuid' \
+      '  just password-gen reality keypair' \
+      '  just password-gen reality shortid' \
+      '  just password-gen naive'
+  }
+
+  args='{{args}}'
+  case "{{subcommand}}${args:+ $args}" in
+    'shadowsocks 128') sing-box generate rand --base64 16 ;;
+    'shadowsocks 256' | 'shadowsocks chacha20') sing-box generate rand --base64 32 ;;
+    hysteria2 | trojan | naive) sing-box generate rand --base64 16 ;;
+    uuid) sing-box generate uuid ;;
+    'reality keypair') sing-box generate reality-keypair ;;
+    'reality shortid') sing-box generate rand --hex 8 ;;
+    *) usage >&2; exit 2 ;;
+  esac
+
 [group('nix')]
 flake-check:
   nix flake check --show-trace {{flake_ref}} --all-systems

@@ -1,0 +1,126 @@
+{
+  "route": {
+    "rule_set": [
+      {
+        "tag": "geosite-netflix",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-netflix.srs"
+      },
+      {
+        "tag": "geosite-disney",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-disney.srs"
+      },
+      {
+        "tag": "geosite-spotify",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-spotify.srs"
+      },
+      {
+        "tag": "geosite-youtube",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-youtube.srs"
+      },
+      {
+        "tag": "geosite-bing",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-bing.srs"
+      },
+      {
+        "tag": "geosite-openai",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-openai.srs"
+      },
+      {
+        "tag": "geosite-anthropic",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-anthropic.srs"
+      },
+      {
+        "tag": "geosite-google-gemini",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-google-gemini.srs"
+      },
+      {
+        "tag": "geosite-apple",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-apple.srs"
+      },
+      {
+        "tag": "geosite-hoyoverse",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-hoyoverse.srs"
+      },
+      {
+        "tag": "geosite-onedrive",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-onedrive.srs"
+      },
+      {
+        "tag": "geosite-google",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-google.srs"
+      },
+      {
+        "tag": "geosite-bytedance",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-bytedance.srs"
+      },
+      {
+        "tag": "geosite-tencent",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-tencent.srs"
+      },
+      {
+        "tag": "geosite-tencent-games",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-tencent-games.srs"
+      },
+      {
+        "tag": "geosite-bahamut",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-bahamut.srs"
+      },
+      {
+        "tag": "geosite-googlefcm",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-googlefcm.srs"
+      },
+      {
+        "tag": "geosite-zhihu",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-zhihu.srs"
+      },
+      {
+        "tag": "geosite-coolapk",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-coolapk.srs"
+      },
+      {
+        "tag": "geosite-smzdm",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-smzdm.srs"
+      }
+    ]
+  }
+}

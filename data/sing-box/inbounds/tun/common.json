@@ -1,0 +1,15 @@
+{
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "address": [
+        "198.51.100.1/24",
+        "fdfe:dcba:1515::1/126"
+      ],
+      "dns_mode": "hijack",
+      "auto_route": true,
+      "strict_route": true
+    }
+  ]
+}

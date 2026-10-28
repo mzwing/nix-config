@@ -5,6 +5,7 @@
     type = "server";
     username = "mzwing";
     useremail = "mzwing@mzwing.eu.org";
+    site = "azure.openlist.service.mzwing.eu.org";
 
     features = [
       "core/nix"
@@ -21,11 +22,10 @@
       "software/ai/skills"
       "software/editor/neovim"
       "software/network/sing-box"
-      "software/network/tailscale"
       "software/security/gpg"
       "software/security/ssh"
       "software/server/caddy"
-      "software/server/nginx"
+      "software/server/openlist"
       "software/shell"
       # "software/utility/karakeep"
       "software/vcs"

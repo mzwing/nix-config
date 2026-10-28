@@ -1,0 +1,23 @@
+{
+  "services": [
+    {
+      "type": "api",
+      "tag": "sing-box-api",
+      "listen": "127.0.0.1",
+      "listen_port": 9091,
+      "reuse_addr": true,
+      "secret": {
+        "_secret": "sing-box/api-secret"
+      },
+      "access_control_allow_origin": [
+        "localhost",
+        "127.0.0.1"
+      ],
+      "access_control_allow_private_network": false,
+      "dashboard": {
+        "enabled": true,
+        "http_client": "default-http-client"
+      }
+    }
+  ]
+}

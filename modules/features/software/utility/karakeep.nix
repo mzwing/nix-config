@@ -1,13 +1,13 @@
 let
   endpoint = import ../../../../data/magpie.nix;
-  domain = "karakeep.mzwing.eu.org";
+  domain = "karakeep.service.mzwing.eu.org";
 in {
   mzwing.features."software/utility/karakeep" = {
     meta.platforms = ["nixos"];
 
     requires = [
       "software/ai/magpie"
-      "software/server/nginx"
+      "software/server/caddy"
     ];
 
     nixos = {
@@ -51,7 +51,7 @@ in {
         };
       };
 
-      services.nginx.virtualHosts.${domain}.locations."/".proxyPass = "http://${web.host}:${toString web.port}";
+      services.caddy.virtualHosts.${domain}.extraConfig = "reverse_proxy ${web.host}:${toString web.port}";
 
       # Keeps Chromium off between crawls: a connection here starts it behind systemd-socket-proxyd, and both stop once the proxy has sat idle.
       systemd.sockets.karakeep-browser-proxy = {

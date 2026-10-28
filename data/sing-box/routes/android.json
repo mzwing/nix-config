@@ -1,0 +1,5 @@
+{
+  "route": {
+    "override_android_vpn": true
+  }
+}

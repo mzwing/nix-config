@@ -1,0 +1,22 @@
+{
+  "inbounds": [
+    {
+      "type": "mixed",
+      "tag": "mixed-in",
+      "listen": "0.0.0.0",
+      "listen_port": 5353
+    },
+    {
+      "type": "mixed",
+      "tag": "mixed-in-direct",
+      "listen": "0.0.0.0",
+      "listen_port": 5354
+    },
+    {
+      "type": "mixed",
+      "tag": "mixed-in-proxy",
+      "listen": "0.0.0.0",
+      "listen_port": 5355
+    }
+  ]
+}

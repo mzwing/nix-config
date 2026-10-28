@@ -1,0 +1,12 @@
+{
+  "dns": {
+    "servers": [
+      {
+        "type": "tailscale",
+        "tag": "dns-mzwing-tailscale",
+        "endpoint": "mzwing-tailscale-endpoint",
+        "accept_search_domain": true
+      }
+    ]
+  }
+}

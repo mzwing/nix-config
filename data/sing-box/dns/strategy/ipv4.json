@@ -1,0 +1,5 @@
+{
+  "dns": {
+    "strategy": "prefer_ipv4"
+  }
+}

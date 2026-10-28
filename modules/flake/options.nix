@@ -82,6 +82,12 @@
       default = "";
     };
 
+    site = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = "Public name the host answers on directly, with no CDN in front. A specialArg; a host with one runs Caddy as its public front.";
+    };
+
     features = mkOption {
       type = types.listOf types.str;
       default = [];

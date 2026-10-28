@@ -1,0 +1,318 @@
+{
+  "route": {
+    "rules": [
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "protocol": "dns"
+          },
+          {
+            "port": 53
+          }
+        ],
+        "action": "hijack-dns"
+      },
+      {
+        "inbound": [
+          "mixed-in",
+          "mixed-in-direct",
+          "mixed-in-proxy",
+          "tun-in"
+        ],
+        "action": "sniff"
+      },
+      {
+        "inbound": [
+          "mixed-in-direct"
+        ],
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "inbound": [
+          "mixed-in-proxy"
+        ],
+        "action": "route",
+        "outbound": "proxy"
+      },
+      {
+        "clash_mode": "Direct",
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "clash_mode": "Global",
+        "action": "route",
+        "outbound": "proxy"
+      },
+      {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "domain": [
+              "sysu.edu.cn",
+              "matrix.moe"
+            ],
+            "domain_suffix": [
+              ".sysu.edu.cn",
+              ".matrix.moe"
+            ],
+            "ip_cidr": [
+              "125.217.164.35/32",
+              "172.16.0.0/12",
+              "172.18.198.0/24",
+              "172.25.76.0/24",
+              "2001:250:3002:4b9d::/64",
+              "202.116.0.0/16",
+              "222.200.0.0/16"
+            ]
+          },
+          {
+            "type": "logical",
+            "mode": "or",
+            "rules": [
+              {
+                "wifi_ssid": [
+                  "SYSU-SECURE",
+                  "SYSU-SECURE-2.4G"
+                ]
+              },
+              {
+                "default_interface_address": [
+                  "172.29.0.0/16"
+                ]
+              },
+              {
+                "default_interface_address": [
+                  "202.116.0.0/16"
+                ]
+              },
+              {
+                "default_interface_address": [
+                  "222.200.0.0/16"
+                ]
+              },
+              {
+                "network_interface_address": {
+                  "wifi": [
+                    "172.29.0.0/16"
+                  ]
+                }
+              },
+              {
+                "network_interface_address": {
+                  "wifi": [
+                    "202.116.0.0/16"
+                  ]
+                }
+              },
+              {
+                "network_interface_address": {
+                  "wifi": [
+                    "222.200.0.0/16"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "domain": [
+          "jwxt.sysu.edu.cn"
+        ],
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "domain": [
+          "sysu.edu.cn",
+          "matrix.moe"
+        ],
+        "domain_suffix": [
+          ".sysu.edu.cn",
+          ".matrix.moe"
+        ],
+        "action": "resolve"
+      },
+      {
+        "preferred_by": [
+          "mzwing-tailscale-endpoint"
+        ],
+        "action": "route",
+        "outbound": "mzwing-tailscale-endpoint"
+      },
+      {
+        "network": [
+          "icmp"
+        ],
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "ip_is_private": true,
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "domain": [
+          "gstatic.com"
+        ],
+        "domain_suffix": [
+          ".gstatic.com"
+        ],
+        "action": "route",
+        "outbound": "proxy"
+      },
+      {
+        "rule_set": [
+          "geosite-category-ads-all"
+        ],
+        "action": "reject"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "rule_set": [
+              "geosite-anthropic"
+            ]
+          },
+          {
+            "domain_suffix": [
+              "anthropic.com",
+              "claude.ai",
+              "claude.com",
+              "claudeusercontent.com"
+            ]
+          }
+        ],
+        "action": "resolve",
+        "strategy": "ipv4_only"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "rule_set": [
+              "geosite-anthropic"
+            ]
+          },
+          {
+            "domain_suffix": [
+              "anthropic.com",
+              "claude.ai",
+              "claude.com",
+              "claudeusercontent.com"
+            ]
+          }
+        ],
+        "action": "route",
+        "outbound": "claude"
+      },
+      {
+        "rule_set": [
+          "geosite-openai"
+        ],
+        "action": "route",
+        "outbound": "openai"
+      },
+      {
+        "rule_set": [
+          "geosite-google-gemini"
+        ],
+        "action": "route",
+        "outbound": "gemini"
+      },
+      {
+        "rule_set": [
+          "geosite-bing"
+        ],
+        "action": "route",
+        "outbound": "copilot"
+      },
+      {
+        "rule_set": [
+          "geosite-netflix"
+        ],
+        "action": "route",
+        "outbound": "netflix"
+      },
+      {
+        "rule_set": [
+          "geosite-disney"
+        ],
+        "action": "route",
+        "outbound": "disney"
+      },
+      {
+        "rule_set": [
+          "geosite-youtube"
+        ],
+        "action": "route",
+        "outbound": "youtube"
+      },
+      {
+        "rule_set": [
+          "geosite-bytedance"
+        ],
+        "action": "route",
+        "outbound": "tiktok"
+      },
+      {
+        "rule_set": [
+          "geosite-bahamut"
+        ],
+        "action": "route",
+        "outbound": "tw"
+      },
+      {
+        "rule_set": [
+          "geosite-spotify"
+        ],
+        "action": "route",
+        "outbound": "us"
+      },
+      {
+        "domain": [
+          "packages.service.mzwing.eu.org",
+          "raw.kiko-play-niptan.one",
+          "busuu.com",
+          "ghfast.top",
+          "hf-mirror.com",
+          "hybgzs.com",
+          "files-mirror.r2.daocloud.vip",
+          "invite.linuxdo.org",
+          "mongodb.com"
+        ],
+        "domain_suffix": [
+          ".busuu.com",
+          ".hf-mirror.com",
+          ".hybgzs.com",
+          ".packages.service.mzwing.eu.org",
+          ".m.daocloud.io",
+          ".mongodb.com"
+        ],
+        "rule_set": [
+          "geoip-cn",
+          "geosite-cn",
+          "geosite-category-games@cn",
+          "geosite-googlefcm"
+        ],
+        "action": "route",
+        "outbound": "direct"
+      }
+    ],
+    "auto_detect_interface": true,
+    "final": "proxy",
+    "default_domain_resolver": "dns-remote",
+    "default_http_client": "default-http-client"
+  }
+}

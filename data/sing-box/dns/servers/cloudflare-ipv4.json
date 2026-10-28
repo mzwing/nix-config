@@ -1,0 +1,12 @@
+{
+  "dns": {
+    "servers": [
+      {
+        "type": "https",
+        "tag": "dns-remote",
+        "server": "1.0.0.1",
+        "server_port": 443
+      }
+    ]
+  }
+}

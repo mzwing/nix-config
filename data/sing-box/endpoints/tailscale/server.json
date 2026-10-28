@@ -1,0 +1,15 @@
+{
+  "endpoints": [
+    {
+      "type": "tailscale",
+      "tag": "mzwing-tailscale-endpoint",
+      "advertise_tags": [
+        "tag:server"
+      ],
+      "listen_port": 41641,
+      "relay_server_port": 40000,
+      "system_interface": true,
+      "system_interface_name": "tailscale0"
+    }
+  ]
+}

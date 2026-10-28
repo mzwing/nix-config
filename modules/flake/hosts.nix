@@ -34,6 +34,7 @@
       inherit
         (host)
         hostname
+        site
         system
         type
         username

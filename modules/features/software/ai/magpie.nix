@@ -1,6 +1,6 @@
 {lib, ...}: let
   endpoint = import ../../../../data/magpie.nix;
-  publicDomain = "ai.mzwing.eu.org";
+  publicDomain = "ai.service.mzwing.eu.org";
 in {
   mzwing.features."software/ai/magpie" = {
     meta.platforms = [
@@ -169,36 +169,24 @@ in {
           ];
         })
 
-        (lib.mkIf config.services.nginx.enable {
+        (lib.mkIf config.services.caddy.enable {
           services.magpie = {
             env.MAGPIE_PUBLIC_URL = "https://${publicDomain}";
-            # Unshared, magpie refuses every request nginx forwards.
+            # Unshared, magpie refuses every request Caddy forwards.
             settings.lan = true;
           };
 
-          services.nginx.virtualHosts.${publicDomain}.locations."/" = {
-            proxyPass = "http://${endpoint.host}:${toString endpoint.port}";
-
-            # One proxy_set_header here drops every inherited one, so this block owns the whole set.
-            recommendedProxySettings = false;
-
-            extraConfig = ''
-              # These mark visitors as remote, so they need a gateway key; magpie lets loopback in with any.
-              proxy_set_header Host $host;
-              proxy_set_header X-Real-IP $remote_addr;
-              proxy_set_header X-Forwarded-For $remote_addr;
-              proxy_set_header X-Forwarded-Proto $scheme;
-              proxy_set_header X-Forwarded-Host $host;
+          # Forwarded headers mark visitors as remote, so they need a gateway key; magpie lets loopback in with any. Caddy sets them by itself and keeps no response timeout, so a model can think for minutes.
+          services.caddy.virtualHosts.${publicDomain}.extraConfig = ''
+            reverse_proxy ${endpoint.host}:${toString endpoint.port} {
+              # The peer is an EdgeOne node, which names the visitor here.
+              header_up X-Real-IP {header.EO-Connecting-IP}
+              header_up X-Forwarded-For {header.EO-Connecting-IP}
 
               # Token-at-a-time SSE: nothing may wait in a buffer.
-              proxy_buffering off;
-              proxy_request_buffering off;
-
-              # A model can think for minutes before the first token.
-              proxy_read_timeout 1h;
-              proxy_send_timeout 1h;
-            '';
-          };
+              flush_interval -1
+            }
+          '';
         })
       ];
     };

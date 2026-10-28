@@ -1,0 +1,9 @@
+{
+  "dns": {
+    "final": "dns-remote",
+    "optimistic": {
+      "enabled": true,
+      "timeout": "1d"
+    }
+  }
+}
