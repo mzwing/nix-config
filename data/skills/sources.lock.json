@@ -100,12 +100,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-xMFkgROdwhjyXnp29VjXFFtUv6T1p6obwCKrnNfB7Nw=",
+        "hash": "sha256-wc4mxXq3dRaGhZMcLOLJDIpVKHVTaF3bZRBG/8byXg8=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "35b620656a0a9fd5d73412f70e94a81584116966",
+        "revision": "21e64c2d87c2ccbe184180ac549188a06c560c90",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -138,29 +138,29 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-6vMfeVGWuBY+/xuiFb2W9wnXImRT4f0u7JjydeM3TTw=",
+        "hash": "sha256-UqZDE0WmQFRHmf1UZ+RoKDbPecIKU3r7phQSoP66LWI=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "1155abbf5d291535b77dce4893952f04997fce07",
+        "revision": "5e9294172b9cb4da6f3462dd0fcfdbf1961f88f4",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/1155abbf5d291535b77dce4893952f04997fce07.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/5e9294172b9cb4da6f3462dd0fcfdbf1961f88f4.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-mf32aWsDqUkI/pbZiKe5SzxAUqrD1t/tnmIc3ktiQSA=",
+        "hash": "sha256-FI+bM+AtmOb4rpeQnR0XHvGhuc7XhF5NQ73zmqh6Cb0=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "699d35b21bd3c97dbc0edeae062b2698898bb2e5",
+        "revision": "92a9a34ac3bf88e695e468b90c7bf32f163d32c8",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/699d35b21bd3c97dbc0edeae062b2698898bb2e5.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/92a9a34ac3bf88e695e468b90c7bf32f163d32c8.tar.gz"
       }
     },
     "version": 8
