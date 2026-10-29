@@ -305,6 +305,9 @@ in {
         # sing-box answers every DNS query here, even lego's to the authoritative servers, and can serve the challenge record's cached absence for longer than lego keeps checking.
         security.acme.defaults.extraLegoFlags = ["--dns.propagation.wait" "1m"];
 
+        # Without tailscaled, resolved gets no tailnet search domain and so never sends bare peer names to sing-box, which expands them itself.
+        services.resolved.settings.Resolve.ResolveUnicastSingleLabel = true;
+
         age.secrets = ageSecrets secrets {} (secretsIn settings);
       };
 
@@ -408,6 +411,8 @@ in {
               systemd.services.sing-box-warp = {
                 description = "Replace the WARP account once its exit stops unlocking what sing-box routes through it";
                 after = ["sing-box.service"];
+                # A switch would otherwise restart a run in progress and wait for all of it.
+                restartIfChanged = false;
                 serviceConfig = {
                   Type = "oneshot";
                   ExecStart = "${warp} unlock ${warpConfig}";

@@ -127,6 +127,8 @@ in {
           systemd.services.magpie-verify = {
             description = "Disable magpie models that error or whose fingerprint isn't the model they claim";
             after = ["magpie.service"];
+            # A switch would otherwise restart a run in progress and wait for all of it.
+            restartIfChanged = false;
             serviceConfig = {
               Type = "oneshot";
               User = username;
