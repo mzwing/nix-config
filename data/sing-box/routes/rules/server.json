@@ -18,6 +18,16 @@
         "action": "sniff"
       },
       {
+        "inbound": [
+          "tun-in"
+        ],
+        "preferred_by": [
+          "mzwing-tailscale-endpoint"
+        ],
+        "action": "route",
+        "outbound": "mzwing-tailscale-endpoint"
+      },
+      {
         "rule_set": [
           "geosite-anthropic",
           "claude"
