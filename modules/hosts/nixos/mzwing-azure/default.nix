@@ -33,6 +33,7 @@
     modules = [
       ./_disk.nix
       ./_hardware.nix
+      ./_locale.nix
       ./_network.nix
     ];
   };
