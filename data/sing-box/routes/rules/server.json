@@ -18,6 +18,35 @@
         "action": "sniff"
       },
       {
+        "rule_set": [
+          "geosite-anthropic",
+          "claude"
+        ],
+        "action": "resolve",
+        "strategy": "ipv4_only"
+      },
+      {
+        "rule_set": [
+          "geosite-anthropic",
+          "claude"
+        ],
+        "action": "route",
+        "outbound": "claude"
+      },
+      {
+        "rule_set": [
+          "geosite-netflix",
+          "geosite-openai"
+        ],
+        "action": "route",
+        "outbound": "warp"
+      },
+      {
+        "ip_version": 6,
+        "action": "route",
+        "outbound": "warp"
+      },
+      {
         "inbound": [
           "tun-in"
         ],

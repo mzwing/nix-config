@@ -2,12 +2,6 @@
   "route": {
     "rule_set": [
       {
-        "tag": "geosite-netflix",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-netflix.srs"
-      },
-      {
         "tag": "geosite-disney",
         "type": "remote",
         "format": "binary",
@@ -30,18 +24,6 @@
         "type": "remote",
         "format": "binary",
         "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-bing.srs"
-      },
-      {
-        "tag": "geosite-openai",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-openai.srs"
-      },
-      {
-        "tag": "geosite-anthropic",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-anthropic.srs"
       },
       {
         "tag": "geosite-google-gemini",

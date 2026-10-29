@@ -48,6 +48,10 @@
 
   clientFragments = secrets: lib.filter (lib.hasPrefix "sing-box/client/") (builtins.attrNames secrets);
 
+  # Haru's Los Angeles nodes with clean IPs, taken from Haru's own list since subs-check renames every node after its exit.
+  claudeNodeList = "subs-check/self/haru";
+  selectClaudeNodes = ''{outbounds: [.outbounds[] | select(.tag | endswith(" - 洛杉矶纯净"))]}'';
+
   # One subs-check-pro run over every subscription, then the outbounds sing-box routes through, grouped by region and service. The speed tests pick this machine's Google cache node and WARP peer, and `render` fills them into what a profile merges.
   mkOutboundsCommand = {
     pkgs,
@@ -156,8 +160,7 @@
               set --
             fi
 
-            clash2sing-box convert "${secretPath "subs-check/self/haru"}" -o "$work/haru.json"
-            jq '{outbounds: [.outbounds[] | select(.tag | endswith(" - 洛杉矶纯净"))]}' "$work/haru.json" > "$work/claude.json"
+            clash2sing-box convert "${secretPath claudeNodeList}" | jq '${selectClaudeNodes}' > "$work/claude.json"
 
             # `(?<!-)` keeps a region group off the hyphenated qualifiers that sit elsewhere in a name: the CDN-side location in `HK¹-US⁰`, TikTok's `TK-US`, and the `|IN-XX` entry tag.
             clash2sing-box convert \
@@ -335,12 +338,40 @@ in {
           settings = profile "server";
           inbounds = "sing-box/${hostname}/inbounds";
           caddySites = "caddy/${hostname}";
+
+          # The group clash2sing-box's --outbound-group builds, without the proxy and urltest-proxy groups every conversion adds.
+          claudeOutboundsCommand = pkgs.writeShellApplication {
+            name = "sing-box-claude-outbounds";
+            runtimeInputs = [
+              pkgs.jq
+              pkgs.nur.repos.mzwing.clash2sing-box
+            ];
+            text = ''
+              clash2sing-box convert "${secretPath claudeNodeList}" | jq '${selectClaudeNodes} | .outbounds += [{type: "urltest", tag: "claude", outbounds: .outbounds | map(.tag)}]' > /run/sing-box/claude.json
+            '';
+          };
+
+          warp = pkgs.writers.writePython3 "sing-box-warp" {flakeIgnore = ["E501"];} (builtins.readFile ../../../../scripts/sing_box_warp.py);
+          warpConfig = (pkgs.formats.json {}).generate "sing-box-warp.json" {
+            wgcf = lib.getExe pkgs.wgcf;
+            singBox = lib.getExe config.services.sing-box.package;
+            regionRestrictionCheck = lib.getExe pkgs.nur.repos.mzwing.regionrestrictioncheck;
+            systemctl = "${config.systemd.package}/bin/systemctl";
+            profile = "/var/lib/sing-box/warp.conf";
+            fragment = "/run/sing-box/warp.json";
+            # RegionRestrictionCheck's function for each rule set routes/rules/server.json sends through warp.
+            checks = [
+              "MediaUnlockTest_Netflix"
+              "MediaUnlockTest_ChatGPT"
+            ];
+            attempts = 10;
+          };
         in
           lib.mkMerge [
             (service settings)
             {
               age.secrets =
-                ageSecrets secrets {} [inbounds "tailscale/oauth-secret"]
+                ageSecrets secrets {} [inbounds claudeNodeList "tailscale/oauth-secret"]
                 // ageSecrets secrets {owner = config.services.caddy.user;} [caddySites];
 
               services.caddy.extraConfig = "import ${secretPath caddySites}";
@@ -366,11 +397,32 @@ in {
                     "+${pkgs.writeShellScript "sing-box-tailscale-auth-key" ''
                       printf 'TS_AUTHKEY=%s?ephemeral=false&preauthorized=true\n' "$(<${secretPath "tailscale/oauth-secret"})" > /run/sing-box/tailscale.env
                     ''}"
+                    "+${lib.getExe claudeOutboundsCommand}"
+                    "+${warp} render ${warpConfig}"
                   ];
                   EnvironmentFile = "-/run/sing-box/tailscale.env";
                 };
-                restartTriggers = [secrets.${inbounds}];
+                restartTriggers = [secrets.${inbounds} secrets.${claudeNodeList}];
               };
+
+              systemd.services.sing-box-warp = {
+                description = "Replace the WARP account once its exit stops unlocking what sing-box routes through it";
+                after = ["sing-box.service"];
+                serviceConfig = {
+                  Type = "oneshot";
+                  ExecStart = "${warp} unlock ${warpConfig}";
+                };
+              };
+
+              systemd.timers.sing-box-warp = {
+                wantedBy = ["timers.target"];
+                timerConfig = {
+                  OnCalendar = "hourly";
+                  Persistent = true;
+                };
+              };
+
+              environment.systemPackages = [pkgs.nur.repos.mzwing.regionrestrictioncheck];
             }
           ]))
 

@@ -176,43 +176,17 @@
         "action": "reject"
       },
       {
-        "type": "logical",
-        "mode": "or",
-        "rules": [
-          {
-            "rule_set": [
-              "geosite-anthropic"
-            ]
-          },
-          {
-            "domain_suffix": [
-              "anthropic.com",
-              "claude.ai",
-              "claude.com",
-              "claudeusercontent.com"
-            ]
-          }
+        "rule_set": [
+          "geosite-anthropic",
+          "claude"
         ],
         "action": "resolve",
         "strategy": "ipv4_only"
       },
       {
-        "type": "logical",
-        "mode": "or",
-        "rules": [
-          {
-            "rule_set": [
-              "geosite-anthropic"
-            ]
-          },
-          {
-            "domain_suffix": [
-              "anthropic.com",
-              "claude.ai",
-              "claude.com",
-              "claudeusercontent.com"
-            ]
-          }
+        "rule_set": [
+          "geosite-anthropic",
+          "claude"
         ],
         "action": "route",
         "outbound": "claude"

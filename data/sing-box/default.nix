@@ -31,8 +31,7 @@ in {
     "dns/common.json"
     "dns/rules/server.json"
     "dns/strategy/ipv4.json"
-    # azure has no IPv6 route.
-    "inbounds/tun/ipv4.json"
+    "inbounds/tun/linux.json"
     "outbounds/common.json"
     "endpoints/tailscale/server.json"
     "http_clients.json"

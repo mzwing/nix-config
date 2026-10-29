@@ -108,10 +108,13 @@ in {
     recipients = [mzwing];
   };
 
-  # subs-check/self/<name>: a Clash node list checked alongside the subscriptions.
+  # subs-check/self/<name>: a Clash node list checked alongside the subscriptions. Every server selecting software/network/sing-box also builds its claude group from haru, so belongs on haru's list.
   "subs-check/self/haru" = {
     file = ./subs-check/self/haru.age;
-    recipients = [mzwing];
+    recipients = [
+      mzwing
+      hosts.mzwing-azure
+    ];
   };
 
   "subs-check/self/mzwing-azure" = {

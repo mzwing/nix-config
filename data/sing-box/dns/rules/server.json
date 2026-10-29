@@ -9,6 +9,17 @@
         "server": "dns-mzwing-tailscale"
       },
       {
+        "query_type": [
+          "A"
+        ],
+        "rule_set": [
+          "geosite-netflix",
+          "geosite-openai"
+        ],
+        "action": "predefined",
+        "rcode": "NOERROR"
+      },
+      {
         "inbound": [
           "tun-in"
         ],

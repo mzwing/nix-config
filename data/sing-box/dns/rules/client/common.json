@@ -52,33 +52,12 @@
         "rcode": "NOERROR"
       },
       {
-        "type": "logical",
-        "mode": "and",
-        "rules": [
-          {
-            "query_type": [
-              "AAAA"
-            ]
-          },
-          {
-            "type": "logical",
-            "mode": "or",
-            "rules": [
-              {
-                "rule_set": [
-                  "geosite-anthropic"
-                ]
-              },
-              {
-                "domain_suffix": [
-                  "anthropic.com",
-                  "claude.ai",
-                  "claude.com",
-                  "claudeusercontent.com"
-                ]
-              }
-            ]
-          }
+        "query_type": [
+          "AAAA"
+        ],
+        "rule_set": [
+          "geosite-anthropic",
+          "claude"
         ],
         "action": "predefined",
         "rcode": "NOERROR"

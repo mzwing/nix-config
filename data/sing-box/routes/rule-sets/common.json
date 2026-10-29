@@ -24,6 +24,38 @@
         "type": "remote",
         "format": "binary",
         "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-category-games@cn.srs"
+      },
+      {
+        "tag": "geosite-anthropic",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-anthropic.srs"
+      },
+      {
+        "tag": "claude",
+        "type": "inline",
+        "rules": [
+          {
+            "domain_suffix": [
+              "anthropic.com",
+              "claude.ai",
+              "claude.com",
+              "claudeusercontent.com"
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "geosite-netflix",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-netflix.srs"
+      },
+      {
+        "tag": "geosite-openai",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-openai.srs"
       }
     ]
   }
