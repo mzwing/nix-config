@@ -56,7 +56,8 @@ nixos host target action='switch' debug='':
   flake_path="$(nix flake metadata --no-write-lock-file --json {{flake_ref}} | jq -r .path)"
   nix copy --to "ssh-ng://{{target}}" "$flake_path"
   # No --accept-flake-config: flake.nix's China-first bootstrap list would replace the host's own substituters.
-  ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "{{target}}" nixos-rebuild \
+  # -t so Ctrl-C or a dropped connection also stops the rebuild on the host; TERM=dumb keeps nix from asking about the flake's nixConfig on that terminal.
+  ssh -t -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "{{target}}" TERM=dumb nixos-rebuild \
     --flake "path:$flake_path#{{host}}" \
     --show-trace \
     ${flags} \

@@ -8,7 +8,6 @@ let
     "dns/servers/mzwing-tailscale.json"
     "dns/common.json"
     "dns/rules/client/common.json"
-    "dns/strategy/ipv6.json"
     "inbounds/mixed.json"
     "outbounds/common.json"
     "endpoints/tailscale/mzwing.json"
@@ -32,7 +31,8 @@ in {
     "dns/common.json"
     "dns/rules/server.json"
     "dns/strategy/ipv4.json"
-    "inbounds/tun/linux.json"
+    # azure has no IPv6 route.
+    "inbounds/tun/ipv4.json"
     "outbounds/common.json"
     "endpoints/tailscale/server.json"
     "http_clients.json"

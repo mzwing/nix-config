@@ -1,5 +1,0 @@
-{
-  "dns": {
-    "strategy": "prefer_ipv6"
-  }
-}

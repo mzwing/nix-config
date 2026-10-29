@@ -118,6 +118,8 @@
             config="${stateDir}/subs-check.yaml"
             export SUBS_CHECK_SENTINEL="$output/.check-complete"
             rm -f "$SUBS_CHECK_SENTINEL"
+            # cp gives the copies the secrets' read-only mode, so a rerun can't overwrite them.
+            rm -rf "$output/more/self"
             mkdir -p "$output/more/self"
 
             OUTPUT="$output" CALLBACK=${onComplete} yq eval-all 'select(fileIndex == 0) * select(fileIndex == 1) | .["output-dir"] = strenv(OUTPUT) | .["callback-script"] = strenv(CALLBACK)' ${../../../../data/subs-check/config.yaml} "${secretPath "subs-check/config"}" > "$config"
@@ -296,6 +298,9 @@ in {
 
         # Replies to the TUN arrive on an interface the main table doesn't route their source through.
         networking.firewall.checkReversePath = "loose";
+
+        # sing-box answers every DNS query here, even lego's to the authoritative servers, and can serve the challenge record's cached absence for longer than lego keeps checking.
+        security.acme.defaults.extraLegoFlags = ["--dns.propagation.wait" "1m"];
 
         age.secrets = ageSecrets secrets {} (secretsIn settings);
       };

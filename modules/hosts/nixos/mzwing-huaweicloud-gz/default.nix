@@ -22,7 +22,7 @@
       "software/security/ssh"
       "software/server/caddy"
       "software/shell"
-      "software/vcs"
+      "software/vcs/git"
       "users/mzwing"
       "users/root"
     ];
