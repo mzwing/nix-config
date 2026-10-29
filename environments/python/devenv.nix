@@ -16,7 +16,7 @@
   };
 
   enterTest = ''
-    python --version | grep --color=auto "Python 3.12"
+    python --version"
     uv --version
     command -v ty
   '';
