@@ -114,25 +114,33 @@ in {
                 # dsh cannot list this provider's models itself. The efforts are copied from magpie's /v1/models; a model declaring none never reasons.
                 models = [
                   {
-                    id = "deepseek-v4-pro";
+                    id = "auto/deepseek-v4-pro";
                     input = ["text"];
                     reasoningEfforts = efforts ["high"];
                   }
                   {
-                    id = "deepseek-flash";
+                    id = "auto/deepseek-v4.1-flash";
                     reasoningEfforts = efforts ["low" "high"];
                   }
                   {
-                    id = "claude-opus-5-5";
+                    id = "auto/claude-opus-5-5";
                     reasoningEfforts = efforts ["low" "medium" "high" "xhigh" "max"];
                   }
                   {
-                    id = "gpt-6.1-sol";
+                    id = "auto/claude-sonnet-5-5";
+                    reasoningEfforts = efforts ["low" "medium" "high" "xhigh" "max"];
+                  }
+                  {
+                    id = "auto/claude-haiku-5-5";
+                    reasoningEfforts = efforts ["low" "medium" "high" "xhigh" "max"];
+                  }
+                  {
+                    id = "auto/gpt-6.1-sol";
                     reasoningEfforts = efforts ["low" "medium" "high" "xhigh"];
                   }
                   {
-                    id = "k3";
-                    reasoningEfforts = efforts ["low" "high" "xhigh"];
+                    id = "workbuddy-ai/kimi-k3.1-pro";
+                    reasoningEfforts = efforts ["low" "high" "max"];
                   }
                 ];
               })
@@ -142,7 +150,7 @@ in {
             id = "agent-default-model";
             config = {
               provider = "magpie";
-              model = "deepseek-flash";
+              model = "auto/deepseek-v4.1-flash";
               reasoningEffort = "high";
             };
           }

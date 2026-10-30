@@ -53,11 +53,11 @@ in {
       yamlFormat = pkgs.formats.yaml {};
       proxyModel = id: "magpie/${id}";
       solModel = {
-        model = proxyModel "gpt-6.1-sol";
+        model = proxyModel "auto/gpt-6.1-sol";
         thinking_level = "high";
       };
       flashModel = {
-        model = proxyModel "deepseek-flash";
+        model = proxyModel "auto/deepseek-v4.1-flash";
         thinking_level = "high";
       };
     in {
@@ -94,24 +94,9 @@ in {
               discovery.type = "openai-models-list";
             }
             // lib.optionalAttrs (name == "magpie") {
-              # magpie serves codex-auto-review but leaves it out of its list. Without reasoning, pi-automode's effort would be dropped.
-              models = [
-                {
-                  id = "codex/codex-auto-review";
-                  reasoning = true;
-                  compat.supportsReasoningEffort = true;
-                }
-              ];
-              # Too new for omp's catalog; mirrors gpt-6-sol.
-              modelOverrides."gpt-6.1-sol" = {
+              # magpie lists codex-auto-review without reasoning, so pi-automode's effort would be dropped.
+              modelOverrides."auto/codex-auto-review" = {
                 reasoning = true;
-                thinking = {
-                  mode = "effort";
-                  efforts = ["low" "medium" "high" "xhigh" "max"];
-                };
-                input = ["text" "image"];
-                contextWindow = 1050000;
-                maxTokens = 128000;
                 compat.supportsReasoningEffort = true;
               };
             })
@@ -126,7 +111,7 @@ in {
         # pi-automode reads its config from pi's directory even under omp.
         ".pi/agent/extensions/pi-automode/config.json".source = jsonFormat.generate "pi-automode-config.json" {
           autoMode = {
-            classifierModel = proxyModel "codex/codex-auto-review";
+            classifierModel = proxyModel "auto/codex-auto-review";
             # The effort Codex itself reviews with.
             classifierReasoningLevel = "medium";
           };
@@ -167,13 +152,13 @@ in {
           memory.backend = "off";
 
           modelRoles = {
-            default = proxyModel "claude-opus-5-5";
-            slow = proxyModel "claude-opus-5-5:max";
-            plan = proxyModel "claude-opus-5-5:max";
-            task = proxyModel "claude-opus-5-5";
-            smol = proxyModel "claude-opus-5-5:medium";
-            commit = proxyModel "claude-opus-5-5:low";
-            tiny = proxyModel "claude-opus-5-5:low";
+            default = proxyModel "auto/claude-opus-5-5";
+            slow = proxyModel "auto/claude-opus-5-5:max";
+            plan = proxyModel "auto/claude-opus-5-5:max";
+            task = proxyModel "auto/claude-opus-5-5";
+            smol = proxyModel "auto/claude-opus-5-5:medium";
+            commit = proxyModel "auto/claude-opus-5-5:low";
+            tiny = proxyModel "auto/claude-opus-5-5:low";
           };
           defaultThinkingLevel = "xhigh";
           symbolPreset = "nerd";
@@ -184,15 +169,15 @@ in {
             enabled = true;
             maxRetries = 3;
             fallbackChains = {
-              default = map proxyModel ["gpt-6.1-sol" "k3" "deepseek-flash"];
-              smol = [(proxyModel "deepseek-flash:high")];
-              commit = [(proxyModel "deepseek-flash:low")];
-              tiny = [(proxyModel "deepseek-flash:low")];
+              default = map proxyModel ["auto/gpt-6.1-sol" "workbuddy-ai/kimi-k3.1-pro" "auto/deepseek-v4.1-flash"];
+              smol = [(proxyModel "auto/deepseek-v4.1-flash:high")];
+              commit = [(proxyModel "auto/deepseek-v4.1-flash:low")];
+              tiny = [(proxyModel "auto/deepseek-v4.1-flash:low")];
             };
           };
 
           task = {
-            agentModelOverrides.security-reviewer = map proxyModel ["k3:high" "deepseek-flash:max"];
+            agentModelOverrides.security-reviewer = map proxyModel ["workbuddy-ai/kimi-k3.1-pro:high" "auto/deepseek-v4.1-flash:max"];
             showResolvedModelBadge = true;
           };
 

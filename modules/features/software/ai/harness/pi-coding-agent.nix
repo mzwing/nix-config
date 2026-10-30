@@ -30,11 +30,11 @@ in {
     }: let
       jsonFormat = pkgs.formats.json {};
       solModel = {
-        model = "magpie/gpt-6.1-sol";
+        model = "magpie/auto/gpt-6.1-sol";
         thinking_level = "high";
       };
       flashModel = {
-        model = "magpie/deepseek-flash";
+        model = "magpie/auto/deepseek-v4.1-flash";
         thinking_level = "high";
       };
 
@@ -48,8 +48,7 @@ in {
         pi-permission-auto-review = {
           "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/main/packages/pi-permission-auto-review/schemas/config.schema.json";
           provider = "magpie";
-          # magpie answers the bare id with a 404.
-          model = "codex/codex-auto-review";
+          model = "auto/codex-auto-review";
           reasoning = "medium";
           additionalPolicy = "At any time, any execution that would result in `git commit` and `git push` operations is strictly prohibited! The only exception is committing in a pi-task-governor coordinator session, recognizable by its `task_*` tool calls and task notices; pushing stays prohibited there too. (Please note that this rule only prohibits these two operations. Read-only viewing is not included in this list and should be allowed in the correct context. `git add` can also be executed under reasonable circumstances)";
         };
@@ -113,17 +112,17 @@ in {
           roles = {
             coordinator.instructions = "Never rebuild the whole system, and never ask a task to. A Rust project is built only with the user's explicit authorization: put a check or instruction that compiles Rust code into a brief only after the user authorizes it for that task, and then say in the brief that the user authorized it. In other projects, tasks may run checks, tests and builds on their own. Write every commit message, the ones you give task_approve included, with the conventional-commit-message and semver skills. You may commit wherever it is reasonable, which overrides the general rule for `git commit` only: never push with `git push`, `jj git push` or anything else that sends commits, bookmarks or tags to a remote.";
             executor = {
-              model = "magpie/deepseek-flash";
+              model = "magpie/auto/deepseek-v4.1-flash";
               thinking = "max";
               instructions = "In a Rust project, never ask the developer to compile Rust code unless the brief says the user explicitly authorized it through the coordinator.";
             };
             developer = {
-              model = "magpie/kimi-k3";
+              model = "magpie/workbuddy-ai/kimi-k3.1-pro";
               thinking = "max";
               instructions = "Never rebuild the whole system. In a Rust project, never compile Rust code, whether with cargo build, check, clippy, test, run or anything like them, unless the brief says the user explicitly authorized it through the coordinator. In other projects, run checks, tests and builds on your own. These rules override the general rule on building.";
             };
             reviewer = {
-              model = "magpie/gpt-6.1-sol";
+              model = "magpie/auto/gpt-6.1-sol";
               thinking = "xhigh";
               instructions = "NEVER try to write so many meaningless smoke tests!!!!!";
             };
@@ -148,6 +147,12 @@ in {
           # pi's default exposure hides MCP tools behind codemode; codegraph is meant to be called first.
           "${config.programs.pi-coding-agent.configDir}/mcp.json".source = jsonFormat.generate "pi-mcp.json" {
             mcpServers = lib.mapAttrs (_: server: lib.hm.mcp.transformMcpServer {inherit server;} // {exposure = "direct";}) config.programs.mcp.servers;
+          };
+
+          # pi-permission-auto-review looks its model up in the registry, which the default exclude list keeps auto-review models out of; magpie lists codex-auto-review without reasoning.
+          "${config.programs.pi-coding-agent.configDir}/pi-openai-api-models-sync.json".source = jsonFormat.generate "pi-openai-api-models-sync.json" {
+            exclude = ["audio" "realtime" "image" "embedding"];
+            overrides."auto/codex-auto-review".reasoning = true;
           };
         };
 
@@ -219,7 +224,7 @@ in {
               };
           };
           settings = {
-            defaultModel = "deepseek-v4-pro";
+            defaultModel = "auto/deepseek-v4-pro";
             defaultProvider = "magpie";
             defaultThinkingLevel = "max";
             defaultTools = ["+ls"];
