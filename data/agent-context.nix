@@ -14,13 +14,15 @@
 
     Please don't write comments unless they are absolutely necessary here. Things that can be seen directly from the code don't need comments at all! You can also delete existing comments that only restate the code. Writing comments should tell people who read the code that there are some special reasons why writing this here, which cannot be seen at a glance, and need to explain the situation additionally. Comments must be kept simple and concise, as long as the reader can understand them: one or two sentences, or even a few words are fine. Long and nonsense comments are absolutely prohibited!
 
+    Never end a comment with a period, including before a closing `*/` and at the end of each paragraph or list item inside a longer comment; only a period between two sentences of one paragraph stays. Lean toward a phrase over a full sentence, as long as the reader gets the meaning. How a project's existing comments happen to read is not one of its specifications, though a comment style its docs or lint rules require is: new comments follow this rule, and existing ones change only when the user asks. Markdown keeps its periods.
+
     Don't segment sentences and lines according to semantics and string length (such as 96 characters)!!!!! This is absolutely prohibited unless there are special format requirements like swift-format. In this case, please inform the user and let the user decide whether to switch to the format the requirements asked.
 
     The requirements for markdown files are the same as comments
 
     Absolutely, absolutely, never write a README as a technical document!!! README is used to let others quickly understand your project. You only need to clearly explain what the project does, how to use it, the credits (if any), and the LICENSE. A few special points worth knowing can be mentioned briefly, but do not write anything else in the README!!! Long-winded, verbose, wordy READMEs are absolutely prohibited, keep it simple and concise!!!!!
 
-    Skills carry the details of their domain; these rules apply everywhere and win when a skill disagrees. Load the matching skill before the work, even when it is only part of a bigger task: write-docs before writing or editing a README or other project docs, design-ui before adding or restyling any UI.
+    Skills carry the details of their domain; these rules apply everywhere and win when a skill disagrees. Load the matching skill before the work, even when it is only part of a bigger task: write-docs before writing or editing a README or other project docs, design-ui before adding or restyling any UI, typescript-dev before writing or reorganizing any TypeScript.
 
     After writing code and before reporting back, load find-code-simplifications, refactor-for-simplicity, and clarify-code-names (plus improve-test-suite if you touched tests) and review your own change with them: find what you did poorly, then refactor and fix it. This standing instruction is the explicit request these skills wait for. Review only what you changed in this task and fix what you find without asking, except changes to behavior or interfaces the task didn't ask for, which you report instead. Sum up the fixes in a line or two rather than the skills' full reports.
   '';

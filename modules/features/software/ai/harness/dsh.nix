@@ -59,6 +59,8 @@ in {
         "@agent-stash/init"
         "@dingyi222666/dsh-wakatime"
         "@michengai/dsh-btw"
+        "@mzwing/dsh-model-info"
+        "dsh-auto-memory"
         "dsh-notify-me"
       ];
 
@@ -74,8 +76,6 @@ in {
         "@deepseek-ai/dsh-experimental-tool-worktree"
         "@deepseek-ai/dsh-experimental-voice-input-bundle"
       ];
-
-      efforts = levels: lib.genAttrs levels lib.id;
 
       mcpRow = serverName: transport: {
         id = "mcp-${serverName}";
@@ -111,40 +111,21 @@ in {
                   mode = "normal";
                   maxRetries = 3;
                 };
-                # dsh cannot list this provider's models itself. The efforts are copied from magpie's /v1/models; a model declaring none never reasons.
+                # dsh-model-info expands `*` to every model magpie lists and fills each in from the pi.dev and models.dev catalogs
                 models = [
                   {
-                    id = "auto/deepseek-v4-pro";
-                    input = ["text"];
-                    reasoningEfforts = efforts ["high"];
-                  }
-                  {
-                    id = "auto/deepseek-v4.1-flash";
-                    reasoningEfforts = efforts ["low" "high"];
-                  }
-                  {
-                    id = "auto/claude-opus-5-5";
-                    reasoningEfforts = efforts ["low" "medium" "high" "xhigh" "max"];
-                  }
-                  {
-                    id = "auto/claude-sonnet-5-5";
-                    reasoningEfforts = efforts ["low" "medium" "high" "xhigh" "max"];
-                  }
-                  {
-                    id = "auto/claude-haiku-5-5";
-                    reasoningEfforts = efforts ["low" "medium" "high" "xhigh" "max"];
-                  }
-                  {
+                    # The catalogs settle on OpenAI's own 272k, below what any of magpie's routes serves
                     id = "auto/gpt-6.1-sol";
-                    reasoningEfforts = efforts ["low" "medium" "high" "xhigh"];
+                    contextWindow = 1000000;
                   }
-                  {
-                    id = "workbuddy-ai/kimi-k3.1-pro";
-                    reasoningEfforts = efforts ["low" "high" "max"];
-                  }
+                  {id = "*";}
                 ];
               })
               gateways;
+          }
+          {
+            id = "model-info";
+            config.providers = lib.mapAttrs (_: _: {}) gateways;
           }
           {
             id = "agent-default-model";
@@ -184,7 +165,8 @@ in {
 
       # Re-adding is how pnpm upgrades a plugin; any other package in the profile gets removed.
       home.activation.dshPlugins = lib.hm.dag.entryAfter ["linkGeneration"] ''
-        run ${dsh}/bin/dsh plugin --profile web add ${lib.escapeShellArgs (plugins ++ map (name: "${name}@${package.version}") shippedPlugins)} \
+        # pnpm otherwise holds back releases younger than a day
+        PNPM_CONFIG_MINIMUM_RELEASE_AGE=0 run ${dsh}/bin/dsh plugin --profile web add ${lib.escapeShellArgs (plugins ++ map (name: "${name}@${package.version}") shippedPlugins)} \
           || warnEcho "dsh plugin install failed; the next activation retries it."
         for plugin in $(jq -r --argjson declared ${lib.escapeShellArg (builtins.toJSON (plugins ++ shippedPlugins))} '.dependencies | keys[] | select(IN($declared[]) | not)' ${config.home.homeDirectory}/.dsh/profiles/web/package.json); do
           run ${dsh}/bin/dsh plugin --profile web remove "$plugin"

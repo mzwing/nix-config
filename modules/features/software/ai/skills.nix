@@ -81,7 +81,7 @@
           "refactor-for-simplicity"
           "semver"
           "speak-plainly"
-          "typescript-naming"
+          "typescript-dev"
           "write-docs"
         ];
 
