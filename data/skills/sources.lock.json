@@ -100,28 +100,28 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-wyprk36gAiRHvwViTKWMByBEB6RjV8gM2rjDJsT+188=",
+        "hash": "sha256-ACGcYja9eOPle8MgwhysecGt3hSbQGvZ1/cAxnq1SWE=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "a964d1c51c2184b3a257ef93b1146bc29a27fde9",
+        "revision": "53a91921b389619b72e218dd94e48ece9058f6d4",
         "submodules": false,
         "type": "Git",
         "url": null
       },
       "conventional-changelog-skills": {
         "branch": "master",
-        "hash": "sha256-tmW7RAe7L1fDgeW0vBM3+uC7zpesi4szPBfrwY2JjSU=",
+        "hash": "sha256-REvdRT3q+nkj3JaJBoT/3aDHDAp2szxSsbI711/ula8=",
         "repository": {
           "owner": "conventional-changelog",
           "repo": "conventional-changelog",
           "type": "GitHub"
         },
-        "revision": "e2c4c3f6bfb746e1de3955c333d8f5a65b46942a",
+        "revision": "98aa6010a6cd833b4abf3f62ca451dde6b9274eb",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/conventional-changelog/conventional-changelog/archive/e2c4c3f6bfb746e1de3955c333d8f5a65b46942a.tar.gz"
+        "url": "https://github.com/conventional-changelog/conventional-changelog/archive/98aa6010a6cd833b4abf3f62ca451dde6b9274eb.tar.gz"
       },
       "dcspirit-skills": {
         "branch": "main",
