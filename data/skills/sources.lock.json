@@ -112,16 +112,16 @@
       },
       "conventional-changelog-skills": {
         "branch": "master",
-        "hash": "sha256-REvdRT3q+nkj3JaJBoT/3aDHDAp2szxSsbI711/ula8=",
+        "hash": "sha256-NdSyrUgqzuflbz2CPo5Ci5JNZqWccPB2gBdVZT3N+T0=",
         "repository": {
           "owner": "conventional-changelog",
           "repo": "conventional-changelog",
           "type": "GitHub"
         },
-        "revision": "98aa6010a6cd833b4abf3f62ca451dde6b9274eb",
+        "revision": "f952155ec3cea5b272306e5a7d5d04fa257819b8",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/conventional-changelog/conventional-changelog/archive/98aa6010a6cd833b4abf3f62ca451dde6b9274eb.tar.gz"
+        "url": "https://github.com/conventional-changelog/conventional-changelog/archive/f952155ec3cea5b272306e5a7d5d04fa257819b8.tar.gz"
       },
       "dcspirit-skills": {
         "branch": "main",
@@ -138,16 +138,16 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-VUj1P9OE3+C/42yvyA8+j29OVh/2G/VBktHoMLMUgSM=",
+        "hash": "sha256-lNlTdWZ/sRiNKAGb/C10erssUZhuBOgHs7wZ3nWVWr8=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "aedfe4f948c06be5e831ea966a42b6f38406576d",
+        "revision": "1f828b3f009e351d9ecf15a7a46aeb30f32e5a47",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/aedfe4f948c06be5e831ea966a42b6f38406576d.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/1f828b3f009e351d9ecf15a7a46aeb30f32e5a47.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
