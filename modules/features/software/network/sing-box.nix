@@ -94,11 +94,7 @@
           name = lib.removeSuffix ".json" (baseNameOf fragment);
           source = fragmentDir + "/${fragment}";
         })
-        profileFragments.measured
-        ++ map (name: {
-          name = baseNameOf name;
-          source = secretPath name;
-        }) (clientFragments secrets));
+        profileFragments.measured);
   in
     pkgs.writeShellApplication {
       name = "sing-box-outbounds";
@@ -162,15 +158,17 @@
 
             clash2sing-box convert "${secretPath claudeNodeList}" | jq '${selectClaudeNodes}' > "$work/claude.json"
 
-            # `(?<!-)` keeps a region group off the hyphenated qualifiers that sit elsewhere in a name: the CDN-side location in `HK¹-US⁰`, TikTok's `TK-US`, and the `|IN-XX` entry tag.
+            # `(?<!-)` keeps a region group off the hyphenated qualifiers that sit elsewhere in a name: the CDN-side location in `HK¹-US⁰`, TikTok's `TK-US`, and the `|IN-XX` entry tag. Client fragment tags carry no exit region, so `sg` names azure's naive node; WARP would win every race it entered
             clash2sing-box convert \
               "$output/sub/all.yaml" \
               "$work/claude.json" \
+              ${lib.concatMapStringsSep " " (name: ''"${secretPath name}"'') (clientFragments secrets)} \
               "$@" \
+              --outbound-no-urltest warp \
               --outbound-group 'hk=(?<!-)\bHK\b' \
               --outbound-group 'tw=(?<!-)\bTW\b' \
               --outbound-group 'jp=(?<!-)\bJP\b' \
-              --outbound-group 'sg=(?<!-)\bSG\b' \
+              --outbound-group 'sg=(?<!-)\bSG\b|^azure-naive$' \
               --outbound-group 'us=(?<!-)\bUS\b' \
               --outbound-group 'openai=GPT⁺' \
               --outbound-group 'claude= - 洛杉矶纯净$' \
@@ -182,11 +180,8 @@
               --outbound-group 'tiktok=\bTK\b' \
               -o "$work/outbounds.json"
 
-            # The client fragments are merged beside these outbounds, and their own outbounds and endpoints join `proxy`.
-            tags="$(jq -s 'map((.outbounds // []) + (.endpoints // []) | map(.tag)) | add' ${lib.concatMapStringsSep " " (name: ''"${secretPath name}"'') (clientFragments secrets)})"
-
             # The legacy VMess nodes drop all UDP except DNS, so QUIC through them hangs; TCP-only, each urltest group sends UDP through its fastest member that relays it.
-            jq --argjson tags "$tags" '(.outbounds[] | select(.type == "vmess" and .alter_id > 0)).network = "tcp" | (.outbounds[] | select(.tag == "proxy")).outbounds += $tags' "$work/outbounds.json" > "${stateDir}/outbounds.json.new"
+            jq '(.outbounds[] | select(.type == "vmess" and .alter_id > 0)).network = "tcp"' "$work/outbounds.json" > "${stateDir}/outbounds.json.new"
             mv "${stateDir}/outbounds.json.new" "${stateDir}/outbounds.json"
             ;;
 
@@ -440,7 +435,7 @@ in {
             };
             users.groups.${checker} = {};
 
-            # The checker also reads the client fragments: their tags join `proxy`, and the WARP one holds the identity its speed test probes with.
+            # The checker also reads the client fragments: convert groups them with the subscription nodes, and the WARP one holds the identity its speed test probes with
             age.secrets = ageSecrets secrets {owner = checker;} (subsCheckSecrets secrets ++ clientFragments secrets);
 
             systemd.services.sing-box-outbounds = {
@@ -471,10 +466,7 @@ in {
               };
             };
 
-            systemd.services.sing-box = {
-              serviceConfig.ExecStartPre = ["+${lib.getExe outboundsCommand} render /run/sing-box"];
-              restartTriggers = map (name: secrets.${name}) (clientFragments secrets);
-            };
+            systemd.services.sing-box.serviceConfig.ExecStartPre = ["+${lib.getExe outboundsCommand} render /run/sing-box"];
           }
         ]))
       ];
