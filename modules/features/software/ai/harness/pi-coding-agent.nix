@@ -46,11 +46,24 @@ in {
         };
 
         pi-permission-auto-review = {
-          "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/main/packages/pi-permission-auto-review/schemas/config.schema.json";
+          "$schema" = "https://raw.githubusercontent.com/mzwing/pi-packages/master/packages/pi-permission-auto-review/schemas/config.schema.json";
+          preset = "claude-code";
           provider = "magpie";
-          model = "auto/codex-auto-review";
-          reasoning = "medium";
-          additionalPolicy = "At any time, any execution that would result in `git commit` and `git push` operations is strictly prohibited! The only exception is committing in a pi-task-governor coordinator session, recognizable by its `task_*` tool calls and task notices; pushing stays prohibited there too. (Please note that this rule only prohibits these two operations. Read-only viewing is not included in this list and should be allowed in the correct context. `git add` can also be executed under reasonable circumstances)";
+          model = "auto/claude-sonnet-5-5";
+          autoMode = {
+            hard_deny = [
+              "$defaults"
+              "Git Push: sending commits, branches, bookmarks or tags to a remote, through `git push`, `jj git push` or anything else."
+            ];
+            soft_deny = [
+              "$defaults"
+              "Git Commit [must name: the commit]: committing through `git commit`, `jj commit` or anything else that creates commits. `git add` and read-only git commands are not commits."
+            ];
+            allow = [
+              "$defaults"
+              "Coordinator Commits: committing in a pi-task-governor coordinator session, recognizable by coordinator tool calls such as `task_declare` and `task_approve`. The context files' ban on `git commit` does not apply there."
+            ];
+          };
         };
 
         pi-permission-system = {
@@ -147,12 +160,6 @@ in {
           # pi's default exposure hides MCP tools behind codemode; codegraph is meant to be called first.
           "${config.programs.pi-coding-agent.configDir}/mcp.json".source = jsonFormat.generate "pi-mcp.json" {
             mcpServers = lib.mapAttrs (_: server: lib.hm.mcp.transformMcpServer {inherit server;} // {exposure = "direct";}) config.programs.mcp.servers;
-          };
-
-          # pi-permission-auto-review looks its model up in the registry, which the default exclude list keeps auto-review models out of; magpie lists codex-auto-review without reasoning.
-          "${config.programs.pi-coding-agent.configDir}/pi-openai-api-models-sync.json".source = jsonFormat.generate "pi-openai-api-models-sync.json" {
-            exclude = ["audio" "realtime" "image" "embedding"];
-            overrides."auto/codex-auto-review".reasoning = true;
           };
         };
 

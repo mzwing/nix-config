@@ -59,6 +59,7 @@ in {
         "@agent-stash/init"
         "@dingyi222666/dsh-wakatime"
         "@michengai/dsh-btw"
+        "@mzwing/dsh-auto-review"
         "@mzwing/dsh-model-info"
         "dsh-auto-memory"
         "dsh-notify-me"
@@ -67,7 +68,6 @@ in {
       # Shipped with dsh but switched off. Adding the running version selects them.
       shippedPlugins = [
         "@deepseek-ai/dsh-experimental-agent-team-profile"
-        "@deepseek-ai/dsh-experimental-auto-review"
         "@deepseek-ai/dsh-experimental-plugin-market-bundle"
         "@deepseek-ai/dsh-experimental-ralph-bundle"
         "@deepseek-ai/dsh-experimental-session-search"
@@ -136,6 +136,24 @@ in {
             };
           }
           {
+            id = "auto-reviewer";
+            config = {
+              preset = "claude-code";
+              provider = "magpie";
+              model = "auto/claude-sonnet-5-5";
+              autoMode = {
+                hard_deny = [
+                  "$defaults"
+                  "Git Push: sending commits, branches, bookmarks or tags to a remote, through `git push`, `jj git push` or anything else."
+                ];
+                soft_deny = [
+                  "$defaults"
+                  "Git Commit [must name: the commit]: committing through `git commit`, `jj commit` or anything else that creates commits. `git add` and read-only git commands are not commits."
+                ];
+              };
+            };
+          }
+          {
             insert =
               lib.mapAttrsToList (
                 name: server:
@@ -165,11 +183,11 @@ in {
 
       # Re-adding is how pnpm upgrades a plugin; any other package in the profile gets removed.
       home.activation.dshPlugins = lib.hm.dag.entryAfter ["linkGeneration"] ''
-        # pnpm otherwise holds back releases younger than a day
+        # pnpm otherwise holds back releases younger than a day, and refuses a remove while the lockfile holds one
         PNPM_CONFIG_MINIMUM_RELEASE_AGE=0 run ${dsh}/bin/dsh plugin --profile web add ${lib.escapeShellArgs (plugins ++ map (name: "${name}@${package.version}") shippedPlugins)} \
           || warnEcho "dsh plugin install failed; the next activation retries it."
         for plugin in $(jq -r --argjson declared ${lib.escapeShellArg (builtins.toJSON (plugins ++ shippedPlugins))} '.dependencies | keys[] | select(IN($declared[]) | not)' ${config.home.homeDirectory}/.dsh/profiles/web/package.json); do
-          run ${dsh}/bin/dsh plugin --profile web remove "$plugin"
+          PNPM_CONFIG_MINIMUM_RELEASE_AGE=0 run ${dsh}/bin/dsh plugin --profile web remove "$plugin"
         done
       '';
     };
