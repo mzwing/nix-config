@@ -20,6 +20,7 @@ in {
       lib,
       pkgs,
       system,
+      type,
       ...
     }: let
       yamlFormat = pkgs.formats.yaml {};
@@ -38,6 +39,9 @@ in {
         )
         gateways;
 
+      # Workspace Write runs commands only under bwrap or Landlock, and containers lack the namespaces bwrap needs
+      permissionArgs = lib.optional (type == "container") "--set-default DSH_PERMISSION_MODE danger-full-access";
+
       dsh = pkgs.symlinkJoin {
         name = "dsh-wrapped-${package.version}";
         paths = [package];
@@ -46,7 +50,7 @@ in {
           wrapProgram $out/bin/dsh \
             --suffix PATH : ${lib.makeBinPath (with pkgs; [git nodejs pnpm-bin.latest wakatime-cli])} \
             --set DSH_TELEMETRY_DISABLED 1 \
-            ${lib.concatStringsSep " " keyArgs}
+            ${lib.concatStringsSep " " (permissionArgs ++ keyArgs)}
         '';
       };
 
@@ -131,8 +135,8 @@ in {
             id = "agent-default-model";
             config = {
               provider = "magpie";
-              model = "auto/deepseek-v4.1-flash";
-              reasoningEffort = "high";
+              model = "auto/claude-opus-5-5";
+              reasoningEffort = "max";
             };
           }
           {

@@ -12,6 +12,7 @@
       "home/base"
       "network/china-mirrors"
       "nixos/container"
+      "software/ai/harness/dsh"
       "software/ai/harness/omp"
       "software/ai/harness/pi-coding-agent"
       "software/ai/mcp"

@@ -231,7 +231,7 @@ in {
               };
           };
           settings = {
-            defaultModel = "auto/deepseek-v4-pro";
+            defaultModel = "auto/claude-opus-5-5";
             defaultProvider = "magpie";
             defaultThinkingLevel = "max";
             defaultTools = ["+ls"];

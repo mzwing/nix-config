@@ -68,10 +68,7 @@ in {
 
   "paseo/password" = {
     file = ./paseo/password.age;
-    recipients = [
-      mzwing
-      hosts.mzwing-azure
-    ];
+    recipients = [mzwing];
   };
 
   # The sing-box client's, like subs-check/* below. The Mac reads them with the mzwing key, and every NixOS desktop selecting software/network/sing-box belongs on these lists.
@@ -157,7 +154,6 @@ in {
     file = ./wakatime/api-key.age;
     recipients = [
       mzwing
-      hosts.mzwing-azure
       hosts.mzwing-cnb
     ];
   };

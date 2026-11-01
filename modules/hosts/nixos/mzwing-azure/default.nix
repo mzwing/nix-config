@@ -15,8 +15,6 @@
       "nixos/server/ssh"
       "nixos/server/zram"
       "software/ai/magpie"
-      "software/ai/mcp"
-      "software/ai/skills"
       "software/editor/neovim"
       "software/network/sing-box"
       "software/security/gpg"

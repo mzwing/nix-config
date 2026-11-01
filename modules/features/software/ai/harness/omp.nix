@@ -152,7 +152,7 @@ in {
           memory.backend = "off";
 
           modelRoles = {
-            default = proxyModel "auto/claude-opus-5-5";
+            default = proxyModel "auto/claude-opus-5-5:max";
             slow = proxyModel "auto/claude-opus-5-5:max";
             plan = proxyModel "auto/claude-opus-5-5:max";
             task = proxyModel "auto/claude-opus-5-5";
