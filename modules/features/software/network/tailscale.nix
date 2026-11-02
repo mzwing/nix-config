@@ -4,16 +4,12 @@ let
 in {
   mzwing.features."software/network/tailscale" = {
     meta.platforms = [
-      "darwin"
       "nixos"
     ];
 
     requires = [
-      "darwin/homebrew"
       "home/agenix"
     ];
-
-    darwin.homebrew.casks = ["tailscale-app"];
 
     nixos = {
       config,

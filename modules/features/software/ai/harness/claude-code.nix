@@ -9,6 +9,7 @@ in {
 
     requires = [
       "darwin/homebrew"
+      "home/agenix"
       # `hooks` below reads programs.gryph.
       "software/ai/gryph"
       # The wakatime plugin below only tracks once ~/.wakatime.cfg carries the key.
@@ -20,13 +21,70 @@ in {
       inputs,
       lib,
       pkgs,
+      secrets,
       system,
       ...
     }: let
       inherit (pkgs.nur.repos.mzwing) claude-code-wakatime claude-hud;
 
       jsonFormat = pkgs.formats.json {};
+
+      claudeTgCommand = let
+        pluginId = "telegram@claude-plugins-official";
+
+        # A question dialog would wait at a terminal nobody is watching
+        askUserQuestionDenial = builtins.toJSON {
+          hookSpecificOutput = {
+            hookEventName = "PreToolUse";
+            permissionDecision = "deny";
+            permissionDecisionReason = "The user is away from the terminal and only reads Telegram. Ask through the telegram reply tool instead and wait for their answer.";
+          };
+        };
+
+        sessionSettings = jsonFormat.generate "claude-tg-settings.json" {
+          enabledPlugins.${pluginId} = true;
+          hooks.PreToolUse = [
+            {
+              matcher = "AskUserQuestion";
+              hooks = [
+                {
+                  type = "command";
+                  command = "echo ${lib.escapeShellArg askUserQuestionDenial}";
+                }
+              ];
+            }
+          ];
+        };
+      in
+        pkgs.writeShellApplication {
+          name = "claude-tg";
+          runtimeInputs = [
+            config.programs.claude-code.finalPackage
+            pkgs.bun
+            pkgs.jq
+          ];
+          text = ''
+            # Claude Code fetches no feature flags while telemetry is off, and channels sit behind one
+            unset DO_NOT_TRACK
+
+            if ! claude plugin list --json | jq -e 'any(.[]; .id == "${pluginId}")' >/dev/null; then
+              claude plugin install telegram --marketplace anthropics/claude-plugins-official
+              # Installing enables it in every session, where it would poll the bot away from this one
+              claude plugin disable ${pluginId}
+            fi
+
+            exec claude --settings ${sessionSettings} --channels plugin:${pluginId} "$@"
+          '';
+        };
     in {
+      age.secrets.claude-code-telegram-bot-token = {
+        file = secrets."claude-code/telegram-bot-token";
+        # Where the Telegram plugin reads its token
+        path = "${config.programs.claude-code.configDir}/channels/telegram/.env";
+      };
+
+      home.packages = [claudeTgCommand];
+
       home.file."${config.programs.claude-code.configDir}/plugins/claude-hud/config.json".source = jsonFormat.generate "claude-hud-config.json" {
         language = "zh-Hans";
         lineLayout = "expanded";
@@ -67,13 +125,14 @@ in {
         '';
         plugins = {inherit claude-code-wakatime claude-hud;};
 
+        # claude-tg's plugin install writes settings.json, which a store symlink refuses
+        mutableSettings = true;
+
         settings = {
           includeCoAuthoredBy = false;
           model = "opus[1m]";
           theme = "dark";
           outputStyle = "concise";
-
-          # `/tui fullscreen` cannot persist this: settings.json is a store symlink.
           tui = "fullscreen";
 
           hooks = config.programs.gryph.hooks.claude-code;

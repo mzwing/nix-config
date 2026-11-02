@@ -51,6 +51,7 @@ in {
     }: let
       jsonFormat = pkgs.formats.json {};
       yamlFormat = pkgs.formats.yaml {};
+      inherit (config.mzwing.magpie) gateway;
       proxyModel = id: "magpie/${id}";
       solModel = {
         model = proxyModel "auto/gpt-6.1-sol";
@@ -80,27 +81,23 @@ in {
         '';
 
         ".omp/agent/models.yml".source = yamlFormat.generate "omp-models.yml" {
-          providers = lib.mapAttrs (name: gateway:
-            {
-              api = "openai-completions";
-              # Loopback takes any key; this is the one magpie names omp's requests by.
-              apiKey =
-                if gateway.keyFile == null
-                then "magpie-omp"
-                else "!cat ${gateway.keyFile}";
-              inherit (gateway) baseUrl;
-              authHeader = true;
-              # pi had a plugin sync its model list; omp asks the proxy itself.
-              discovery.type = "openai-models-list";
-            }
-            // lib.optionalAttrs (name == "magpie") {
-              # magpie lists codex-auto-review without reasoning, so pi-automode's effort would be dropped.
-              modelOverrides."auto/codex-auto-review" = {
-                reasoning = true;
-                compat.supportsReasoningEffort = true;
-              };
-            })
-          config.mzwing.magpie.gateways;
+          providers.magpie = {
+            api = "openai-completions";
+            # Loopback takes any key; this is the one magpie names omp's requests by.
+            apiKey =
+              if gateway.keyFile == null
+              then "magpie-omp"
+              else "!cat ${gateway.keyFile}";
+            inherit (gateway) baseUrl;
+            authHeader = true;
+            # pi had a plugin sync its model list; omp asks the proxy itself.
+            discovery.type = "openai-models-list";
+            # magpie lists codex-auto-review without reasoning, so pi-automode's effort would be dropped.
+            modelOverrides."auto/codex-auto-review" = {
+              reasoning = true;
+              compat.supportsReasoningEffort = true;
+            };
+          };
         };
 
         # Reuse what programs.mcp already generated: omp's schema takes the same shape.

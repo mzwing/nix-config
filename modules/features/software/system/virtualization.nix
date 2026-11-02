@@ -15,7 +15,6 @@
       ];
       casks = [
         "orbstack"
-        "utm"
       ];
       masApps = {
         "Windows App" = 1295203466;

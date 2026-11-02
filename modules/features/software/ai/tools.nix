@@ -31,9 +31,6 @@
         }
         "stable-diffusion.cpp"
       ];
-      casks = [
-        "kelivo"
-      ];
     };
   };
 }

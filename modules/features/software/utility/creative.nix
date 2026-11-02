@@ -18,7 +18,6 @@
     darwin.homebrew = {
       casks = [
         "blender"
-        "kdenlive"
         "krita"
         "musescore"
         "obs"

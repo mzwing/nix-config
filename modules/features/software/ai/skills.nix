@@ -19,7 +19,7 @@
       lib,
       ...
     }: let
-      gateway = config.mzwing.magpie.gateways.magpie;
+      inherit (config.mzwing.magpie) gateway;
 
       agentLib = inputs.agent-skills.lib.agent-skills;
 

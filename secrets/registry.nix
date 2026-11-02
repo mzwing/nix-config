@@ -26,6 +26,18 @@ in {
     recipients = ownedBy "mzwing-azure";
   };
 
+  # `TELEGRAM_BOT_TOKEN=…` for the bot claude-tg sessions talk through
+  "claude-code/telegram-bot-token" = {
+    file = ./claude-code/telegram-bot-token.age;
+    recipients = [mzwing];
+  };
+
+  # cnb/magpie/<server>: the key `magpie gateway-key add mzwing-cnb` printed on that server, as CNB runs no gateway of its own
+  "cnb/magpie/mzwing-azure" = {
+    file = ./cnb/magpie/mzwing-azure.age;
+    recipients = ownedBy "mzwing-cnb";
+  };
+
   "do-sgp/network/private" = {
     file = ./do-sgp/network/private.age;
     recipients = ownedBy "mzwing-do-sgp";
@@ -45,17 +57,6 @@ in {
     ];
   };
 
-  # magpie/<server>/<client>: the key `magpie gateway-key add` printed on that server, for one machine without a gateway of its own.
-  "magpie/mzwing-azure/mzwing-cnb" = {
-    file = ./magpie/mzwing-azure/mzwing-cnb.age;
-    recipients = ownedBy "mzwing-cnb";
-  };
-
-  "magpie/mzwing-huaweicloud-gz/mzwing-cnb" = {
-    file = ./magpie/mzwing-huaweicloud-gz/mzwing-cnb.age;
-    recipients = ownedBy "mzwing-cnb";
-  };
-
   "magpie-web/mzwing-azure" = {
     file = ./magpie-web/mzwing-azure.age;
     recipients = ownedBy "mzwing-azure";
@@ -68,7 +69,7 @@ in {
 
   "paseo/password" = {
     file = ./paseo/password.age;
-    recipients = [mzwing];
+    recipients = ownedBy "mzwing-cnb";
   };
 
   # The sing-box client's, like subs-check/* below. The Mac reads them with the mzwing key, and every NixOS desktop selecting software/network/sing-box belongs on these lists.

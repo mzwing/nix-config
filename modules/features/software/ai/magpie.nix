@@ -146,7 +146,7 @@ in {
           };
         }
 
-        # Machines without a gateway of their own call the servers' over the tailnet, each with its own gateway key: magpie only takes keyless requests from plain loopback.
+        # Other machines call a server's gateway over the tailnet, each with its own gateway key: magpie only takes keyless requests from plain loopback
         (lib.mkIf (type == "server") {
           age.secrets.magpie-web-key.file = secrets."magpie-web/${hostname}";
 

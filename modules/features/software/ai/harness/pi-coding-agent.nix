@@ -29,6 +29,7 @@ in {
       ...
     }: let
       jsonFormat = pkgs.formats.json {};
+      inherit (config.mzwing.magpie) gateway;
       solModel = {
         model = "magpie/auto/gpt-6.1-sol";
         thinking_level = "high";
@@ -212,23 +213,19 @@ in {
 
             ${agentContext.codegraph}
           '';
-          models = {
-            providers =
-              lib.mapAttrs (_: gateway: {
-                api = "openai-completions";
-                # Loopback takes any key; this is the one magpie names pi's requests by.
-                apiKey =
-                  if gateway.keyFile == null
-                  then "magpie-pi"
-                  else "!cat ${gateway.keyFile}";
-                inherit (gateway) baseUrl;
-                authHeader = true;
-                models = [];
-              })
-              config.mzwing.magpie.gateways
-              // {
-                openai-codex.modelOverrides."gpt-5.6-sol".contextWindow = 1050000;
-              };
+          models.providers = {
+            magpie = {
+              api = "openai-completions";
+              # Loopback takes any key; this is the one magpie names pi's requests by.
+              apiKey =
+                if gateway.keyFile == null
+                then "magpie-pi"
+                else "!cat ${gateway.keyFile}";
+              inherit (gateway) baseUrl;
+              authHeader = true;
+              models = [];
+            };
+            openai-codex.modelOverrides."gpt-5.6-sol".contextWindow = 1050000;
           };
           settings = {
             defaultModel = "auto/claude-opus-5-5";
