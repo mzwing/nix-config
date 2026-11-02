@@ -100,28 +100,28 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-ACGcYja9eOPle8MgwhysecGt3hSbQGvZ1/cAxnq1SWE=",
+        "hash": "sha256-J9wL7Ybgfom1pNWaA7WymI344/YCiIOPUMUbZ0zXW34=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "53a91921b389619b72e218dd94e48ece9058f6d4",
+        "revision": "851c7e3c6276243dc473cfa4363895e78b426bb9",
         "submodules": false,
         "type": "Git",
         "url": null
       },
       "conventional-changelog-skills": {
         "branch": "master",
-        "hash": "sha256-NdSyrUgqzuflbz2CPo5Ci5JNZqWccPB2gBdVZT3N+T0=",
+        "hash": "sha256-/jIJG0uHBsccc4Uj5302SIaDwzUf9knu1cXL2rzttkg=",
         "repository": {
           "owner": "conventional-changelog",
           "repo": "conventional-changelog",
           "type": "GitHub"
         },
-        "revision": "f952155ec3cea5b272306e5a7d5d04fa257819b8",
+        "revision": "0cdedf882b7d2c86ea8e03ce0c4fafc597fa2108",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/conventional-changelog/conventional-changelog/archive/f952155ec3cea5b272306e5a7d5d04fa257819b8.tar.gz"
+        "url": "https://github.com/conventional-changelog/conventional-changelog/archive/0cdedf882b7d2c86ea8e03ce0c4fafc597fa2108.tar.gz"
       },
       "dcspirit-skills": {
         "branch": "main",
@@ -138,29 +138,29 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-lNlTdWZ/sRiNKAGb/C10erssUZhuBOgHs7wZ3nWVWr8=",
+        "hash": "sha256-Vzp3VdOdOeY3kjRjY9Dl9YVjDuhpVK2bI03+XKeKqfc=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "1f828b3f009e351d9ecf15a7a46aeb30f32e5a47",
+        "revision": "277eafc9457c43ac16f077302286daf8ff9b50c9",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/1f828b3f009e351d9ecf15a7a46aeb30f32e5a47.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/277eafc9457c43ac16f077302286daf8ff9b50c9.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-FI+bM+AtmOb4rpeQnR0XHvGhuc7XhF5NQ73zmqh6Cb0=",
+        "hash": "sha256-A5akWl5IeWPa1BOIS73I2xdw3M2XLn/PQSNUKlhh15w=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "92a9a34ac3bf88e695e468b90c7bf32f163d32c8",
+        "revision": "77cfce8221e6e112a70152a230abc848b8b14c19",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/92a9a34ac3bf88e695e468b90c7bf32f163d32c8.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/77cfce8221e6e112a70152a230abc848b8b14c19.tar.gz"
       }
     },
     "version": 8
