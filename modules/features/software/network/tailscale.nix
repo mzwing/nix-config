@@ -72,6 +72,9 @@ in {
               "--hostname=${hostname}"
             ];
           };
+
+          # systemctl3 counts a notify unit whose process exits after READY=1 as failed, failing the .cnb.yml stage that starts it
+          systemd.services.tailscaled-autoconnect.serviceConfig.RemainAfterExit = true;
         })
       ];
 

@@ -59,9 +59,12 @@
           networking.firewall.interfaces.tailscale0.allowedTCPPorts = [config.services.paseo.port];
         })
 
-        # tailscaled runs in userspace there: it hands tailnet connections to loopback, where the daemon listens by default, and the agents reach magpie only through its proxy
         (lib.mkIf (type == "container") {
+          # tailscaled runs in userspace there: it hands tailnet connections to loopback, where the daemon listens by default, and the agents reach magpie only through its proxy
           services.paseo.environment.HTTP_PROXY = hm.home.sessionVariables.HTTP_PROXY;
+
+          # The module creates dataDir with tmpfiles, which can't run on CNB's 5.4 kernel
+          systemd.services.paseo.preStart = lib.mkBefore "install -d -m 0700 ${config.services.paseo.dataDir}";
         })
       ];
     };

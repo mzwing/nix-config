@@ -91,7 +91,11 @@ in {
             inherit (gateway) baseUrl;
             authHeader = true;
             # pi had a plugin sync its model list; omp asks the proxy itself.
-            discovery.type = "openai-models-list";
+            discovery = {
+              type = "openai-models-list";
+              # A fresh omp on CNB misses the 10 s default: the list crawls over the tailnet while omp refreshes its built-in catalogs
+              timeoutMs = 60000;
+            };
             # magpie lists codex-auto-review without reasoning, so pi-automode's effort would be dropped.
             modelOverrides."auto/codex-auto-review" = {
               reasoning = true;
