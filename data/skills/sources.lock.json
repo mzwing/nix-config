@@ -100,12 +100,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-839DRhWr/Vsx11kWqhxlk+qT9A7OgsLL5RGD2ZtMPyY=",
+        "hash": "sha256-1djhl0kMe25ESQTGGmzL04qpV5C29RcYS+56cXTP3Es=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "d5e0964514dbbcec3404b12ef21ced297e28f914",
+        "revision": "568c6aab0a06d3f686bd0421e0fa754ef50da2ec",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -138,29 +138,29 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-Vzp3VdOdOeY3kjRjY9Dl9YVjDuhpVK2bI03+XKeKqfc=",
+        "hash": "sha256-1+rZLA0rqUrgu1ufObo4J0KsNxYZCvz+1vtMkTmigY0=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "277eafc9457c43ac16f077302286daf8ff9b50c9",
+        "revision": "6c30419057bce5bb95afb4e6e45de25b561d7236",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/277eafc9457c43ac16f077302286daf8ff9b50c9.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/6c30419057bce5bb95afb4e6e45de25b561d7236.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-ndqCF/W/WofV0qomKclNG5lShDXcH3qYXuvzTk5sIAk=",
+        "hash": "sha256-V4T+uKBm7Fe5vU5X/z6gzzsBAwlLh2YGxCZYctPxYdQ=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "7a5e920bead4b1039a6d6df5d7e1163b7b09423a",
+        "revision": "9197d919034d19010ae303cf96bf19ad087dd4be",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/7a5e920bead4b1039a6d6df5d7e1163b7b09423a.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/9197d919034d19010ae303cf96bf19ad087dd4be.tar.gz"
       }
     },
     "version": 8
