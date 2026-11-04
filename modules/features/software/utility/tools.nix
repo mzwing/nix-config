@@ -34,6 +34,9 @@
         "stats"
         "easydict"
       ];
+      masApps = {
+        "xntfs" = 6782636021;
+      };
     };
 
     home = {

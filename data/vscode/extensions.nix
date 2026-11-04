@@ -169,7 +169,8 @@ in {
 
   java = with m; [
     dotjoshjohnson.xml
-    jetbrains.intellij-server
+    # Open VSX's build downloads its server; the Marketplace's bundles it into the store, where the extension can't chmod the launcher
+    pkgs.open-vsx-release.jetbrains.intellij-server
     # .kts highlighting; intellij-server only claims .kt
     mathiasfrohlich.kotlin
     naco-siren.gradle-language

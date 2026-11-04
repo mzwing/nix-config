@@ -124,6 +124,13 @@
         "match_response": true,
         "action": "route",
         "server": "dns-direct"
+      },
+      {
+        "query_type": [
+          "AAAA"
+        ],
+        "action": "predefined",
+        "rcode": "NOERROR"
       }
     ]
   }
