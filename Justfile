@@ -96,6 +96,54 @@ nixos-anywhere host target *flags:
     --generate-hardware-config nixos-generate-config {{repo_dir}}/modules/hosts/nixos/{{host}}/_hardware.nix \
     {{flags}}
 
+# Build a host's NixOS on a Debian or Ubuntu machine with Docker and passwordless sudo, then boot it there under systemd-nspawn; `just nixos` takes over afterwards
+[group('nixos')]
+nspawn-install host target machines_dir='/var/lib/machines':
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  flake_path="$(nix flake metadata --no-write-lock-file --json {{flake_ref}} | jq -r .path)"
+  src="$(ssh "{{target}}" mktemp -d)"
+  tar -C "$flake_path" -cf - . | ssh "{{target}}" tar -xf - -C "$src"
+
+  ssh "{{target}}" 'bash -s' -- "{{host}}" "{{machines_dir}}/{{host}}" "$src" <<'REMOTE'
+  set -euo pipefail
+  host=$1 root=$2 src=$3
+  # Store files come over read-only
+  trap 'chmod -R u+w "$src" && rm -rf "$src"' EXIT
+
+  if [ -e "$root" ]; then
+    printf '%s already exists\n' "$root" >&2
+    exit 1
+  fi
+  sudo install -d "$root"
+
+  # Built with the host's own caches rather than flake.nix's China-first bootstrap list
+  docker run --rm -v "$src:/src:ro" -v "$root:/out" nixos/nix bash -euo pipefail -c '
+    nix() { command nix --extra-experimental-features "nix-command flakes" "$@"; }
+    config="/src#nixosConfigurations.$1.config"
+    setting() { nix eval --raw "$config.nix.settings.$1" --apply "builtins.concatStringsSep \" \""; }
+    nix build --out-link /system --option substituters "$(setting substituters)" --option trusted-public-keys "$(setting trusted-public-keys)" "$config.system.build.toplevel"
+    nix copy --no-check-sigs --to /out /system
+    nix-env --store /out --profile /out/nix/var/nix/profiles/system --set "$(readlink /system)"
+    # nspawn boots /sbin/init, and only in a tree with an os-release
+    mkdir -p /out/sbin /out/etc
+    ln -s /nix/var/nix/profiles/system/init /out/sbin/init
+    ln -s "$(readlink -f /system/etc/os-release)" /out/etc/os-release
+  ' bash "$host"
+
+  sudo apt-get update -qq
+  sudo apt-get install -y -qq systemd-container
+  sudo install -d /etc/systemd/nspawn /var/lib/machines
+  # Root inside owns the store as it is on disk, and the machine's network is shared instead of a veth that would need NAT
+  printf '[Exec]\nPrivateUsers=no\n\n[Network]\nVirtualEthernet=no\n' | sudo tee "/etc/systemd/nspawn/$host.nspawn" >/dev/null
+  if [ "$root" != "/var/lib/machines/$host" ]; then
+    sudo ln -s "$root" "/var/lib/machines/$host"
+  fi
+  sudo machinectl enable "$host"
+  sudo machinectl start "$host"
+  REMOTE
+
 # Names as registry.nix spells them, without the .age suffix that `secret` adds back.
 [group('secrets')]
 secrets:

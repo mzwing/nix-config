@@ -47,15 +47,15 @@ in {
               "flakes"
             ];
 
-            substituters = lib.mkForce (
-              lib.subtractLists config.mzwing.nix.unreachableSubstituters (
-                config.mzwing.nix.mirrorSubstituters
-                ++ cacheData.defaultSubstituters
+            substituters = let
+              reachable = lib.subtractLists config.mzwing.nix.unreachableSubstituters;
+            in
+              lib.mkForce (
+                reachable (config.mzwing.nix.mirrorSubstituters ++ cacheData.defaultSubstituters)
                 # Caches rank by the priority they advertise (numtide 30, cuda 50) before list position; pin these to the cachix caches' 41.
-                ++ map (url: "${url}?priority=41") config.mzwing.nix.extraSubstituters
-                ++ map (cache: cache.url) nurCaches
-              )
-            );
+                ++ map (url: "${url}?priority=41") (reachable config.mzwing.nix.extraSubstituters)
+                ++ reachable (map (cache: cache.url) nurCaches)
+              );
 
             # trusted-public-keys rather than the extra- form: nixos-anywhere seeds the installer from this exact setting, and never reads the other one.
             trusted-public-keys = lib.unique (
@@ -86,8 +86,6 @@ in {
         package = pkgs.nix;
         settings.auto-optimise-store = false;
       };
-
-      nixpkgs.config.android_sdk.accept_license = true;
     };
 
     nixos = {lib, ...}: {

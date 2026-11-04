@@ -65,9 +65,12 @@
         go = mkProfile (core ++ ext.go) {
           "go.toolsManagement.autoUpdate" = true;
         };
-        java = mkProfile (core ++ ext.java ++ ext.kotlin) {
+        java = mkProfile (core ++ ext.java) {
           "[xml]"."editor.defaultFormatter" = "redhat.vscode-xml";
           "redhat.telemetry.enabled" = true;
+          # intellij-server's setup wizard saves these to user settings, which a store symlink refuses
+          "intellij.region" = "apac";
+          "intellij.dataSharing" = "none";
         };
         python = mkProfile (core ++ ext.python ++ ext.jupyter) {
           "[python]"."editor.defaultFormatter" = "ms-python.black-formatter";
@@ -86,6 +89,13 @@
         typst = mkProfile (core ++ ext.docs) {};
         ctf = mkProfile (core ++ ext.ctf) {};
       };
+
+      intellijServerExtension = lib.findFirst (e: e.vscodeExtUniqueId == "jetbrains.intellij-server") null ext.java;
+      intellijServerRoot = "${
+        if pkgs.stdenv.hostPlatform.isDarwin
+        then "${config.home.homeDirectory}/Library/Application Support"
+        else config.xdg.dataHome
+      }/JetBrains/IntelliJServer/servers/intellij-server";
     in {
       programs =
         lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
@@ -116,6 +126,21 @@
           };
         };
       };
+
+      # The extension keeps every server build it ever pinned, about 1.3 GB each
+      home.activation.pruneOldIntellijServers = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        (
+          shopt -s nullglob
+          root=${lib.escapeShellArg intellijServerRoot}
+          current=$(jq -r .version ${intellijServerExtension}/share/vscode/extensions/${intellijServerExtension.vscodeExtUniqueId}/server-bundle.json)
+          for entry in "$root"/* "$root"/server-downloads/*; do
+            case ''${entry##*/} in
+              "$current" | "$current.lock" | server-downloads) ;;
+              *) run rm -rf "$entry" ;;
+            esac
+          done
+        )
+      '';
     };
   };
 }

@@ -14,7 +14,7 @@
     home = {
       lib,
       pkgs,
-      username,
+      type,
       useremail,
       ...
     }: {
@@ -28,7 +28,8 @@
 
         signing = {
           key = null;
-          signByDefault = true;
+          # Containers hold no signing key
+          signByDefault = type != "container";
           format = "openpgp";
         };
 
@@ -42,7 +43,8 @@
         settings =
           {
             user.email = useremail;
-            user.name = username;
+            # Not the login, which is root on containers
+            user.name = "mzwing";
 
             init.defaultBranch = "master";
             trim.bases = "develop,master,main";

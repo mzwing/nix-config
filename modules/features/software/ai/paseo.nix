@@ -52,7 +52,7 @@
         }
 
         (lib.mkIf (type != "container") {
-          age.secrets.paseo-password.file = secrets."paseo/password";
+          age.secrets.paseo-password.file = secrets."${lib.removePrefix "mzwing-" hostname}/paseo/password";
 
           services.paseo.listenAddress = "0.0.0.0";
 
@@ -71,6 +71,7 @@
 
     # A container decrypts only the user's secrets, so the password is linked to where a system secret would land
     home = {
+      hostname,
       lib,
       osConfig,
       secrets,
@@ -79,7 +80,7 @@
     }:
       lib.mkIf (type == "container") {
         age.secrets.paseo-password = {
-          file = secrets."paseo/password";
+          file = secrets."${lib.removePrefix "mzwing-" hostname}/paseo/password";
           path = "${osConfig.age.secretsDir}/paseo-password";
         };
       };

@@ -27,6 +27,9 @@
 in {
   networking.hostName = hostname;
 
+  # Its NARs crawl over CNB's link to Hetzner, about 5 KB/s, so the unfree Android SDK pieces only it holds build from Google's downloads instead
+  mzwing.nix.unreachableSubstituters = ["https://cache.nixos-cuda.org"];
+
   services.openssh = {
     enable = true;
     # CNB runs sshd with UsePAM=no and logs in by password; without libxcrypt sshd falls back to OpenSSL's DES-only crypt and rejects every yescrypt hash.
@@ -34,6 +37,9 @@ in {
       buildInputs = old.buildInputs ++ [pkgs.libxcrypt];
     });
   };
+
+  # Every workspace starts with an empty ~/.paseo, where the daemon would mint a new server ID that the apps take for another host
+  services.paseo.environment.PASEO_SERVER_ID = hostname;
 
   users.users.root.createHome = true;
 
@@ -54,11 +60,6 @@ in {
   '';
 
   home-manager.users.root = {lib, ...}: {
-    programs.git = {
-      settings.user.name = lib.mkForce "mzwing";
-      signing.signByDefault = lib.mkForce false;
-    };
-
     # CNB skips roaming a ~/.gitconfig that already exists, and its tools write to it with `git config --global`.
     home.activation.gitconfig = lib.hm.dag.entryAfter ["linkGeneration"] ''
       run touch ~/.gitconfig
@@ -79,12 +80,12 @@ in {
     # Carries /root/repos from one workspace to the next through the registry, encrypted since nix-config's is public
     (pkgs.writeShellApplication {
       name = "workspace-snapshot";
-      runtimeInputs = with pkgs; [age crane fd git gnutar zstd];
+      runtimeInputs = with pkgs; [age crane curl fd git gnutar zstd];
       text = ''
         ref="$CNB_DOCKER_REGISTRY/$CNB_REPO_SLUG_LOWERCASE/workspace-snapshot"
         # Only a workspace that restored the snapshot may replace it, or a failed restore would save an empty tree over it
         restored=/run/workspace-snapshot-restored
-        crane auth login "$CNB_DOCKER_REGISTRY" -u cnb --password-stdin <"${hm.age.secrets.registry-token.path}"
+        crane auth login "$CNB_DOCKER_REGISTRY" -u "$CNB_TOKEN_USER_NAME" --password-stdin <<<"$CNB_TOKEN"
 
         case "''${1:-}" in
           restore)
@@ -97,21 +98,23 @@ in {
               exit 1
             fi
             dir=$(mktemp -d)
-            # Ignored build outputs and devenv state come back on their own
-            fd -HI -t d --prune --base-directory /root '^(target|build|\.gradle|\.cxx|\.devenv|\.direnv|node_modules|\.kotlin)$' repos | while read -r path; do
-              if git -C "/root/$(dirname "$path")" check-ignore -q "$(basename "$path")" 2>/dev/null; then
-                echo "$path"
-              fi
+            # Git-ignored devenv state and anything over 1 MiB, the size of caches and build outputs, stay out to come back from the network; small ignored files like keystores travel along
+            fd -HI --prune --base-directory /root '^\.git$' repos | while read -r gitdir; do
+              repo=$(dirname "$gitdir")
+              git -C "/root/$repo" ls-files -z --others --ignored --exclude-standard --directory | while IFS= read -r -d "" path; do
+                if [[ ''${path%/} =~ (^|/)\.(devenv|direnv)$ ]] || [ "$(du -sk "/root/$repo/$path" | cut -f1)" -gt 1024 ]; then
+                  echo "$repo/''${path%/}"
+                fi
+              done
             done >"$dir/excludes"
-            tar -C /root -X "$dir/excludes" -cf - repos | zstd -T0 | age ${snapshotRecipients} >"$dir/snapshot"
+            tar -C /root --anchored --no-wildcards -X "$dir/excludes" -cf - repos | zstd -T0 | age ${snapshotRecipients} >"$dir/snapshot"
             tar -C "$dir" -cf "$dir/layer.tar" snapshot
             old_latest=$(crane digest "$ref:latest")
-            old_previous=$(crane digest "$ref:previous")
             crane append -f "$dir/layer.tar" -t "$ref:latest"
+            # The registry refuses deletes by digest; deleting a snapshot's only tag through the API deletes it
+            curl -fsS -X DELETE -H "Authorization: Bearer $(<"${hm.age.secrets.registry-token.path}")" -H 'Accept: application/vnd.cnb.api+json' "$CNB_API_ENDPOINT/$CNB_REPO_SLUG/-/packages/docker/''${CNB_REPO_SLUG_LOWERCASE##*/}%2Fworkspace-snapshot/-/tag/previous"
             # The one just replaced stays as a fallback
             crane tag "$ref@$old_latest" previous
-            # Untagged, the registry would keep it as another full copy
-            crane delete "$ref@$old_previous"
             rm -r "$dir"
             ;;
           *)

@@ -38,7 +38,13 @@ in {
     recipients = ownedBy "mzwing-cnb";
   };
 
-  # A CNB access token used only on this repository, with registry-package and registry-package-delete: workspace-snapshot deletes the snapshots it replaces, and a workspace's own CNB_TOKEN can't delete
+  # <host>/paseo/password: `PASEO_PASSWORD=…` for that host's daemon, one per host so a leak opens no other
+  "cnb/paseo/password" = {
+    file = ./cnb/paseo/password.age;
+    recipients = ownedBy "mzwing-cnb";
+  };
+
+  # A CNB access token limited to this repository, with registry-package-delete: workspace-snapshot deletes the snapshot it replaces, which a workspace's own CNB_TOKEN can't
   "cnb/registry-token" = {
     file = ./cnb/registry-token.age;
     recipients = ownedBy "mzwing-cnb";
@@ -63,6 +69,17 @@ in {
     ];
   };
 
+  # instabox/magpie/<server>: the key `magpie gateway-key add mzwing-instabox` printed on that server
+  "instabox/magpie/mzwing-azure" = {
+    file = ./instabox/magpie/mzwing-azure.age;
+    recipients = ownedBy "mzwing-instabox";
+  };
+
+  "instabox/paseo/password" = {
+    file = ./instabox/paseo/password.age;
+    recipients = ownedBy "mzwing-instabox";
+  };
+
   "magpie-web/mzwing-azure" = {
     file = ./magpie-web/mzwing-azure.age;
     recipients = ownedBy "mzwing-azure";
@@ -71,11 +88,6 @@ in {
   "magpie-web/mzwing-huaweicloud-gz" = {
     file = ./magpie-web/mzwing-huaweicloud-gz.age;
     recipients = ownedBy "mzwing-huaweicloud-gz";
-  };
-
-  "paseo/password" = {
-    file = ./paseo/password.age;
-    recipients = ownedBy "mzwing-cnb";
   };
 
   # The sing-box client's, like subs-check/* below. The Mac reads them with the mzwing key, and every NixOS desktop selecting software/network/sing-box belongs on these lists.
@@ -131,6 +143,16 @@ in {
     recipients = [mzwing];
   };
 
+  # `tskey-client-…` of an OAuth client tagged tag:container alone, so a container can't mint itself a tag:server key. Every container selecting software/network/tailscale belongs on this list
+  "tailscale/container-oauth-secret" = {
+    file = ./tailscale/container-oauth-secret.age;
+    recipients = [
+      mzwing
+      hosts.mzwing-cnb
+      hosts.mzwing-instabox
+    ];
+  };
+
   # Every NixOS host selecting software/network/tailscale, or software/network/sing-box as a server, belongs on this list.
   "tailscale/oauth-secret" = {
     file = ./tailscale/oauth-secret.age;
@@ -162,6 +184,7 @@ in {
     recipients = [
       mzwing
       hosts.mzwing-cnb
+      hosts.mzwing-instabox
     ];
   };
 

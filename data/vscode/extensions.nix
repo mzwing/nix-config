@@ -169,19 +169,13 @@ in {
 
   java = with m; [
     dotjoshjohnson.xml
+    jetbrains.intellij-server
+    # .kts highlighting; intellij-server only claims .kt
+    mathiasfrohlich.kotlin
     naco-siren.gradle-language
-    redhat.java
     redhat.vscode-xml
     vscjava.vscode-gradle
-    vscjava.vscode-java-debug
-    vscjava.vscode-java-dependency
-    vscjava.vscode-java-test
     vscjava.vscode-maven
-  ];
-
-  kotlin = with m; [
-    fwcd.kotlin
-    mathiasfrohlich.kotlin
   ];
 
   dart = with m; [
