@@ -100,12 +100,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-1djhl0kMe25ESQTGGmzL04qpV5C29RcYS+56cXTP3Es=",
+        "hash": "sha256-t7NfIua7MU+4vXI8jwHD6gV1vKiogkGHwC2ebIV+CHg=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "568c6aab0a06d3f686bd0421e0fa754ef50da2ec",
+        "revision": "7aad16a518f6aea6c2d9f317715ead36ec36f374",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -138,29 +138,29 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-1+rZLA0rqUrgu1ufObo4J0KsNxYZCvz+1vtMkTmigY0=",
+        "hash": "sha256-LQIo+cg7FPg+sx06eXicnv1E2GkIEShh/+3xIRpsHL4=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "6c30419057bce5bb95afb4e6e45de25b561d7236",
+        "revision": "b2dc019b9bf4a669bdaeb56083e88f794ce6cb66",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/6c30419057bce5bb95afb4e6e45de25b561d7236.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/b2dc019b9bf4a669bdaeb56083e88f794ce6cb66.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-V4T+uKBm7Fe5vU5X/z6gzzsBAwlLh2YGxCZYctPxYdQ=",
+        "hash": "sha256-IknOGjSczICbpqxWRoH5YYffg8VT5YCT5EdXUGuLssU=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "9197d919034d19010ae303cf96bf19ad087dd4be",
+        "revision": "cabe07254cddf16a3a650253f0ba03d543d8a86e",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/9197d919034d19010ae303cf96bf19ad087dd4be.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/cabe07254cddf16a3a650253f0ba03d543d8a86e.tar.gz"
       }
     },
     "version": 8
