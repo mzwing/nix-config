@@ -18,6 +18,7 @@
     mzwing-huaweicloud-gz = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINFsTKkd54S65FTuvtE/NFDCCJFvN1h/OvWk5WJsjHSW root@hcss-ecs-ec93";
     # Not its sshd key either: made once at ~/.ssh/agenix inside the container, and it never leaves there
     mzwing-instabox = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIdfsUndiUFgPiEMzy4R3R2d5XyWCW93+iQ4eW59CPkS root@mzwing-instabox";
+    mzwing-lycheen-us = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBeVV5WX9pgH5iUCUtTggM3ufxOm1sblo8eoYGJJpsHU root@lycheen.server.mzwing.eu.org";
     mzwing-upcloud-sg = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFN6u5TVLoI3OzCfCqjVYThl+4UcAXZ8noRJO05aoHcL root@mzwing-upcloud-sg";
     mzwing-wap = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILGW67hQftVipTLuqRhnICn8zYUSQ/hpu0YGjdtCaS8N root@wap.server.mzwing.eu.org";
   };

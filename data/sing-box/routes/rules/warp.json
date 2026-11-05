@@ -1,0 +1,19 @@
+{
+  "route": {
+    "rules": [
+      {
+        "rule_set": [
+          "geosite-netflix",
+          "geosite-openai"
+        ],
+        "action": "route",
+        "outbound": "warp"
+      },
+      {
+        "ip_version": 6,
+        "action": "route",
+        "outbound": "warp"
+      }
+    ]
+  }
+}

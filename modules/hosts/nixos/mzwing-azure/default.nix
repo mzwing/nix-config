@@ -13,10 +13,14 @@
       "nixos/server/azure"
       "nixos/server/base"
       "nixos/server/ssh"
+      # Gen2 VMs boot UEFI only
+      "nixos/server/uefi"
       "nixos/server/zram"
       "software/ai/magpie"
       "software/editor/neovim"
       "software/network/sing-box"
+      # Azure gives the VM no IPv6
+      "software/network/sing-box-warp"
       "software/security/gpg"
       "software/security/ssh"
       "software/server/caddy"

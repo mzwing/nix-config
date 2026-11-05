@@ -171,7 +171,7 @@ in {
           ];
         })
 
-        (lib.mkIf config.services.caddy.enable {
+        (lib.mkIf (hostname == endpoint.remote) {
           services.magpie = {
             env.MAGPIE_PUBLIC_URL = "https://${endpoint.publicDomain}";
             # Unshared, magpie refuses every request Caddy forwards.

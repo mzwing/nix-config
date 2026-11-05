@@ -158,7 +158,7 @@
 
             clash2sing-box convert "${secretPath claudeNodeList}" | jq '${selectClaudeNodes}' > "$work/claude.json"
 
-            # `(?<!-)` keeps a region group off the hyphenated qualifiers that sit elsewhere in a name: the CDN-side location in `HK¹-US⁰`, TikTok's `TK-US`, and the `|IN-XX` entry tag. Client fragment tags carry no exit region, so `sg` names azure's naive node; WARP would win every race it entered
+            # `(?<!-)` keeps a region group off the hyphenated qualifiers that sit elsewhere in a name: the CDN-side location in `HK¹-US⁰`, TikTok's `TK-US`, and the `|IN-XX` entry tag. Client fragment tags carry no exit region, so each region group names its own naive nodes; WARP would win every race it entered
             clash2sing-box convert \
               "$output/sub/all.yaml" \
               "$work/claude.json" \
@@ -169,7 +169,7 @@
               --outbound-group 'tw=(?<!-)\bTW\b' \
               --outbound-group 'jp=(?<!-)\bJP\b' \
               --outbound-group 'sg=(?<!-)\bSG\b|^azure-naive$' \
-              --outbound-group 'us=(?<!-)\bUS\b' \
+              --outbound-group 'us=(?<!-)\bUS\b|^lycheen-us-naive$' \
               --outbound-group 'openai=GPT⁺' \
               --outbound-group 'claude= - 洛杉矶纯净$' \
               --outbound-group 'gemini=(?<!-)\bGM\b' \
@@ -330,10 +330,16 @@ in {
                 ++ base.route.rules;
             };
         };
-    in
-      lib.mkMerge [
+    in {
+      options.mzwing.sing-box.serverProfile = lib.mkOption {
+        type = lib.types.str;
+        default = "server";
+        description = "The data/sing-box profile this server merges.";
+      };
+
+      config = lib.mkMerge [
         (lib.mkIf (type == "server") (let
-          settings = profile "server";
+          settings = profile config.mzwing.sing-box.serverProfile;
           inbounds = "sing-box/${hostname}/inbounds";
           caddySites = "caddy/${hostname}";
 
@@ -347,22 +353,6 @@ in {
             text = ''
               clash2sing-box convert "${secretPath claudeNodeList}" | jq '${selectClaudeNodes} | .outbounds += [{type: "urltest", tag: "claude", outbounds: .outbounds | map(.tag)}]' > /run/sing-box/claude.json
             '';
-          };
-
-          warp = pkgs.writers.writePython3 "sing-box-warp" {flakeIgnore = ["E501"];} (builtins.readFile ../../../../scripts/sing_box_warp.py);
-          warpConfig = (pkgs.formats.json {}).generate "sing-box-warp.json" {
-            wgcf = lib.getExe pkgs.wgcf;
-            singBox = lib.getExe config.services.sing-box.package;
-            regionRestrictionCheck = lib.getExe pkgs.nur.repos.mzwing.regionrestrictioncheck;
-            systemctl = "${config.systemd.package}/bin/systemctl";
-            profile = "/var/lib/sing-box/warp.conf";
-            fragment = "/run/sing-box/warp.json";
-            # RegionRestrictionCheck's function for each rule set routes/rules/server.json sends through warp.
-            checks = [
-              "MediaUnlockTest_Netflix"
-              "MediaUnlockTest_ChatGPT"
-            ];
-            attempts = 10;
           };
         in
           lib.mkMerge [
@@ -396,33 +386,11 @@ in {
                       printf 'TS_AUTHKEY=%s?ephemeral=false&preauthorized=true\n' "$(<${secretPath "tailscale/oauth-secret"})" > /run/sing-box/tailscale.env
                     ''}"
                     "+${lib.getExe claudeOutboundsCommand}"
-                    "+${warp} render ${warpConfig}"
                   ];
                   EnvironmentFile = "-/run/sing-box/tailscale.env";
                 };
                 restartTriggers = [secrets.${inbounds} secrets.${claudeNodeList}];
               };
-
-              systemd.services.sing-box-warp = {
-                description = "Replace the WARP account once its exit stops unlocking what sing-box routes through it";
-                after = ["sing-box.service"];
-                # A switch would otherwise restart a run in progress and wait for all of it.
-                restartIfChanged = false;
-                serviceConfig = {
-                  Type = "oneshot";
-                  ExecStart = "${warp} unlock ${warpConfig}";
-                };
-              };
-
-              systemd.timers.sing-box-warp = {
-                wantedBy = ["timers.target"];
-                timerConfig = {
-                  OnCalendar = "hourly";
-                  Persistent = true;
-                };
-              };
-
-              environment.systemPackages = [pkgs.nur.repos.mzwing.regionrestrictioncheck];
             }
           ]))
 
@@ -470,6 +438,7 @@ in {
           }
         ]))
       ];
+    };
 
     home = {
       config,

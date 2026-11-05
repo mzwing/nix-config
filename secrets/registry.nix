@@ -17,6 +17,7 @@ in {
     recipients = [
       mzwing
       hosts.mzwing-azure
+      hosts.mzwing-lycheen-us
     ];
   };
 
@@ -24,6 +25,11 @@ in {
   "caddy/mzwing-azure" = {
     file = ./caddy/mzwing-azure.age;
     recipients = ownedBy "mzwing-azure";
+  };
+
+  "caddy/mzwing-lycheen-us" = {
+    file = ./caddy/mzwing-lycheen-us.age;
+    recipients = ownedBy "mzwing-lycheen-us";
   };
 
   # `TELEGRAM_BOT_TOKEN=…` for the bot claude-tg sessions talk through
@@ -66,6 +72,7 @@ in {
     recipients = [
       mzwing
       hosts.mzwing-azure
+      hosts.mzwing-lycheen-us
     ];
   };
 
@@ -80,6 +87,12 @@ in {
     recipients = ownedBy "mzwing-instabox";
   };
 
+  # A whole systemd-networkd unit, for a host whose addresses are static
+  "lycheen-us/network/public" = {
+    file = ./lycheen-us/network/public.age;
+    recipients = ownedBy "mzwing-lycheen-us";
+  };
+
   "magpie-web/mzwing-azure" = {
     file = ./magpie-web/mzwing-azure.age;
     recipients = ownedBy "mzwing-azure";
@@ -88,6 +101,11 @@ in {
   "magpie-web/mzwing-huaweicloud-gz" = {
     file = ./magpie-web/mzwing-huaweicloud-gz.age;
     recipients = ownedBy "mzwing-huaweicloud-gz";
+  };
+
+  "magpie-web/mzwing-lycheen-us" = {
+    file = ./magpie-web/mzwing-lycheen-us.age;
+    recipients = ownedBy "mzwing-lycheen-us";
   };
 
   # The sing-box client's, like subs-check/* below. The Mac reads them with the mzwing key, and every NixOS desktop selecting software/network/sing-box belongs on these lists.
@@ -107,6 +125,11 @@ in {
     recipients = [mzwing];
   };
 
+  "sing-box/client/mzwing-lycheen-us-naive" = {
+    file = ./sing-box/client/mzwing-lycheen-us-naive.age;
+    recipients = [mzwing];
+  };
+
   "sing-box/client/warp" = {
     file = ./sing-box/client/warp.age;
     recipients = [mzwing];
@@ -116,6 +139,11 @@ in {
   "sing-box/mzwing-azure/inbounds" = {
     file = ./sing-box/mzwing-azure/inbounds.age;
     recipients = ownedBy "mzwing-azure";
+  };
+
+  "sing-box/mzwing-lycheen-us/inbounds" = {
+    file = ./sing-box/mzwing-lycheen-us/inbounds.age;
+    recipients = ownedBy "mzwing-lycheen-us";
   };
 
   # YAML merged over data/subs-check/config.yaml: the subscriptions and sub-store-path.
@@ -130,11 +158,17 @@ in {
     recipients = [
       mzwing
       hosts.mzwing-azure
+      hosts.mzwing-lycheen-us
     ];
   };
 
   "subs-check/self/mzwing-azure" = {
     file = ./subs-check/self/mzwing-azure.age;
+    recipients = [mzwing];
+  };
+
+  "subs-check/self/mzwing-lycheen-us" = {
+    file = ./subs-check/self/mzwing-lycheen-us.age;
     recipients = [mzwing];
   };
 
@@ -161,6 +195,7 @@ in {
       hosts.mzwing-azure
       hosts.mzwing-cnb
       hosts.mzwing-huaweicloud-gz
+      hosts.mzwing-lycheen-us
     ];
   };
 

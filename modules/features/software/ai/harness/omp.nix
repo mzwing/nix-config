@@ -49,7 +49,6 @@ in {
       system,
       ...
     }: let
-      jsonFormat = pkgs.formats.json {};
       yamlFormat = pkgs.formats.yaml {};
       inherit (config.mzwing.magpie) gateway;
       proxyModel = id: "magpie/${id}";
@@ -80,6 +79,22 @@ in {
           ${agentContext.codegraph}
         '';
 
+        # Subagents never receive AGENTS.md
+        ".omp/agent/rules/conventions.md".text = ''
+          ---
+          alwaysApply: true
+          agents: [task, sonic, expert, docs-writer]
+          ---
+
+          ${agentContext.rules}
+        '';
+        ".omp/agent/rules/director.md".source = ../../../../../data/omp/rules/director.md;
+        ".omp/agent/rules/worker.md".source = ../../../../../data/omp/rules/worker.md;
+        ".omp/agent/agents" = {
+          source = ../../../../../data/omp/agents;
+          recursive = true;
+        };
+
         ".omp/agent/models.yml".source = yamlFormat.generate "omp-models.yml" {
           providers.magpie = {
             api = "openai-completions";
@@ -96,26 +111,12 @@ in {
               # A fresh omp on CNB can miss the 10 s default: the list crawls in from azure while omp refreshes its built-in catalogs
               timeoutMs = 60000;
             };
-            # magpie lists codex-auto-review without reasoning, so pi-automode's effort would be dropped.
-            modelOverrides."auto/codex-auto-review" = {
-              reasoning = true;
-              compat.supportsReasoningEffort = true;
-            };
           };
         };
 
         # Reuse what programs.mcp already generated: omp's schema takes the same shape.
         ".omp/agent/mcp.json" = lib.mkIf (config.programs.mcp.servers != {}) {
           source = config.xdg.configFile."mcp/mcp.json".source;
-        };
-
-        # pi-automode reads its config from pi's directory even under omp.
-        ".pi/agent/extensions/pi-automode/config.json".source = jsonFormat.generate "pi-automode-config.json" {
-          autoMode = {
-            classifierModel = proxyModel "auto/codex-auto-review";
-            # The effort Codex itself reviews with.
-            classifierReasoningLevel = "medium";
-          };
         };
       };
 
@@ -142,7 +143,6 @@ in {
         package = inputs.llm-agents.packages.${system}.omp;
         plugins = [
           "@cortexkit/pi-magic-context"
-          "@czottmann/pi-automode"
         ];
         settings = {
           # config.yml is reinstalled on every switch, so without this omp reruns its setup wizard each time.
@@ -156,8 +156,9 @@ in {
             default = proxyModel "auto/claude-opus-5-5:max";
             slow = proxyModel "auto/claude-opus-5-5:max";
             plan = proxyModel "auto/claude-opus-5-5:max";
-            task = proxyModel "auto/claude-opus-5-5";
-            smol = proxyModel "auto/claude-opus-5-5:medium";
+            task = proxyModel "auto/gpt-6.1-terra:high";
+            smol = proxyModel "auto/gpt-6.1-terra:medium";
+            docs = proxyModel "auto/gemini-4-argon";
             commit = proxyModel "auto/claude-opus-5-5:low";
             tiny = proxyModel "auto/claude-opus-5-5:low";
           };

@@ -10,11 +10,11 @@
       },
       {
         "query_type": [
-          "A"
+          "AAAA"
         ],
         "rule_set": [
-          "geosite-netflix",
-          "geosite-openai"
+          "geosite-anthropic",
+          "claude"
         ],
         "action": "predefined",
         "rcode": "NOERROR"

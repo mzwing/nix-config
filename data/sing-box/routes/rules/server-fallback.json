@@ -1,0 +1,49 @@
+{
+  "route": {
+    "rules": [
+      {
+        "inbound": [
+          "tun-in"
+        ],
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "action": "resolve"
+      },
+      {
+        "ip_is_private": true,
+        "action": "reject"
+      },
+      {
+        "ip_cidr": [
+          "100.64.0.0/10",
+          "fd7a:115c:a1e0::/48"
+        ],
+        "action": "reject"
+      },
+      {
+        "domain": [
+          "gstatic.com"
+        ],
+        "domain_suffix": [
+          ".gstatic.com"
+        ],
+        "rule_set": [
+          "geosite-microsoft"
+        ],
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "rule_set": [
+          "geoip-cn",
+          "geosite-category-ads-all",
+          "geosite-cn",
+          "geosite-category-games@cn"
+        ],
+        "action": "reject"
+      }
+    ]
+  }
+}

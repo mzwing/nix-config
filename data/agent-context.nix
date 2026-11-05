@@ -6,6 +6,8 @@
 
     NEVER try to build any programs (especially Rust) locally, except the user explicitly approve it in the context. Ask the user to build it themselves instead. This also holds when a skill asks for a build: give the user the exact command, and never claim it passed.
 
+    CNB workspaces (`*@cnb.space`, hostname `mzwing-cnb`) and InstaBox (`mzwing-instabox`) are disposable dev sandboxes, so the rule above does not apply there: build, test and install freely without asking, whether you run inside one or edit locally, sync the changes to one (e.g. rsync) and build over SSH. Still report results faithfully and never claim a build passed without its output.
+
     You must definitely abide by the original specifications of the project!!! Such as specifications for comments, variable naming style, README writing, etc. Priority must be given to complying with the original specifications of the project!!!!! This entry takes precedence over the code, comment, and documentation rules below, and over any skill's defaults.
 
     Projects must be good streamlined, modularized, and maintainable. When writing a project or refactoring, don't be afraid to extract, add, modify, or delete components. Never leave components everywhere because "this is a new feature" or something else, and then pretend to add an import to the old component!
