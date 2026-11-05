@@ -105,7 +105,7 @@ in {
           ProxyCommand = "${lib.getExe tailscale} nc %h %p";
         };
 
-        # Same for plain-http calls, such as the agents' to the servers' magpie.
+        # Same for plain-http calls
         home.sessionVariables.HTTP_PROXY = "http://${userspaceProxy}";
       };
   };

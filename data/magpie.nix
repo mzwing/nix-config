@@ -3,6 +3,7 @@ rec {
   port = 3425;
   baseUrl = "http://${host}:${toString port}/v1";
 
-  # Called over the tailnet by machines without a gateway of their own
+  # Machines without a gateway of their own call this server's, through EdgeOne
   remote = "mzwing-azure";
+  publicDomain = "ai.service.mzwing.eu.org";
 }

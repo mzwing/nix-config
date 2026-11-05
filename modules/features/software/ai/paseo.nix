@@ -18,6 +18,7 @@
       hostname,
       inputs,
       lib,
+      pkgs,
       secrets,
       system,
       type,
@@ -33,7 +34,18 @@
           services.paseo = {
             enable = true;
             # Cached on cache.numtide.com, unlike the paseo flake's own
-            package = inputs.llm-agents.packages.${system}.paseo;
+            package = let
+              paseo = inputs.llm-agents.packages.${system}.paseo;
+            in
+              pkgs.symlinkJoin {
+                name = "paseo-wrapped-${paseo.version}";
+                paths = [paseo];
+                nativeBuildInputs = [pkgs.makeWrapper];
+                # Plugin installs run npm, and their build steps node, from the daemon's PATH
+                postBuild = ''
+                  wrapProgram $out/bin/paseo-server --suffix PATH : ${lib.makeBinPath [pkgs.nodejs]}
+                '';
+              };
             user = username;
             group = config.users.users.${username}.group;
             # The module guesses /home/<user>, which root's isn't
@@ -41,7 +53,10 @@
             # No relay, so the apps dial the daemon over the tailnet; hostnames lets them use the MagicDNS name, not only the IP.
             relay.enable = false;
             hostnames = [hostname];
-            settings.daemon.mcp.injectIntoAgents = true;
+            settings = {
+              daemon.mcp.injectIntoAgents = true;
+              pluginsEnabled = true;
+            };
           };
 
           # settings is rendered into the world-readable store, so the password comes in as PASEO_PASSWORD instead.
@@ -49,6 +64,16 @@
             if type == "container"
             then hm.age.secrets.paseo-password.path
             else config.age.secrets.paseo-password.path;
+
+          # Every start rewrites config.json without the plugins added to it, and gets here before the daemon writes the pid file the CLI looks for
+          systemd.services.paseo.serviceConfig.ExecStartPost = let
+            paseo = lib.getExe' config.services.paseo.package "paseo";
+          in "-${pkgs.writeShellScript "paseo-plugins" ''
+            until ${paseo} plugin ls >/dev/null 2>&1 || (( SECONDS > 60 )); do
+              sleep 1
+            done
+            ${paseo} plugin add omercnet/omp
+          ''}";
         }
 
         (lib.mkIf (type != "container") {
@@ -60,7 +85,7 @@
         })
 
         (lib.mkIf (type == "container") {
-          # tailscaled runs in userspace there: it hands tailnet connections to loopback, where the daemon listens by default, and the agents reach magpie only through its proxy
+          # tailscaled runs in userspace there: it hands tailnet connections to loopback, where the daemon listens by default, and the agents reach the tailnet only through its proxy
           services.paseo.environment.HTTP_PROXY = hm.home.sessionVariables.HTTP_PROXY;
 
           # The module creates dataDir with tmpfiles, which can't run on CNB's 5.4 kernel

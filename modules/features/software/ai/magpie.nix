@@ -1,6 +1,5 @@
 {lib, ...}: let
   endpoint = import ../../../../data/magpie.nix;
-  publicDomain = "ai.service.mzwing.eu.org";
 in {
   mzwing.features."software/ai/magpie" = {
     meta.platforms = [
@@ -174,13 +173,13 @@ in {
 
         (lib.mkIf config.services.caddy.enable {
           services.magpie = {
-            env.MAGPIE_PUBLIC_URL = "https://${publicDomain}";
+            env.MAGPIE_PUBLIC_URL = "https://${endpoint.publicDomain}";
             # Unshared, magpie refuses every request Caddy forwards.
             settings.lan = true;
           };
 
           # Forwarded headers mark visitors as remote, so they need a gateway key; magpie lets loopback in with any. Caddy sets them by itself and keeps no response timeout, so a model can think for minutes.
-          services.caddy.virtualHosts.${publicDomain}.extraConfig = ''
+          services.caddy.virtualHosts.${endpoint.publicDomain}.extraConfig = ''
             reverse_proxy ${endpoint.host}:${toString endpoint.port} {
               # The peer is an EdgeOne node, which names the visitor here.
               header_up X-Real-IP {header.EO-Connecting-IP}

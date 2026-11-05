@@ -23,7 +23,7 @@ in {
         description = "The gateway agents call: its `baseUrl`, and a `keyFile` holding this machine's gateway key, null on loopback, which takes any key.";
       };
 
-      # A machine running a gateway calls its own; any other calls the remote's over the tailnet
+      # A machine running a gateway calls its own; any other calls the remote's
       config =
         if osConfig.services.magpie.enable or false
         then {
@@ -36,7 +36,7 @@ in {
           age.secrets.magpie-key.file = secrets."${lib.removePrefix "mzwing-" hostname}/magpie/${endpoint.remote}";
 
           mzwing.magpie.gateway = {
-            baseUrl = "http://${endpoint.remote}:${toString endpoint.port}/v1";
+            baseUrl = "https://${endpoint.publicDomain}/v1";
             keyFile = config.age.secrets.magpie-key.path;
           };
         };
