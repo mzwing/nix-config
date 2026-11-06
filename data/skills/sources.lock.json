@@ -100,12 +100,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-t7NfIua7MU+4vXI8jwHD6gV1vKiogkGHwC2ebIV+CHg=",
+        "hash": "sha256-JUmG0TmRUZ+URuveklaeXN4z1CFAS+6okahm5d0C7aU=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "7aad16a518f6aea6c2d9f317715ead36ec36f374",
+        "revision": "0adf0adecaa4e83c0dfbad7045514bbeaa5cdda7",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -138,29 +138,29 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-LQIo+cg7FPg+sx06eXicnv1E2GkIEShh/+3xIRpsHL4=",
+        "hash": "sha256-rSWLg7fNU34fM1InaeR/vaLNLDQF16Uh5IEBaf0afbA=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "b2dc019b9bf4a669bdaeb56083e88f794ce6cb66",
+        "revision": "94716141c418732ad27cb7f1b553148df52893b4",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/b2dc019b9bf4a669bdaeb56083e88f794ce6cb66.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/94716141c418732ad27cb7f1b553148df52893b4.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-IknOGjSczICbpqxWRoH5YYffg8VT5YCT5EdXUGuLssU=",
+        "hash": "sha256-TDLIerf2DHWDuFfWnzBp5fEEQj3B9jtW4IIrpRXwoHg=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "cabe07254cddf16a3a650253f0ba03d543d8a86e",
+        "revision": "d3701c11b1101251af14c9d148f026e1a47ebe17",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/cabe07254cddf16a3a650253f0ba03d543d8a86e.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/d3701c11b1101251af14c9d148f026e1a47ebe17.tar.gz"
       }
     },
     "version": 8
