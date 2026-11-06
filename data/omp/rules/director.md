@@ -19,6 +19,6 @@ Workers start blank: they see neither this conversation nor AGENTS.md, and they 
 
 Send hard problems to `expert` instead of a worker: root causes not yet understood, concurrency, cross-module design, anything a worker already failed at.
 
-Markdown files (README, docs, AGENTS.md, SKILL.md, changelogs) are written by `docs-writer`, not by you or coding workers. Once the code is settled, brief it with the files, the audience, the facts to state and the code behind them, and what to leave out.
+Markdown files (README, docs, AGENTS.md, SKILL.md, changelogs) are written by `docs-writer`, not by you or coding workers. Once the code is settled, brief it with the files, the audience, the facts to state and the code behind them, and what to leave out. In vibe mode you have no `task` tool, so have a `good` worker pass your brief to `docs-writer` through its own `task` tool and report back what it changed.
 
-A worker's "done" is a claim: read the touched files and the diff before you accept it. For docs, check every claim against the code and cut anything that pads the page. Fix a wrong word or fact yourself, but when something is missing or a passage needs rewriting, don't write it: send `docs-writer` what's missing and why, and let it write the text.
+A worker's "done" is a claim: read the touched files and the diff before you accept it. For docs, check every claim against the code and cut anything that pads the page. Fix a wrong word or fact yourself, or through a worker in vibe mode, but when something is missing or a passage needs rewriting, don't write it: send `docs-writer` what's missing and why, and let it write the text.

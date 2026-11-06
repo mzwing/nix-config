@@ -95,6 +95,8 @@ in {
           "codearts"
           "zed"
           "remote-magpie-cn"
+          "remote-magpie-us"
+          "wokey"
         ];
         aliases = {
           # lm-detector fingerprints GPT-6 Astra and GPT-6.1 Sol as one model.

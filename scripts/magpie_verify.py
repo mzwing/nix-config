@@ -109,6 +109,24 @@ def magpie(config: dict[str, Any], verb: str, model: str) -> None:
     )
 
 
+def disabled_models(config: dict[str, Any]) -> set[str]:
+    run = subprocess.run(
+        [config["magpie"], "model", "disabled"],
+        capture_output=True,
+        check=True,
+        text=True,
+    )
+    entries = (
+        line.split(" · ", 1) for line in run.stdout.splitlines() if " · " in line
+    )
+    return {
+        hit.lower()
+        for _, hits in entries
+        for hit in hits.split(", ")
+        if hit != "matches no model magpie serves now"
+    }
+
+
 def disable(
     config: dict[str, Any], model: str, reports: list[dict[str, Any] | None]
 ) -> None:
@@ -127,11 +145,18 @@ def main() -> None:
     bank = {m["id"] for m in json.loads(Path(config["bank"]).read_text())["models"]}
     excluded = set(config["excludeProviders"])
     STATE.mkdir(parents=True, exist_ok=True)
+    models = served(config["gateway"])
+    known = {model.lower() for model in models} | disabled_models(config)
 
     # The gateway refuses a disabled model before any upstream call, so each one disabled here is let back in for its round.
     retested = set()
     for path in sorted(STATE.glob("*.json")):
         model = json.loads(path.read_text())["model"]
+        if model.lower() not in known:
+            magpie(config, "enable", model)
+            path.unlink()
+            log("released", model, "no longer served by magpie")
+            continue
         if model.split("/", 1)[0] in excluded:
             continue
         retested.add(model)
@@ -149,7 +174,7 @@ def main() -> None:
             disable(config, model, reports)
             log("kept off", model, found)
 
-    for model in served(config["gateway"]):
+    for model in models:
         if model.split("/", 1)[0] in excluded or model in retested:
             continue
         claimed = identity(model, bank, config["aliases"])

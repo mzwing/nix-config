@@ -156,8 +156,8 @@ in {
             default = proxyModel "auto/claude-opus-5-5:max";
             slow = proxyModel "auto/claude-opus-5-5:max";
             plan = proxyModel "auto/claude-opus-5-5:max";
-            task = proxyModel "auto/gpt-6.1-terra:high";
-            smol = proxyModel "auto/gpt-6.1-terra:medium";
+            task = proxyModel "auto/gpt-6.1-terra:xhigh";
+            smol = proxyModel "auto/gpt-6.1-terra:xhigh";
             docs = proxyModel "auto/gemini-4-argon";
             commit = proxyModel "auto/claude-opus-5-5:low";
             tiny = proxyModel "auto/claude-opus-5-5:low";
@@ -171,15 +171,15 @@ in {
             enabled = true;
             maxRetries = 3;
             fallbackChains = {
-              default = map proxyModel ["auto/gpt-6.1-sol" "workbuddy-ai/kimi-k3.1-pro" "auto/deepseek-v4.1-flash"];
-              smol = [(proxyModel "auto/deepseek-v4.1-flash:high")];
+              default = map proxyModel ["auto/gpt-6.1-sol" "auto/deepseek-v4.1-flash"];
+              smol = [(proxyModel "auto/claude-sonnet-5-5:xhigh")];
               commit = [(proxyModel "auto/deepseek-v4.1-flash:low")];
               tiny = [(proxyModel "auto/deepseek-v4.1-flash:low")];
             };
           };
 
           task = {
-            agentModelOverrides.security-reviewer = map proxyModel ["workbuddy-ai/kimi-k3.1-pro:high" "auto/deepseek-v4.1-flash:max"];
+            agentModelOverrides.security-reviewer = [(proxyModel "auto/deepseek-v4.1-flash:max")];
             showResolvedModelBadge = true;
           };
 
