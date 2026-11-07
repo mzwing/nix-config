@@ -42,6 +42,7 @@
         "easydict"
       ];
       masApps = {
+        "xlinuxfs" = 6785355678;
         "xntfs" = 6782636021;
       };
     };
