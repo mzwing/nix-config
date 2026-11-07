@@ -22,6 +22,7 @@ in {
           "samzong/tap"
           "sinhong2011/tap"
           "tw93/tap"
+          "nohajc/anylinuxfs"
         ]
         ++ [
           # Not named homebrew-*, so brew cannot find it by name alone.

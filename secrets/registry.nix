@@ -11,6 +11,12 @@ let
     hosts.${host}
   ];
 in {
+  # git-crypt's symmetric key for MZWNET/agent-history, the repository baton-sync keeps agent sessions in
+  "baton/git-crypt-key" = {
+    file = ./baton/git-crypt-key.age;
+    recipients = ownedBy "mzwing-cnb";
+  };
+
   # `CLOUDFLARE_DNS_API_TOKEN=…`, a token that may edit the zone's DNS records for ACME challenges. Every host with a site belongs on this list.
   "cloudflare/dns-api-token" = {
     file = ./cloudflare/dns-api-token.age;
@@ -36,6 +42,12 @@ in {
   "claude-code/telegram-bot-token" = {
     file = ./claude-code/telegram-bot-token.age;
     recipients = [mzwing];
+  };
+
+  # A CNB access token limited to MZWNET/agent-history with repo-code:rw, which baton-sync pushes with
+  "cnb/agent-history-token" = {
+    file = ./cnb/agent-history-token.age;
+    recipients = ownedBy "mzwing-cnb";
   };
 
   # cnb/magpie/<server>: the key `magpie gateway-key add mzwing-cnb` printed on that server, as CNB runs no gateway of its own

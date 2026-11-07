@@ -52,6 +52,7 @@ in {
       yamlFormat = pkgs.formats.yaml {};
       inherit (config.mzwing.magpie) gateway;
       proxyModel = id: "magpie/${id}";
+      taskModel = proxyModel "auto/gpt-6.1-terra:xhigh";
       solModel = {
         model = proxyModel "auto/gpt-6.1-sol";
         thinking_level = "high";
@@ -88,7 +89,7 @@ in {
 
           ${agentContext.rules}
         '';
-        ".omp/agent/rules/director.md".source = ../../../../../data/omp/rules/director.md;
+        ".omp/agent/rules/director.md".text = builtins.replaceStrings ["@taskModel@"] [taskModel] (builtins.readFile ../../../../../data/omp/rules/director.md);
         ".omp/agent/rules/worker.md".source = ../../../../../data/omp/rules/worker.md;
         ".omp/agent/agents" = {
           source = ../../../../../data/omp/agents;
@@ -156,8 +157,8 @@ in {
             default = proxyModel "auto/claude-opus-5-5:max";
             slow = proxyModel "auto/claude-opus-5-5:max";
             plan = proxyModel "auto/claude-opus-5-5:max";
-            task = proxyModel "auto/gpt-6.1-terra:xhigh";
-            smol = proxyModel "auto/gpt-6.1-terra:xhigh";
+            task = taskModel;
+            smol = taskModel;
             docs = proxyModel "auto/gemini-4-argon";
             commit = proxyModel "auto/claude-opus-5-5:low";
             tiny = proxyModel "auto/claude-opus-5-5:low";
@@ -180,6 +181,7 @@ in {
 
           task = {
             agentModelOverrides.security-reviewer = [(proxyModel "auto/deepseek-v4.1-flash:max")];
+            perCallModel = "on";
             showResolvedModelBadge = true;
           };
 

@@ -23,6 +23,13 @@
 
     darwin.homebrew = {
       brews = [
+        "anylinuxfs"
+        # required by anylinuxfs
+        "json-c"
+        "libunistring"
+        "gettext"
+        "util-linux"
+
         "mole"
       ];
       casks = [

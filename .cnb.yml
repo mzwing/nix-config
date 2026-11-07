@@ -33,12 +33,17 @@ $:
         # Needs the agenix key
         - name: restore projects
           script: workspace-snapshot restore
+        # Needs unlocked secrets and restored projects for materialization
+        - name: sync agent sessions
+          script: systemctl3 --user start baton-sync
         - name: join tailnet
           script: systemctl3 start tailscaled tailscaled-autoconnect
         # Once its password is decrypted
         - name: start paseo
           script: systemctl3 start paseo
       endStages:
+        - name: sync agent sessions
+          script: baton-sync
         - name: save projects
           script: workspace-snapshot save
         # Frees the hostname for the next workspace now; an ephemeral node otherwise lingers 30–60 minutes after going offline.
