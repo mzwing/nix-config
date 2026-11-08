@@ -12,6 +12,8 @@ master:
       stages:
         - name: build and push image
           script: docker buildx build -f modules/hosts/nixos/mzwing-cnb/Dockerfile -t "$IMAGE" --output type=registry,compression=zstd,oci-mediatypes=true .
+          # Also the no-output limit, 10m by default; nix prints nothing while a large NAR downloads
+          timeout: 1h
 
 $:
   vscode:
