@@ -17,6 +17,7 @@
       "nixos/server/zram"
       "software/ai/magpie"
       "software/editor/neovim"
+      "software/network/syncthing"
       "software/network/tailscale"
       "software/security/gpg"
       "software/security/ssh"

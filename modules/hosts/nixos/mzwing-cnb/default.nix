@@ -22,6 +22,7 @@
       "software/development/tools"
       "software/editor/code-server"
       "software/editor/neovim"
+      "software/network/syncthing"
       "software/network/tailscale"
       "software/security/gpg"
       "software/security/ssh"

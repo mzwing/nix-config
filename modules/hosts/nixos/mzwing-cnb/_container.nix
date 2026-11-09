@@ -3,17 +3,10 @@
   hostname,
   lib,
   pkgs,
-  secrets,
   ...
 }: let
   hm = config.home-manager.users.root;
-  identities = import ../../../../data/identities.nix;
-
-  # The workspace opens a snapshot with its own key, the Mac with the agenix one
-  snapshotRecipients = lib.concatMapStringsSep " " (key: "-r ${lib.escapeShellArg key}") [
-    identities.hosts.mzwing-cnb
-    identities.age.mzwing
-  ];
+  syncthing = import ../../../../data/syncthing.nix;
 
   # Where Remote-SSH's server keeps each profile's extension list; without relativeLocation it loads them from the store instead of its own extensions dir.
   vscodeServer = pkgs.linkFarm "vscode-server" (lib.mapAttrsToList (name: profile: {
@@ -64,8 +57,6 @@ in {
     home.activation.gitconfig = lib.hm.dag.entryAfter ["linkGeneration"] ''
       run touch ~/.gitconfig
     '';
-
-    age.secrets.registry-token.file = secrets."cnb/registry-token";
   };
 
   # Run by the vscode pipeline in .cnb.yml, once CNB has injected AGENIX_KEY and mounted its own /root/.vscode-server over the image's.
@@ -77,51 +68,45 @@ in {
       install -D -m 600 /dev/stdin /root/.ssh/agenix <<<"$AGENIX_KEY"
       exec systemctl3 --user start agenix
     '')
-    # Carries /root/repos from one workspace to the next through the registry, encrypted since nix-config's is public
     (pkgs.writeShellApplication {
-      name = "workspace-snapshot";
-      runtimeInputs = with pkgs; [age crane curl fd git gnutar zstd];
+      name = "repos-sync-wait";
+      runtimeInputs = with pkgs; [curl jq xmlstarlet];
       text = ''
-        ref="$CNB_DOCKER_REGISTRY/$CNB_REPO_SLUG_LOWERCASE/workspace-snapshot"
-        # Only a workspace that restored the snapshot may replace it, or a failed restore would save an empty tree over it
-        restored=/run/workspace-snapshot-restored
-        crane auth login "$CNB_DOCKER_REGISTRY" -u "$CNB_TOKEN_USER_NAME" --password-stdin <<<"$CNB_TOKEN"
-
         case "''${1:-}" in
-          restore)
-            crane export "$ref:latest" - | tar -xOf - snapshot | age -d -i /root/.ssh/agenix | zstd -d | tar -x -C /root
-            touch "$restored"
-            ;;
-          save)
-            if [ ! -e "$restored" ]; then
-              echo "workspace-snapshot: this workspace restored nothing, so the snapshot stays as it is" >&2
-              exit 1
-            fi
-            dir=$(mktemp -d)
-            # Git-ignored devenv state and anything over 1 MiB, the size of caches and build outputs, stay out to come back from the network; small ignored files like keystores travel along
-            fd -HI --prune --base-directory /root '^\.git$' repos | while read -r gitdir; do
-              repo=$(dirname "$gitdir")
-              git -C "/root/$repo" ls-files -z --others --ignored --exclude-standard --directory | while IFS= read -r -d "" path; do
-                if [[ ''${path%/} =~ (^|/)\.(devenv|direnv)$ ]] || [ "$(du -sk "/root/$repo/$path" | cut -f1)" -gt 1024 ]; then
-                  echo "$repo/''${path%/}"
-                fi
-              done
-            done >"$dir/excludes"
-            tar -C /root --anchored --no-wildcards -X "$dir/excludes" -cf - repos | zstd -T0 | age ${snapshotRecipients} >"$dir/snapshot"
-            tar -C "$dir" -cf "$dir/layer.tar" snapshot
-            old_latest=$(crane digest "$ref:latest")
-            crane append -f "$dir/layer.tar" -t "$ref:latest"
-            # The registry refuses deletes by digest; deleting a snapshot's only tag through the API deletes it
-            curl -fsS -X DELETE -H "Authorization: Bearer $(<"${hm.age.secrets.registry-token.path}")" -H 'Accept: application/vnd.cnb.api+json' "$CNB_API_ENDPOINT/$CNB_REPO_SLUG/-/packages/docker/''${CNB_REPO_SLUG_LOWERCASE##*/}%2Fworkspace-snapshot/-/tag/previous"
-            # The one just replaced stays as a fallback
-            crane tag "$ref@$old_latest" previous
-            rm -r "$dir"
-            ;;
+          pull|push) ;;
           *)
-            echo "usage: workspace-snapshot restore|save" >&2
+            echo "usage: repos-sync-wait pull|push" >&2
             exit 2
             ;;
         esac
+
+        hub_id=${lib.escapeShellArg syncthing.devices.${syncthing.hub}.id}
+        api_key=$(xmlstarlet sel -t -v /configuration/gui/apikey /root/.local/state/syncthing/config.xml)
+        api=http://${hm.services.syncthing.guiAddress}/rest
+
+        if [ "$1" = push ]; then
+          echo "repos-sync-wait: scanning repos"
+          curl -fsS -X POST -H "X-API-Key: $api_key" "$api/db/scan?folder=repos"
+        fi
+
+        while :; do
+          connections=$(curl -fsS -H "X-API-Key: $api_key" "$api/system/connections")
+          status=$(curl -fsS -H "X-API-Key: $api_key" "$api/db/status?folder=repos")
+          connected=$(jq -r --arg hub_id "$hub_id" '.connections[$hub_id].connected' <<<"$connections")
+          if [ "$1" = pull ]; then
+            echo "repos-sync-wait: hub connected=$connected, $(jq -c '{state, needTotalItems, globalTotalItems}' <<<"$status")"
+            if [ "$connected" = true ] && jq -e '.state == "idle" and .needTotalItems == 0 and .globalTotalItems > 0' <<<"$status" >/dev/null; then
+              break
+            fi
+          else
+            completion=$(curl -fsS -H "X-API-Key: $api_key" "$api/db/completion?folder=repos&device=$hub_id")
+            echo "repos-sync-wait: hub connected=$connected, $(jq -c '{state}' <<<"$status"), $(jq -c '{completion, needItems, remoteState}' <<<"$completion")"
+            if [ "$connected" = true ] && jq -e '.state == "idle"' <<<"$status" >/dev/null && jq -e '.completion == 100 and .needItems == 0 and .remoteState == "valid"' <<<"$completion" >/dev/null; then
+              break
+            fi
+          fi
+          sleep 30
+        done
       '';
     })
   ];

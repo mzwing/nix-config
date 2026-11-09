@@ -62,12 +62,6 @@ in {
     recipients = ownedBy "mzwing-cnb";
   };
 
-  # A CNB access token limited to this repository, with registry-package-delete: workspace-snapshot deletes the snapshot it replaces, which a workspace's own CNB_TOKEN can't
-  "cnb/registry-token" = {
-    file = ./cnb/registry-token.age;
-    recipients = ownedBy "mzwing-cnb";
-  };
-
   "do-sgp/network/private" = {
     file = ./do-sgp/network/private.age;
     recipients = ownedBy "mzwing-do-sgp";
@@ -187,6 +181,21 @@ in {
   "subs-check/self/sci" = {
     file = ./subs-check/self/sci.age;
     recipients = [mzwing];
+  };
+
+  "syncthing/mzwing-MacBook-Pro" = {
+    file = ./syncthing/mzwing-MacBook-Pro.age;
+    recipients = [mzwing];
+  };
+
+  "syncthing/mzwing-cnb" = {
+    file = ./syncthing/mzwing-cnb.age;
+    recipients = ownedBy "mzwing-cnb";
+  };
+
+  "syncthing/mzwing-huaweicloud-gz" = {
+    file = ./syncthing/mzwing-huaweicloud-gz.age;
+    recipients = ownedBy "mzwing-huaweicloud-gz";
   };
 
   # `tskey-client-…` of an OAuth client tagged tag:container alone, so a container can't mint itself a tag:server key. Every container selecting software/network/tailscale belongs on this list

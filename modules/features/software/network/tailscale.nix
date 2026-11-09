@@ -1,6 +1,6 @@
 let
   relayPort = 40000;
-  userspaceProxy = "localhost:1055";
+  inherit (import ../../../../data/tailscale.nix) userspaceProxy;
 in {
   mzwing.features."software/network/tailscale" = {
     meta.platforms = [
