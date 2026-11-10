@@ -62,6 +62,12 @@ in {
     recipients = ownedBy "mzwing-cnb";
   };
 
+  # A CNB access token limited to this repository, with registry-package-delete: workspace-snapshot deletes the snapshot it replaces, which a workspace's own CNB_TOKEN can't
+  "cnb/registry-token" = {
+    file = ./cnb/registry-token.age;
+    recipients = ownedBy "mzwing-cnb";
+  };
+
   "do-sgp/network/private" = {
     file = ./do-sgp/network/private.age;
     recipients = ownedBy "mzwing-do-sgp";

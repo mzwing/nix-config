@@ -32,6 +32,9 @@ $:
         # AGENIX_KEY comes from the personal env vars set in CNB's workspace settings.
         - name: unlock secrets
           script: agenix-unlock
+        # Needs the agenix key
+        - name: restore projects
+          script: workspace-snapshot restore
         - name: join tailnet
           script: systemctl3 start tailscaled tailscaled-autoconnect
         # Once its password is decrypted
@@ -43,12 +46,15 @@ $:
         - name: pull projects
           script: repos-sync-wait pull
           timeout: 1h
-        # Needs unlocked secrets and synced projects for materialization
+        # Needs unlocked secrets plus restored and synced projects for materialization
         - name: sync agent sessions
           script: systemctl3 --user start baton-sync
       endStages:
         - name: sync agent sessions
           script: baton-sync
+        # Before the push, whose wait on the hub can take an hour: these repos have no other copy
+        - name: save projects
+          script: workspace-snapshot save
         - name: push projects
           script: repos-sync-wait push
           timeout: 1h
