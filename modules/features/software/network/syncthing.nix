@@ -27,6 +27,14 @@ let
     /cache
   '';
 
+  mkStignore = lib: hostname: let
+    device = syncthing.devices.${hostname};
+  in
+    ignorePatterns
+    + lib.optionalString (device ? repos) ''
+      ${lib.concatMapStrings (repo: "!/${repo}\n") device.repos}*
+    '';
+
   mkSettings = lib: hostname: path: let
     peers = lib.filterAttrs (name: _: name != hostname) syncthing.devices;
   in {
@@ -83,7 +91,7 @@ in {
 
         systemd.tmpfiles.rules = [
           "d ${repos} 0750 ${config.services.syncthing.user} ${config.services.syncthing.group} -"
-          "L+ ${repos}/.stignore - - - - ${pkgs.writeText "syncthing-stignore" ignorePatterns}"
+          "L+ ${repos}/.stignore - - - - ${pkgs.writeText "syncthing-stignore" (mkStignore lib hostname)}"
         ];
         networking.firewall.interfaces.tailscale0.allowedTCPPorts = [22000];
       };
@@ -106,7 +114,7 @@ in {
           settings = mkSettings lib hostname "${config.home.homeDirectory}/repos";
         };
 
-        home.file."repos/.stignore".text = ignorePatterns;
+        home.file."repos/.stignore".text = mkStignore lib hostname;
 
         # Syncthing carries only mtime and size, so full stat checks rewrite every synced index
         programs.git.includes = [

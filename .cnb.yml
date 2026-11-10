@@ -39,7 +39,7 @@ $:
           script: systemctl3 start paseo
         - name: start syncthing
           script: systemctl3 --user start syncthing syncthing-init
-        # The first pull downloads the whole tree
+        # The first pull downloads every listed repo
         - name: pull projects
           script: repos-sync-wait pull
           timeout: 1h
