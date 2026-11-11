@@ -100,12 +100,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-9SONwXkaUHfoW0IhWt0sKXeWgEXkaK02Wv24rmpZF4E=",
+        "hash": "sha256-0WCCO8qBe/s1uCKfQs3VRoGdvuIrXJNYxlMmUsMxjdA=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "394ec5fb709dde21acb41644ced56cd125257b34",
+        "revision": "4016c9c2ed5635eb1488d83bcd1e1a5bf7e3541f",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -151,16 +151,16 @@
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-RlmtgKZUBdLIZnJqwXL7uCOn1bm0qFU4FO5AaGVODVw=",
+        "hash": "sha256-K4xCSpt8jnkTx8FDEa2cXrzMjpRkYOwTiFqPap6iCYU=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "26dc8e4755a11fea22ed788256c3db50001b013d",
+        "revision": "e781cb4d07433dfe1d19e924ed45cc61738c55ec",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/26dc8e4755a11fea22ed788256c3db50001b013d.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/e781cb4d07433dfe1d19e924ed45cc61738c55ec.tar.gz"
       }
     },
     "version": 8
