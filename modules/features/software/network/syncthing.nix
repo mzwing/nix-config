@@ -6,10 +6,13 @@ let
   outsideDotDirs = name: "(?d)/*/*/{,[!.]*/,[!.]*/**/}${name}";
 
   # No dist, and .codegraph keeps its .gitignore: some repos commit them
+  # devenv writes hooks and pre-commit config pointing to each machine's own Nix store
   ignorePatterns = ''
     (?d).DS_Store
     (?d).devenv
     (?d).direnv
+    (?d)/*/*/.git/hooks
+    (?d).pre-commit-config.yaml
     (?d)node_modules
     ${outsideDotDirs "target"}
     ${outsideDotDirs "build"}

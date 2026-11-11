@@ -12,6 +12,7 @@
       hostname,
       inputs,
       lib,
+      osConfig,
       pkgs,
       secrets,
       system,
@@ -31,10 +32,12 @@
       projects = "${homeDirectory}/repos";
       repoRoots = ["/Users/mzwing/repos" "/root/repos"];
       pathMap = lib.concatStringsSep ":" (map (root: "${root}=${projects}") (lib.filter (root: root != projects) repoRoots));
+      paseo = osConfig.services.paseo or {enable = false;};
       agents =
         lib.optional (config.programs.omp.enable or false) "omp"
         ++ lib.optional (config.programs.pi-coding-agent.enable or false) "pi"
-        ++ lib.optional (config.programs.claude-code.enable or false) "claude";
+        ++ lib.optional (config.programs.claude-code.enable or false) "claude"
+        ++ lib.optional paseo.enable "paseo";
       credentialHelper = pkgs.writeShellScript "agent-history-credential" ''
         [ "$1" = get ] || exit 0
         echo username=cnb
@@ -42,7 +45,7 @@
       '';
       script = pkgs.writeShellApplication {
         name = "baton-sync";
-        runtimeInputs = [baton pkgs.git pkgs.git-crypt pkgs.flock pkgs.coreutils];
+        runtimeInputs = [baton pkgs.git pkgs.git-crypt pkgs.flock pkgs.coreutils] ++ lib.optional paseo.enable paseo.package;
         text = ''
           export BATON_HOME=${lib.escapeShellArg dataDir}
           export BATON_HOST=${lib.escapeShellArg hostname}

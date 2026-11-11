@@ -1,4 +1,16 @@
-{
+let
+  # Providers left out keep Paseo's default, which turns most of them on
+  providers = {
+    omp.enabled = true;
+    pi.enabled = true;
+    antigravity.enabled = false;
+    claude.enabled = false;
+    codex.enabled = false;
+    copilot.enabled = false;
+    muse.enabled = false;
+    opencode.enabled = false;
+  };
+in {
   mzwing.features."software/ai/paseo" = {
     meta.platforms = [
       "darwin"
@@ -54,6 +66,7 @@
             relay.enable = false;
             hostnames = [hostname];
             settings = {
+              agents.providers = providers;
               daemon.mcp.injectIntoAgents = true;
               pluginsEnabled = true;
             };
@@ -94,20 +107,39 @@
       ];
     };
 
-    # A container decrypts only the user's secrets, so the password is linked to where a system secret would land
     home = {
+      config,
       hostname,
       lib,
       osConfig,
+      pkgs,
       secrets,
       type,
       ...
-    }:
-      lib.mkIf (type == "container") {
-        age.secrets.paseo-password = {
-          file = secrets."${lib.removePrefix "mzwing-" hostname}/paseo/password";
-          path = "${osConfig.age.secretsDir}/paseo-password";
-        };
+    }: let
+      mergeProviders = pkgs.writeShellApplication {
+        name = "paseo-merge-providers";
+        runtimeInputs = [pkgs.jq];
+        text = ''
+          umask 077
+          jq --argjson settings ${lib.escapeShellArg (builtins.toJSON {agents.providers = providers;})} '. * $settings' "$1" > "$1.tmp"
+          mv "$1.tmp" "$1"
+        '';
       };
+    in {
+      # A container decrypts only the user's secrets, so the password is linked to where a system secret would land
+      age.secrets.paseo-password = lib.mkIf (type == "container") {
+        file = secrets."${lib.removePrefix "mzwing-" hostname}/paseo/password";
+        path = "${osConfig.age.secretsDir}/paseo-password";
+      };
+
+      # Paseo.app writes its own settings to this file, so it can't be a store link
+      home.activation.paseoProviders = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
+        config=${lib.escapeShellArg "${config.home.homeDirectory}/.paseo/config.json"}
+        if [[ -f $config ]]; then
+          run ${lib.getExe mergeProviders} "$config"
+        fi
+      '');
+    };
   };
 }
