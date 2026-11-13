@@ -100,12 +100,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-c22fcvVFWOLb7YJQr0HX9lv25fj2ohpe/Ix8m87M1vQ=",
+        "hash": "sha256-fL8GMaoi3RBq/BmSZtpj6PtE5HbhbZoSdQDGMzhJrxo=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "55e0681a5e87b6f042595bf5d10cc9d1d7b771ae",
+        "revision": "7c0d73ae8ab8db18f7754095b0c2b1c95c28ca44",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -138,29 +138,29 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-M7LppMGBC22nbe1A9EMklP7Xzwizljev/bpOuUchUpg=",
+        "hash": "sha256-k3ZwHxQp2SuX16H4I6lVqx6v56dYtCQX42atWGkk1dQ=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "96eba381b14a90f90489e9b4bdaca9a8fa3817a3",
+        "revision": "006477618d7aeca481078691729737d6ec59f871",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/96eba381b14a90f90489e9b4bdaca9a8fa3817a3.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/006477618d7aeca481078691729737d6ec59f871.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-K4xCSpt8jnkTx8FDEa2cXrzMjpRkYOwTiFqPap6iCYU=",
+        "hash": "sha256-ADvbHoiYUSsvXAjEGKwE4cAjnl1Fk3ztr2UthP/dLHM=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "e781cb4d07433dfe1d19e924ed45cc61738c55ec",
+        "revision": "b716f9dc2ba36b6aa8f0080615e5a3a6caeac63b",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/e781cb4d07433dfe1d19e924ed45cc61738c55ec.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/b716f9dc2ba36b6aa8f0080615e5a3a6caeac63b.tar.gz"
       }
     },
     "version": 8
