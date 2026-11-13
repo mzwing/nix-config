@@ -141,7 +141,18 @@ in {
 
       programs.omp = {
         enable = true;
-        package = inputs.llm-agents.packages.${system}.omp;
+        package = let
+          omp = inputs.llm-agents.packages.${system}.omp;
+        in
+          pkgs.symlinkJoin {
+            name = "omp-wrapped-${omp.version}";
+            paths = [omp];
+            nativeBuildInputs = [pkgs.makeWrapper];
+            # For the eval tool's Python backend
+            postBuild = ''
+              wrapProgram $out/bin/omp --suffix PATH : ${lib.makeBinPath [pkgs.python3]}
+            '';
+          };
         plugins = [
           "@cortexkit/pi-magic-context"
         ];

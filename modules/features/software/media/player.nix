@@ -28,6 +28,7 @@
       "piliplus"
       "vlc"
       "xld"
+      "rune@alpha"
     ];
   };
 }
