@@ -9,6 +9,7 @@
 
     home = {
       config,
+      features,
       hostname,
       inputs,
       lib,
@@ -33,10 +34,14 @@
       repoRoots = ["/Users/mzwing/repos" "/root/repos"];
       pathMap = lib.concatStringsSep ":" (map (root: "${root}=${projects}") (lib.filter (root: root != projects) repoRoots));
       paseo = osConfig.services.paseo or {enable = false;};
+      agentByHarness = {
+        claude-code = "claude";
+        omp = "omp";
+        pi-coding-agent = "pi";
+        zcode = "zcode";
+      };
       agents =
-        lib.optional (config.programs.omp.enable or false) "omp"
-        ++ lib.optional (config.programs.pi-coding-agent.enable or false) "pi"
-        ++ lib.optional (config.programs.claude-code.enable or false) "claude"
+        lib.attrValues (lib.filterAttrs (harness: _: lib.elem "software/ai/harness/${harness}" features) agentByHarness)
         ++ lib.optional paseo.enable "paseo";
       credentialHelper = pkgs.writeShellScript "agent-history-credential" ''
         [ "$1" = get ] || exit 0

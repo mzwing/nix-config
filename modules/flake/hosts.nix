@@ -31,6 +31,7 @@
     specialArgs = {
       inherit inputs;
       secrets = secretPaths;
+      features = map (feature: feature.name) features;
       inherit
         (host)
         hostname
