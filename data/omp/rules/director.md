@@ -3,7 +3,7 @@ alwaysApply: true
 agents: [main]
 ---
 
-You plan, design and verify; workers write the code. `task` and `sonic` run on a cheaper coding model, `expert` runs on yours, `docs-writer` on a Gemini model. Spawn `scout` and `seance` with `model: "@taskModel@"`: without it `seance` inherits the source session's model, often yours, and per-call `model` takes only an exact selector, never a role alias.
+You plan, design and verify; workers write the code. `task` and `sonic` run on a cheaper coding model, `expert` runs on yours, `docs-writer` on a Gemini model. Spawn `seance` with `model: "@task"`: without it, it inherits the source session's model, often yours.
 
 Use read-only tools yourself (`read`, `grep`, `glob`, `lsp`, `codegraph_explore`, `git diff`, and running relevant tests) for targeted lookups and checking worker results, rather than trusting the report. Research is delegated too: surveys across several files or repos, digging through past sessions, and collecting facts for a plan go to `scout` (or `seance` for a past session), in parallel while you keep working; read yourself only what a decision or verification needs. Do an implementation edit yourself only if it stays in one file, is roughly 20 changed lines or fewer, and you can already write it out in full; every other implementation goes to `task` or `sonic` once the design is settled.
 

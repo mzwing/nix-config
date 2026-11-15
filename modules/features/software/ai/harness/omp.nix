@@ -61,6 +61,21 @@ in {
         model = proxyModel "auto/deepseek-v4.1-flash";
         thinking_level = "high";
       };
+      teams = {
+        default = {
+          default = proxyModel "auto/claude-opus-5-5:max";
+          slow = proxyModel "auto/claude-opus-5-5:max";
+          plan = proxyModel "auto/claude-opus-5-5:max";
+          task = taskModel;
+          smol = taskModel;
+          docs = proxyModel "auto/gemini-4-argon";
+          commit = proxyModel "auto/claude-opus-5-5:low";
+          tiny = proxyModel "auto/claude-opus-5-5:low";
+          # A custom role for security-reviewer, so switching presets switches it too
+          security = proxyModel "auto/deepseek-v4.1-flash:max";
+        };
+        sensitive = lib.mapAttrs (_: _: proxyModel "auto/glm-5.3-flash") teams.default;
+      };
     in {
       imports = [
         inputs.nur.repos.mzwing.modules.homeManager.magic-context
@@ -89,7 +104,7 @@ in {
 
           ${agentContext.rules}
         '';
-        ".omp/agent/rules/director.md".text = builtins.replaceStrings ["@taskModel@"] [taskModel] (builtins.readFile ../../../../../data/omp/rules/director.md);
+        ".omp/agent/rules/director.md".source = ../../../../../data/omp/rules/director.md;
         ".omp/agent/rules/worker.md".source = ../../../../../data/omp/rules/worker.md;
         ".omp/agent/agents" = {
           source = ../../../../../data/omp/agents;
@@ -164,16 +179,8 @@ in {
           compaction.enabled = false;
           memory.backend = "off";
 
-          modelRoles = {
-            default = proxyModel "auto/claude-opus-5-5:max";
-            slow = proxyModel "auto/claude-opus-5-5:max";
-            plan = proxyModel "auto/claude-opus-5-5:max";
-            task = taskModel;
-            smol = taskModel;
-            docs = proxyModel "auto/gemini-4-argon";
-            commit = proxyModel "auto/claude-opus-5-5:low";
-            tiny = proxyModel "auto/claude-opus-5-5:low";
-          };
+          modelRoles = teams.default;
+          modelPresets = lib.mapAttrs (_: modelRoles: {inherit modelRoles;}) teams;
           defaultThinkingLevel = "xhigh";
           symbolPreset = "nerd";
 
@@ -182,16 +189,19 @@ in {
           retry = {
             enabled = true;
             maxRetries = 3;
-            fallbackChains = {
-              default = map proxyModel ["auto/gpt-6.1-sol" "auto/deepseek-v4.1-flash"];
-              smol = [(proxyModel "auto/claude-sonnet-5-5:xhigh")];
-              commit = [(proxyModel "auto/deepseek-v4.1-flash:low")];
-              tiny = [(proxyModel "auto/deepseek-v4.1-flash:low")];
-            };
+            fallbackChains =
+              {
+                default = map proxyModel ["auto/gpt-6.1-sol" "auto/deepseek-v4.1-flash"];
+                smol = [(proxyModel "auto/claude-sonnet-5-5:xhigh")];
+                commit = [(proxyModel "auto/deepseek-v4.1-flash:low")];
+                tiny = [(proxyModel "auto/deepseek-v4.1-flash:low")];
+              }
+              # Suffixless model keys win over role keys at any effort, so the sensitive team never falls back to the default team's models
+              // lib.genAttrs (lib.unique (map (model: lib.head (lib.splitString ":" model)) (lib.attrValues teams.sensitive))) (_: []);
           };
 
           task = {
-            agentModelOverrides.security-reviewer = [(proxyModel "auto/deepseek-v4.1-flash:max")];
+            agentModelOverrides.security-reviewer = ["@security"];
             perCallModel = "on";
             showResolvedModelBadge = true;
           };
