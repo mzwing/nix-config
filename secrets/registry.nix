@@ -14,7 +14,11 @@ in {
   # git-crypt's symmetric key for MZWNET/agent-history, the repository baton-sync keeps agent sessions in
   "baton/git-crypt-key" = {
     file = ./baton/git-crypt-key.age;
-    recipients = ownedBy "mzwing-cnb";
+    recipients = [
+      mzwing
+      hosts.mzwing-cnb
+      hosts.mzwing-instabox
+    ];
   };
 
   # `CLOUDFLARE_DNS_API_TOKEN=…`, a token that may edit the zone's DNS records for ACME challenges. Every host with a site belongs on this list.
@@ -47,7 +51,11 @@ in {
   # A CNB access token limited to MZWNET/agent-history with repo-code:rw, which baton-sync pushes with
   "cnb/agent-history-token" = {
     file = ./cnb/agent-history-token.age;
-    recipients = ownedBy "mzwing-cnb";
+    recipients = [
+      mzwing
+      hosts.mzwing-cnb
+      hosts.mzwing-instabox
+    ];
   };
 
   # cnb/magpie/<server>: the key `magpie gateway-key add mzwing-cnb` printed on that server, as CNB runs no gateway of its own
@@ -204,14 +212,9 @@ in {
     recipients = ownedBy "mzwing-huaweicloud-gz";
   };
 
-  # `tskey-client-…` of an OAuth client tagged tag:container alone, so a container can't mint itself a tag:server key. Every container selecting software/network/tailscale belongs on this list
-  "tailscale/container-oauth-secret" = {
-    file = ./tailscale/container-oauth-secret.age;
-    recipients = [
-      mzwing
-      hosts.mzwing-cnb
-      hosts.mzwing-instabox
-    ];
+  "syncthing/mzwing-instabox" = {
+    file = ./syncthing/mzwing-instabox.age;
+    recipients = ownedBy "mzwing-instabox";
   };
 
   # Every NixOS host selecting software/network/tailscale, or software/network/sing-box as a server, belongs on this list.
@@ -222,6 +225,7 @@ in {
       hosts.mzwing-azure
       hosts.mzwing-cnb
       hosts.mzwing-huaweicloud-gz
+      hosts.mzwing-instabox
       hosts.mzwing-lycheen-us
     ];
   };

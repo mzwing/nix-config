@@ -3,8 +3,15 @@
     meta.platforms = ["nixos"];
 
     # Booted by systemd-nspawn on another distro and sharing that machine's network, as `just nspawn-install` sets it up
-    nixos = {hostname, ...}: {
+    nixos = {
+      hostname,
+      username,
+      ...
+    }: {
       boot.isNspawnContainer = true;
+
+      # Home Manager's user services (agenix, syncthing, baton-sync) must run without anyone logged in
+      users.users.${username}.linger = true;
 
       networking = {
         hostName = hostname;

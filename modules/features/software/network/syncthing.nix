@@ -41,15 +41,7 @@ let
   mkSettings = lib: hostname: path: let
     peers = lib.filterAttrs (name: _: name != hostname) syncthing.devices;
   in {
-    options = {
-      globalAnnounceEnabled = false;
-      localAnnounceEnabled = false;
-      relaysEnabled = false;
-      natEnabled = false;
-      urAccepted = -1;
-      crashReportingEnabled = false;
-      listenAddresses = ["tcp://0.0.0.0:22000"];
-    };
+    inherit options;
     devices =
       lib.mapAttrs (_: peer: {
         inherit (peer) id;
@@ -61,6 +53,28 @@ let
       devices = builtins.attrNames peers;
     };
   };
+
+  options = {
+    globalAnnounceEnabled = false;
+    localAnnounceEnabled = false;
+    relaysEnabled = false;
+    natEnabled = false;
+    urAccepted = -1;
+    crashReportingEnabled = false;
+    listenAddresses = ["tcp://0.0.0.0:22000"];
+  };
+
+  # A first start would otherwise dial relays and STUN until syncthing-init patches the options, which InstaBox's abuse check took for a port scan
+  initialConfig = lib:
+    lib.concatStrings (
+      ["<configuration>\n  <options>\n"]
+      ++ lib.mapAttrsToList (name: value:
+        if name == "listenAddresses"
+        then lib.concatMapStrings (address: "    <listenAddress>${address}</listenAddress>\n") value
+        else "    <${name}>${lib.generators.mkValueStringDefault {} value}</${name}>\n")
+      options
+      ++ ["  </options>\n</configuration>\n"]
+    );
 in {
   mzwing.features."software/network/syncthing" = {
     meta.platforms = ["darwin" "nixos"];
@@ -103,6 +117,7 @@ in {
       config,
       hostname,
       lib,
+      pkgs,
       secrets,
       type,
       ...
@@ -118,6 +133,13 @@ in {
         };
 
         home.file."repos/.stignore".text = mkStignore lib hostname;
+
+        home.activation.syncthingInitialConfig = lib.mkIf pkgs.stdenv.hostPlatform.isLinux (lib.hm.dag.entryBetween ["reloadSystemd"] ["writeBoundary"] ''
+          config=${lib.escapeShellArg "${config.xdg.stateHome}/syncthing/config.xml"}
+          if [[ ! -e $config ]]; then
+            run install -Dm600 ${pkgs.writeText "syncthing-config.xml" (initialConfig lib)} "$config"
+          fi
+        '');
 
         # Syncthing carries only mtime and size, so full stat checks rewrite every synced index
         programs.git.includes = [

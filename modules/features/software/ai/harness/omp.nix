@@ -39,6 +39,7 @@ in {
     requires = [
       "software/vcs/git"
       "software/ai/magpie-client"
+      "software/development/wakatime"
     ];
 
     home = {
@@ -170,6 +171,7 @@ in {
           };
         plugins = [
           "@cortexkit/pi-magic-context"
+          "omp-wakatime"
         ];
         settings = {
           # config.yml is reinstalled on every switch, so without this omp reruns its setup wizard each time.
