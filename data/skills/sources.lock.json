@@ -100,12 +100,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-V00CpNWcMmCaqrcRU2iBzxeGkO4paqhTr1LZ/amotCA=",
+        "hash": "sha256-vn/H6nxQR77Lzf/iLF2qqTmGSKAA7TxJdijk25S1Qj8=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "16462622c1ef336196e6dcd6ab281efed3f25d7a",
+        "revision": "5c72d4fdb09f9446da9c64039313d23d8aa6a001",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -138,29 +138,29 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-YZT5Y97yt70qNOi11Wxp98bCU8oJvLUHbME21OQ7u9c=",
+        "hash": "sha256-7rGX197JzZq9rqv71uFTxTLtiFwNT6miAuFrqLXR4sI=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "7354c1782fd0e3cad1e46823aa451c33c0cec233",
+        "revision": "57f4586f1d2e1400844f36b2eeaab8136837501c",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/7354c1782fd0e3cad1e46823aa451c33c0cec233.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/57f4586f1d2e1400844f36b2eeaab8136837501c.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-ADvbHoiYUSsvXAjEGKwE4cAjnl1Fk3ztr2UthP/dLHM=",
+        "hash": "sha256-Mc5DOu9W6cY5YdzN4vX6UzOICyj3U3MvhHXym6S9xd0=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "b716f9dc2ba36b6aa8f0080615e5a3a6caeac63b",
+        "revision": "57217cf86ba38148a57af9e90d14a4c049558330",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/b716f9dc2ba36b6aa8f0080615e5a3a6caeac63b.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/57217cf86ba38148a57af9e90d14a4c049558330.tar.gz"
       }
     },
     "version": 8
