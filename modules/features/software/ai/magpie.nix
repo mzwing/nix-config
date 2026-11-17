@@ -25,6 +25,7 @@ in {
     darwin = {
       config,
       inputs,
+      pkgs,
       system,
       username,
       ...
@@ -38,7 +39,9 @@ in {
         # A Claude subscription is answered through Claude Code.
         inputs.llm-agents.packages.${system}.claude-code
         # Antigravity is managed through its CLI since Google banned magpie's own sign-in
-        inputs.llm-agents.packages.${system}.antigravity-cli
+        (pkgs.nur.repos.mzwing.antigravity-cli-modified.override {
+          inherit (inputs.llm-agents.packages.${system}) antigravity-cli;
+        })
         # `path` replaces launchd's PATH instead of adding to it.
         "/usr/bin"
         "/bin"
@@ -62,9 +65,11 @@ in {
       ...
     }: let
       # A Claude subscription is answered through Claude Code, and `magpie accounts add claude` signs in with it from a shell. Antigravity is managed through its CLI since Google banned magpie's own sign-in
-      agents = with inputs.llm-agents.packages.${system}; [
-        claude-code
-        antigravity-cli
+      agents = [
+        inputs.llm-agents.packages.${system}.claude-code
+        (pkgs.nur.repos.mzwing.antigravity-cli-modified.override {
+          inherit (inputs.llm-agents.packages.${system}) antigravity-cli;
+        })
       ];
       lmfpd = pkgs.nur.repos.mzwing.lmfpd;
 

@@ -90,6 +90,7 @@ in {
         permissions.deny = lib.concatMap (cmd: ["command(${cmd})" "command(rtk ${cmd})" "command(rtk bypass ${cmd})"]) ["git commit" "git push"];
         settings = {
           agentMode = "auto";
+          altScreenMode = "always";
           enableTerminalSandbox = true;
           contextWindow = "";
           statusLine = {

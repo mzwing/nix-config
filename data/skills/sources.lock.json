@@ -57,6 +57,25 @@
       },
       "subdir": "."
     },
+    "deja-vu-skills": {
+      "filter": {
+        "maxDepth": 1,
+        "nameRegex": "deja-search"
+      },
+      "idPrefix": null,
+      "pin": {
+        "at": null,
+        "branch": "main",
+        "owner": "vshulcz",
+        "preReleases": false,
+        "releasePrefix": null,
+        "repo": "deja-vu",
+        "submodules": false,
+        "type": "github",
+        "versionUpperBound": null
+      },
+      "subdir": "skills"
+    },
     "so1ve-skills": {
       "filter": {
         "maxDepth": 1,
@@ -135,6 +154,19 @@
         "submodules": false,
         "type": "Git",
         "url": "https://github.com/DCspirit-23/DSH-inspired-Code-Simplification-Skill/archive/8da42ae379f7f95e675704c350fcbd76e1679b61.tar.gz"
+      },
+      "deja-vu-skills": {
+        "branch": "main",
+        "hash": "sha256-AZMkMkrxNi3iU1fas+b/iC6W1llpFsY4cWs0MOZieSs=",
+        "repository": {
+          "owner": "vshulcz",
+          "repo": "deja-vu",
+          "type": "GitHub"
+        },
+        "revision": "621cef8d450835c956e852f999f7530266e6e1de",
+        "submodules": false,
+        "type": "Git",
+        "url": "https://github.com/vshulcz/deja-vu/archive/621cef8d450835c956e852f999f7530266e6e1de.tar.gz"
       },
       "so1ve-skills": {
         "branch": "main",

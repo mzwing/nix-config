@@ -16,7 +16,7 @@
       "software/ai/harness/omp"
       "software/ai/harness/pi-coding-agent"
       "software/ai/mcp"
-      "software/ai/obelisk"
+      "software/ai/deja-vu"
       "software/ai/paseo"
       "software/ai/skills"
       "software/development/tools"
