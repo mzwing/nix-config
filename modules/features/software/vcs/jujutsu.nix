@@ -25,10 +25,9 @@
               backend = "gpg";
             };
 
-            git = {
-              sign-on-push = config.programs.git.signing.signByDefault;
-              private-commits = "description(glob:'wip:*') | description(glob:'private:*')";
-            };
+            git.private-commits = "description(glob:'wip:*') | description(glob:'private:*')";
+
+            revsets.git-sign-on-push = lib.mkIf config.programs.git.signing.signByDefault "~signed() & mine()";
 
             remotes.origin.auto-track-created-bookmarks = "*";
 

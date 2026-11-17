@@ -37,6 +37,8 @@ in {
       launchd.user.agents.magpie.path = [
         # A Claude subscription is answered through Claude Code.
         inputs.llm-agents.packages.${system}.claude-code
+        # Antigravity is managed through its CLI since Google banned magpie's own sign-in
+        inputs.llm-agents.packages.${system}.antigravity-cli
         # `path` replaces launchd's PATH instead of adding to it.
         "/usr/bin"
         "/bin"
@@ -59,7 +61,11 @@ in {
       username,
       ...
     }: let
-      inherit (inputs.llm-agents.packages.${system}) claude-code;
+      # A Claude subscription is answered through Claude Code, and `magpie accounts add claude` signs in with it from a shell. Antigravity is managed through its CLI since Google banned magpie's own sign-in
+      agents = with inputs.llm-agents.packages.${system}; [
+        claude-code
+        antigravity-cli
+      ];
       lmfpd = pkgs.nur.repos.mzwing.lmfpd;
 
       verifyConfig = (pkgs.formats.json {}).generate "magpie-verify.json" {
@@ -121,9 +127,8 @@ in {
             user = username;
           };
 
-          # A Claude subscription is answered through Claude Code, and `magpie accounts add claude` signs in with it from a shell.
-          environment.systemPackages = [claude-code];
-          systemd.services.magpie.path = [claude-code];
+          environment.systemPackages = agents;
+          systemd.services.magpie.path = agents;
 
           # Runs as magpie's own user, so `magpie model disable` edits the settings the gateway reads.
           systemd.services.magpie-verify = {

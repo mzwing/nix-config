@@ -87,11 +87,19 @@
 
         # pi and omp read ~/.agents/skills, so neither needs a target of its own.
         # `link` gives each skill its own home.file entry; the default `symlink-tree` would rsync --delete the agents' own plugins away.
-        targets = lib.genAttrs (["agents"] ++ lib.optional config.programs.claude-code.enable "claude") (name: {
-          enable = true;
-          structure = "link";
-          dest = staticDest name;
-        });
+        targets =
+          lib.genAttrs (["agents"] ++ lib.optional config.programs.claude-code.enable "claude") (name: {
+            enable = true;
+            structure = "link";
+            dest = staticDest name;
+          })
+          // lib.optionalAttrs config.programs.antigravity-cli.enable {
+            antigravity = {
+              enable = true;
+              structure = "link";
+              dest = ".gemini/config/skills";
+            };
+          };
       };
     };
   };

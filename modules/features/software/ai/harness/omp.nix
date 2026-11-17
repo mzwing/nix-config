@@ -62,6 +62,11 @@ in {
         model = proxyModel "auto/deepseek-v4.1-flash";
         thinking_level = "high";
       };
+      sensitiveModels = {
+        main = proxyModel "auto/kimi-k3.1-pro";
+        sub = proxyModel "auto/glm-5.3";
+        flash = proxyModel "auto/glm-5.3-flash";
+      };
       teams = {
         default = {
           default = proxyModel "auto/claude-opus-5-5:max";
@@ -75,7 +80,17 @@ in {
           # A custom role for security-reviewer, so switching presets switches it too
           security = proxyModel "auto/deepseek-v4.1-flash:max";
         };
-        sensitive = lib.mapAttrs (_: _: proxyModel "auto/glm-5.3-flash") teams.default;
+        sensitive = with sensitiveModels; {
+          default = main;
+          slow = main;
+          plan = main;
+          task = sub;
+          smol = sub;
+          docs = sub;
+          security = sub;
+          commit = flash;
+          tiny = flash;
+        };
       };
     in {
       imports = [
@@ -199,7 +214,11 @@ in {
                 tiny = [(proxyModel "auto/deepseek-v4.1-flash:low")];
               }
               # Suffixless model keys win over role keys at any effort, so the sensitive team never falls back to the default team's models
-              // lib.genAttrs (lib.unique (map (model: lib.head (lib.splitString ":" model)) (lib.attrValues teams.sensitive))) (_: []);
+              // (with sensitiveModels; {
+                ${main} = [sub];
+                ${sub} = [flash];
+                ${flash} = [];
+              });
           };
 
           task = {
