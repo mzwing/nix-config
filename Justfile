@@ -53,7 +53,7 @@ nixos host target action='switch' debug='':
     *) printf 'nixos only accepts "debug" as its fourth argument\n' >&2; exit 2 ;;
   esac
 
-  flake_path="$(nix flake metadata --no-write-lock-file --json {{flake_ref}} | jq -r .path)"
+  flake_path="$(nix flake prefetch --json {{flake_ref}} | jq -r .storePath)"
   nix copy --to "ssh-ng://{{target}}" "$flake_path"
   # No --accept-flake-config: flake.nix's China-first bootstrap list would replace the host's own substituters.
   # -t so Ctrl-C or a dropped connection also stops the rebuild on the host; TERM=dumb keeps nix from asking about the flake's nixConfig on that terminal.
@@ -102,7 +102,7 @@ nspawn-install host target machines_dir='/var/lib/machines':
   #!/usr/bin/env bash
   set -euo pipefail
 
-  flake_path="$(nix flake metadata --no-write-lock-file --json {{flake_ref}} | jq -r .path)"
+  flake_path="$(nix flake prefetch --json {{flake_ref}} | jq -r .storePath)"
   src="$(ssh "{{target}}" mktemp -d)"
   tar -C "$flake_path" -cf - . | ssh "{{target}}" tar -xf - -C "$src"
 

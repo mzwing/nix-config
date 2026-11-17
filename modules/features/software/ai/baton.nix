@@ -103,7 +103,11 @@
       };
 
       systemd.user.services.baton-sync = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
-        Unit.Description = "Sync agent sessions";
+        Unit = {
+          Description = "Sync agent sessions";
+          Requires = ["agenix.service"];
+          After = ["agenix.service"];
+        };
         Service.ExecStart = "${loop}";
         Install.WantedBy = ["default.target"];
       };

@@ -152,10 +152,16 @@ in {
           }
         ];
 
-        systemd.user.services.syncthing.Service.Environment = lib.mkIf (type == "container") [
-          "all_proxy=socks5://${tailscale.userspaceProxy}"
-          "ALL_PROXY_NO_FALLBACK=1"
-        ];
+        systemd.user.services.syncthing = {
+          Unit = {
+            Requires = ["agenix.service"];
+            After = ["agenix.service"];
+          };
+          Service.Environment = lib.mkIf (type == "container") [
+            "all_proxy=socks5://${tailscale.userspaceProxy}"
+            "ALL_PROXY_NO_FALLBACK=1"
+          ];
+        };
       };
   };
 }

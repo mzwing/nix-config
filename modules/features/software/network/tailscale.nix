@@ -74,7 +74,16 @@ in {
           };
 
           # systemctl3 counts a notify unit whose process exits after READY=1 as failed, failing the .cnb.yml stage that starts it
-          systemd.services.tailscaled-autoconnect.serviceConfig.RemainAfterExit = true;
+          systemd.services.tailscaled-autoconnect = {
+            serviceConfig.RemainAfterExit = true;
+            unitConfig.ConditionPathExists = config.services.tailscale.authKeyFile;
+          };
+
+          # The key comes from the user's agenix, which runs after boot has already tried to connect
+          systemd.paths.tailscaled-autoconnect = {
+            wantedBy = ["multi-user.target"];
+            pathConfig.PathExists = config.services.tailscale.authKeyFile;
+          };
         })
       ];
 
