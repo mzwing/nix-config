@@ -147,20 +147,22 @@ def main() -> None:
     STATE.mkdir(parents=True, exist_ok=True)
     models = served(config["gateway"])
     known = {model.lower() for model in models} | disabled_models(config)
+    disabled_this_run = set()
 
     # The gateway refuses a disabled model before any upstream call, so each one disabled here is let back in for its round.
     retested = set()
     for path in sorted(STATE.glob("*.json")):
         model = json.loads(path.read_text())["model"]
+        magpie(config, "enable", model)
         if model.lower() not in known:
-            magpie(config, "enable", model)
             path.unlink()
             log("released", model, "no longer served by magpie")
             continue
         if model.split("/", 1)[0] in excluded:
+            path.unlink()
+            log("released", model, "its provider is excluded")
             continue
         retested.add(model)
-        magpie(config, "enable", model)
         claimed = identity(model, bank, config["aliases"])
         if claimed is None:
             path.unlink()
@@ -172,10 +174,14 @@ def main() -> None:
             log("restored", model, found)
         else:
             disable(config, model, reports)
+            disabled_this_run.add(model.lower())
             log("kept off", model, found)
 
     for model in models:
         if model.split("/", 1)[0] in excluded or model in retested:
+            continue
+        if model.lower() in disabled_this_run:
+            log("skipped", model, "disabled through a case variant")
             continue
         claimed = identity(model, bank, config["aliases"])
         if claimed is None:
@@ -184,6 +190,7 @@ def main() -> None:
         verdict, reports, found = judge(config, model, claimed, 2)
         if verdict in ("fake", "error"):
             disable(config, model, reports)
+            disabled_this_run.add(model.lower())
             verdict = "disabled"
         log(verdict, model, found)
 
