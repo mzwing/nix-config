@@ -21,3 +21,5 @@ branch:
       - name: 64 CPUs, 128 GiB
         event: web_trigger_workspace_64
         openWorkspace: true
+      - name: Build image
+        event: web_trigger_image

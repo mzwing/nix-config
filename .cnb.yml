@@ -1,5 +1,5 @@
 master:
-  push:
+  web_trigger_image:
     - name: mzwing-cnb
       services:
         - docker
