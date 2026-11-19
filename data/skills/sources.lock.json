@@ -157,16 +157,16 @@
       },
       "deja-vu-skills": {
         "branch": "main",
-        "hash": "sha256-qU510ZCo7Yn1HyN09/MSUxy2E1wp+8dTorc51FI7o48=",
+        "hash": "sha256-0D4rn9Pmb5LWgeimBTZkv8mRUeJE17J74mCjhK/nd5s=",
         "repository": {
           "owner": "vshulcz",
           "repo": "deja-vu",
           "type": "GitHub"
         },
-        "revision": "0ee5df498eeb064828a3105467110dc0495283dc",
+        "revision": "34cdcb829776dde20e5dac6f93cf06c761d4e2f6",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vshulcz/deja-vu/archive/0ee5df498eeb064828a3105467110dc0495283dc.tar.gz"
+        "url": "https://github.com/vshulcz/deja-vu/archive/34cdcb829776dde20e5dac6f93cf06c761d4e2f6.tar.gz"
       },
       "so1ve-skills": {
         "branch": "main",
