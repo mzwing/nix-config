@@ -119,12 +119,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-QSCxLrl3GYQYF821dPhTvGqEw4oH8TChYKKRqcYfduA=",
+        "hash": "sha256-uShhr+PcbBiByER/SJlDavXYtdtJETMwL9F5tXor16Y=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "3dea5833298266d7620348e27cfe755537d3afaf",
+        "revision": "112110f11a931f92266015b4f78b1f64c8d677e1",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -157,16 +157,16 @@
       },
       "deja-vu-skills": {
         "branch": "main",
-        "hash": "sha256-5iHlygm937xN4xQ9z9/GVsWf4CLiwAIw6BMdkg2Zbjw=",
+        "hash": "sha256-qU510ZCo7Yn1HyN09/MSUxy2E1wp+8dTorc51FI7o48=",
         "repository": {
           "owner": "vshulcz",
           "repo": "deja-vu",
           "type": "GitHub"
         },
-        "revision": "ffd28bead8d57c6ae8b3888f1ad8760a7310a147",
+        "revision": "0ee5df498eeb064828a3105467110dc0495283dc",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vshulcz/deja-vu/archive/ffd28bead8d57c6ae8b3888f1ad8760a7310a147.tar.gz"
+        "url": "https://github.com/vshulcz/deja-vu/archive/0ee5df498eeb064828a3105467110dc0495283dc.tar.gz"
       },
       "so1ve-skills": {
         "branch": "main",
