@@ -5,7 +5,7 @@
       "nixos"
     ];
 
-    requires = ["darwin/homebrew"];
+    requires = ["darwin/homebrew" "darwin/qiuchenly"];
 
     packages.nixos = pkgs:
       with pkgs; [
@@ -25,6 +25,8 @@
         "LocalSend" = 1661733229;
       };
     };
+
+    darwin.mzwing.qiuchenly.inject = ["com.proxyman.NSProxy"];
 
     nixos.programs.kdeconnect.enable = true;
 

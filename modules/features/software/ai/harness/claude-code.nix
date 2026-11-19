@@ -121,6 +121,7 @@ in {
         enableMcpIntegration = true;
         context = ''
           ${agentContext.rules}
+          ${agentContext.delegation}
           ${agentContext.codegraph}
         '';
         plugins = {inherit claude-code-wakatime claude-hud;};

@@ -31,7 +31,7 @@ in {
       jsonFormat = pkgs.formats.json {};
       inherit (config.mzwing.magpie) gateway;
       solModel = {
-        model = "magpie/auto/gpt-6.1-sol";
+        model = "magpie/auto/gpt-6.2-sol";
         thinking_level = "high";
       };
       flashModel = {
@@ -126,17 +126,17 @@ in {
           roles = {
             coordinator.instructions = "Never rebuild the whole system, and never ask a task to. A Rust project is built only with the user's explicit authorization: put a check or instruction that compiles Rust code into a brief only after the user authorizes it for that task, and then say in the brief that the user authorized it. In other projects, tasks may run checks, tests and builds on their own. Write every commit message, the ones you give task_approve included, with the conventional-commit-message and semver skills. You may commit wherever it is reasonable, which overrides the general rule for `git commit` only: never push with `git push`, `jj git push` or anything else that sends commits, bookmarks or tags to a remote.";
             executor = {
-              model = "magpie/auto/deepseek-v4.1-flash";
-              thinking = "max";
+              model = "magpie/auto/auto/gpt-6.1-terra";
+              thinking = "xhigh";
               instructions = "In a Rust project, never ask the developer to compile Rust code unless the brief says the user explicitly authorized it through the coordinator.";
             };
             developer = {
-              model = "magpie/workbuddy-ai/kimi-k3.1-pro";
+              model = "magpie/auto/claude-opus-5-5";
               thinking = "max";
               instructions = "Never rebuild the whole system. In a Rust project, never compile Rust code, whether with cargo build, check, clippy, test, run or anything like them, unless the brief says the user explicitly authorized it through the coordinator. In other projects, run checks, tests and builds on your own. These rules override the general rule on building.";
             };
             reviewer = {
-              model = "magpie/auto/gpt-6.1-sol";
+              model = "magpie/auto/gpt-6.2-sol";
               thinking = "xhigh";
               instructions = "NEVER try to write so many meaningless smoke tests!!!!!";
             };
@@ -210,6 +210,8 @@ in {
             When possible, ALWAYS use the builtin tools (like read, edit, etc.) instead of shell commands! And when possible, ALWAYS use fffind / ffgrep instead of find / grep, since fffind / ffgrep is much faster and more efficient, but NOTICE: fffind / ffgrep is git-aware, and cannot search files not tracked by git.
 
             NEVER overthinking!
+
+            ${agentContext.delegation}
 
             ${agentContext.codegraph}
           '';

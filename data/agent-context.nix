@@ -29,6 +29,12 @@
     After writing code and before reporting back, load find-code-simplifications, refactor-for-simplicity, and clarify-code-names (plus improve-test-suite if you touched tests) and review your own change with them: find what you did poorly, then refactor and fix it. This standing instruction is the explicit request these skills wait for. Review only what you changed in this task and fix what you find without asking, except changes to behavior or interfaces the task didn't ask for, which you report instead. Sum up the fixes in a line or two rather than the skills' full reports.
   '';
 
+  delegation = ''
+    When you hand work to another agent (a subagent, worker or task executor), point it to what already exists, such as files, earlier reports and review findings, by path and line or section instead of copying or summarizing it into the brief. When the user approved a specific action the agent will take, quote their words in the brief: the agent's permission check sees only its own transcript.
+
+    When you report back to the agent that delegated to you, your report is a claim it will check, so give evidence: what you changed or found with paths and lines, the decisions you took that the brief left open, what you left unverified, and the exact check commands you ran with their results (counts, not "tests pass").
+  '';
+
   codegraph = ''
     <!-- CODEGRAPH_START -->
     ## CodeGraph

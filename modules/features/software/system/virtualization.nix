@@ -5,7 +5,7 @@
       "nixos"
     ];
 
-    requires = ["darwin/homebrew"];
+    requires = ["darwin/homebrew" "darwin/qiuchenly"];
 
     packages.darwin = pkgs: [pkgs.container];
 
@@ -20,6 +20,8 @@
         "Windows App" = 1295203466;
       };
     };
+
+    darwin.mzwing.qiuchenly.apps."com.parallels.desktop.console".precracked = true;
 
     # TODO: complete podman configuration
     nixos = {pkgs, ...}: {

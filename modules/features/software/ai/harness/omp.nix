@@ -54,8 +54,11 @@ in {
       inherit (config.mzwing.magpie) gateway;
       proxyModel = id: "magpie/${id}";
       taskModel = proxyModel "auto/gpt-6.1-terra:xhigh";
+      cheapModelId = proxyModel "auto/deepseek-v4.1-flash";
+      cheapModel = "${cheapModelId}:low";
+      docsModelId = proxyModel "auto/gemini-4-hydrogen";
       solModel = {
-        model = proxyModel "auto/gpt-6.1-sol";
+        model = proxyModel "auto/gpt-6.2-sol";
         thinking_level = "high";
       };
       flashModel = {
@@ -74,11 +77,11 @@ in {
           plan = proxyModel "auto/claude-opus-5-5:max";
           task = taskModel;
           smol = taskModel;
-          docs = proxyModel "auto/gemini-4-argon";
-          commit = proxyModel "auto/claude-opus-5-5:low";
-          tiny = proxyModel "auto/claude-opus-5-5:low";
+          docs = "${docsModelId}:high";
+          commit = cheapModel;
+          tiny = cheapModel;
           # A custom role for security-reviewer, so switching presets switches it too
-          security = proxyModel "auto/deepseek-v4.1-flash:max";
+          security = proxyModel "auto/glm-5.3:max";
         };
         sensitive = with sensitiveModels; {
           default = main;
@@ -108,6 +111,8 @@ in {
 
           NEVER overthinking!
 
+          ${agentContext.delegation}
+
           ${agentContext.codegraph}
         '';
 
@@ -119,6 +124,8 @@ in {
           ---
 
           ${agentContext.rules}
+
+          ${agentContext.delegation}
         '';
         ".omp/agent/rules/director.md".source = ../../../../../data/omp/rules/director.md;
         ".omp/agent/rules/worker.md".source = ../../../../../data/omp/rules/worker.md;
@@ -208,10 +215,11 @@ in {
             maxRetries = 3;
             fallbackChains =
               {
-                default = map proxyModel ["auto/gpt-6.1-sol" "auto/deepseek-v4.1-flash"];
-                smol = [(proxyModel "auto/claude-sonnet-5-5:xhigh")];
-                commit = [(proxyModel "auto/deepseek-v4.1-flash:low")];
-                tiny = [(proxyModel "auto/deepseek-v4.1-flash:low")];
+                default = [(proxyModel "auto/gpt-6.2-sol") sensitiveModels.main];
+                smol = [(proxyModel "auto/claude-sonnet-5-5:xhigh") sensitiveModels.sub sensitiveModels.flash];
+                # Otherwise the default chain would retry commit/tiny on opus
+                ${cheapModelId} = [];
+                ${docsModelId} = [(proxyModel "auto/claude-opus-5-5:xhigh")];
               }
               # Suffixless model keys win over role keys at any effort, so the sensitive team never falls back to the default team's models
               // (with sensitiveModels; {

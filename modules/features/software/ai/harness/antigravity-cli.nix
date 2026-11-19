@@ -21,10 +21,17 @@ in {
         HOME=$TMPDIR rtk init -g --agent antigravity
         cp -r $TMPDIR/.gemini/config/plugins/rtk $out
       '';
+      # agy-codemode's bundled rules contradict agentContext.rules
+      agyToolPlugins = pkgs.nur.repos.mzwing.agy-tool-plugins.overrideAttrs {
+        postInstall = "rm -r $out/agy-codemode/rules";
+      };
     in {
       home.file = {
         ".gemini/config/plugins/antigravity-cli-wakatime".source = pkgs.nur.repos.mzwing.antigravity-wakatime;
         ".gemini/config/plugins/rtk".source = rtkPlugin;
+        ".gemini/config/plugins/agy-codemode".source = "${agyToolPlugins}/agy-codemode";
+        ".gemini/config/plugins/agy-output-guard".source = "${agyToolPlugins}/agy-output-guard";
+        ".gemini/config/plugins/agy-rehydrate".source = "${agyToolPlugins}/agy-rehydrate";
         ".gemini/antigravity-cli/plugins/agy-hud/config.json".source = jsonFormat.generate "agy-hud-config.json" {
           language = "zh-Hans";
           lineLayout = "expanded";
@@ -66,6 +73,7 @@ in {
         package = let
           agy = pkgs.nur.repos.mzwing.antigravity-cli-modified.override {
             antigravity-cli = inputs.llm-agents.packages.${system}.antigravity-cli;
+            prompts."guidelines.tmpl" = ../../../../../data/antigravity/guidelines.tmpl;
           };
         in
           pkgs.symlinkJoin {
@@ -84,6 +92,7 @@ in {
         enableMcpIntegration = true;
         context.AGENTS = ''
           ${agentContext.rules}
+          ${agentContext.delegation}
           ${agentContext.codegraph}
         '';
         # agy checks permissions after rtk's hook has rewritten `git push` to `rtk git push`

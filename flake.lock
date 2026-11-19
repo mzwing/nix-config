@@ -707,6 +707,26 @@
         "type": "github"
       }
     },
+    "qiuchenly-cli": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1795018378,
+        "narHash": "sha256-L2qbsTT0uew+dEiRKy8dQXvgQgGVbAYwx+E7SiMP9BY=",
+        "owner": "MZWNET",
+        "repo": "qiuchenly_cli",
+        "rev": "fc1a770f15506feadbc767fb0a9ad4aaf5872da9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "MZWNET",
+        "repo": "qiuchenly_cli",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "agenix": "agenix",
@@ -727,6 +747,7 @@
         "nur": "nur",
         "oh-my-pi": "oh-my-pi",
         "paseo": "paseo",
+        "qiuchenly-cli": "qiuchenly-cli",
         "zen-browser": "zen-browser"
       }
     },

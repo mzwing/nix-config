@@ -5,7 +5,7 @@
       "nixos"
     ];
 
-    requires = ["darwin/homebrew"];
+    requires = ["darwin/homebrew" "darwin/qiuchenly"];
 
     packages = {
       system = pkgs:
@@ -41,5 +41,7 @@
         "WPS Office" = 1443749478;
       };
     };
+
+    darwin.mzwing.qiuchenly.inject = ["abnerworks.Typora"];
   };
 }

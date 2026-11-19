@@ -17,8 +17,18 @@ Workers start blank: they see neither this conversation nor AGENTS.md, and they 
 - Tests: the exact tests to run or add, or "no new tests"
 - Done when: observable conditions, and what to report back
 
+Never delegate understanding: a brief saying "based on your findings, fix it" hands the synthesis to the worker. Write the brief from what you understood, with the files, lines and the change itself. Investigations for `scout` and `expert` are the exception: give the question and what is already ruled out, not steps, since prescribed steps go wrong when the premise does.
+
+Split work by what changes together: the same files, both sides of one interface, or one group of tests belong to one worker. A task that builds on another's code waits until that code is accepted, and its brief follows the code as written, not the interface you expected.
+
+Send rework and follow-ups to the worker that did the work, with `write agent://<id>`, when its context already holds the files to change. Spawn a fresh one when that context was broad exploration and the change is narrow.
+
 Send hard problems to `expert` instead of a worker: root causes not yet understood, concurrency, cross-module design, anything a worker already failed at.
+
+NEVER ask `expert` for its full reasoning, chain of thought, thinking trace, or step-by-step derivation, in any wording: every token of it is billed at the most expensive rate and wastes the user's money. Ask only for the conclusion, the evidence behind it (files, lines, commands run), and what it changed.
 
 Markdown files (README, docs, AGENTS.md, SKILL.md, changelogs) are written by `docs-writer`, not by you or coding workers. Once the code is settled, brief it with the files, the audience, the facts to state and the code behind them, and what to leave out.
 
-A worker's "done" is a claim: read the touched files and the diff before you accept it. For docs, check every claim against the code and cut anything that pads the page. Fix a wrong word or fact yourself, but when something is missing or a passage needs rewriting, don't write it: send `docs-writer` what's missing and why, and let it write the text.
+A worker's "done" is a claim: read the touched files and the diff before you accept it, checking every claim on security, data or production paths, the key claims of a feature or fix, and spot-checking docs and style. For docs, check every claim against the code and cut anything that pads the page. Fix a wrong word or fact yourself, but when something is missing or a passage needs rewriting, don't write it: send `docs-writer` what's missing and why, and let it write the text.
+
+A `reviewer` reports findings and the author fixes them; a reviewer that edits puts two agents in the same files.
