@@ -33,6 +33,19 @@
               CODEGRAPH_NO_UPDATE_CHECK = "1";
             };
           };
+          colab-mcp = {
+            command = lib.getExe' pkgs.uv "uvx";
+            args = [
+              "--from"
+              "git+https://github.com/googlecolab/colab-mcp@v1.0.2"
+              "colab-mcp"
+            ];
+            env = {
+              UV_PYTHON = lib.getExe pkgs.python313;
+              UV_PYTHON_DOWNLOADS = "never";
+            };
+            timeout = 30000;
+          };
         };
       };
     };
