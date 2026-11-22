@@ -7,8 +7,6 @@ in {
       "nixos"
     ];
 
-    requires = ["darwin/homebrew"];
-
     # For checking a relay's models by hand, as magpie-verify does on a timer.
     packages.home = pkgs: [pkgs.nur.repos.mzwing.lmfpd];
 
@@ -33,7 +31,7 @@ in {
       imports = [inputs.nur.repos.mzwing.modules.darwin.magpie];
 
       # Keep the app's own launch at login off: it would fight the agent for the port.
-      homebrew.casks = ["magpie-app"];
+      services.magpie.package = inputs.magpie.packages.${system}.magpie;
 
       launchd.user.agents.magpie.path = [
         # A Claude subscription is answered through Claude Code.
@@ -132,8 +130,13 @@ in {
       config = lib.mkMerge [
         {
           services.magpie = {
-            package = pkgs.nur.repos.xyenon.magpie.override {guiSupport = type == "desktop";};
+            package = with inputs.magpie.packages.${system};
+              if type == "desktop"
+              then magpie
+              else magpie-cli;
             user = username;
+            # Only the desktop build wraps in nixpkgs' Bun; the one magpie downloads for plugins can't start on NixOS
+            env.MAGPIE_BUN = lib.getExe pkgs.bun;
           };
 
           environment.systemPackages = agents;

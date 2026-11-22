@@ -415,6 +415,26 @@
         "type": "github"
       }
     },
+    "magpie": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1795386442,
+        "narHash": "sha256-XbLad8KpwqeHfo3GNYocuMKIOmJaqC0hZjuhKBIogSs=",
+        "owner": "yetone",
+        "repo": "magpie-releases",
+        "rev": "4b3a802600e677caac65cdc82a73d839a93e22de",
+        "type": "github"
+      },
+      "original": {
+        "owner": "yetone",
+        "repo": "magpie-releases",
+        "type": "github"
+      }
+    },
     "nix-bun": {
       "inputs": {
         "nixpkgs": [
@@ -740,6 +760,7 @@
         "import-tree": "import-tree",
         "js-toolchain-overlay": "js-toolchain-overlay",
         "llm-agents": "llm-agents",
+        "magpie": "magpie",
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixos-anywhere": "nixos-anywhere",
         "nixpkgs": "nixpkgs_3",

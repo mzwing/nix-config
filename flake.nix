@@ -17,7 +17,6 @@
       # "https://mzwing.cachix.org"
       "https://cachix.service.mzwing.eu.org"
       "https://so1ve.cachix.org"
-      "https://nur-xyenon.cachix.org"
     ];
     extra-trusted-public-keys = [
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
@@ -25,7 +24,6 @@
       "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
       "mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA="
       "so1ve.cachix.org-1:51jcW4FkJhiLcqPsiUx3nglRP469les8F9zjFxio1nw="
-      "nur-xyenon.cachix.org-1:fZ3SGJ3E1p34JSG5j4etfF9+vjJGMZxe1dDBNliKx5U="
     ];
   };
 
@@ -70,6 +68,11 @@
 
     paseo = {
       url = "github:getpaseo/paseo";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    magpie = {
+      url = "github:yetone/magpie-releases";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
