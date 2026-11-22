@@ -12,10 +12,14 @@
     }: let
       cfg = config.mzwing.qiuchenly;
 
-      appLine = app: opts: "${app} ${lib.boolToString opts.precracked}\n";
+      appLine = app: opts: "${app} ${lib.boolToString opts.precracked} ${opts.channel}\n";
 
       appsFile = pkgs.writeText "qiuchenly-apps" (
         lib.concatStrings (lib.mapAttrsToList appLine cfg.apps)
+      );
+
+      channelsFile = pkgs.writeText "qiuchenly-channels" (
+        lib.concatStrings (lib.mapAttrsToList (name: url: "${name} ${url}\n") (lib.filterAttrs (_: url: url != null) cfg.channels))
       );
 
       injectFile = pkgs.writeText "qiuchenly-inject" (
@@ -30,9 +34,20 @@
               default = false;
               description = "Install the precracked package";
             };
+            options.channel = lib.mkOption {
+              type = lib.types.strMatching "[^[:space:]]+";
+              default = "default";
+              description = "Store channel used to install and update the application";
+            };
           });
           default = {};
           description = "Applications installed and updated by qiuchenly";
+        };
+
+        channels = lib.mkOption {
+          type = lib.types.attrsOf (lib.types.nullOr (lib.types.strMatching "[^[:space:]]+"));
+          default = {};
+          description = "Built-in and custom store channels";
         };
 
         inject = lib.mkOption {
@@ -57,25 +72,38 @@
 
             qiuchenly_install() {
               if [ "$2" = true ]; then
-                qiuchenly_run install "$1" --precracked --aria2c ${pkgs.aria2}/bin/aria2c
+                qiuchenly_run install "$1" --precracked --channel "$3" --aria2c ${pkgs.aria2}/bin/aria2c
               else
-                qiuchenly_run install "$1" --aria2c ${pkgs.aria2}/bin/aria2c
+                qiuchenly_run install "$1" --channel "$3" --aria2c ${pkgs.aria2}/bin/aria2c
               fi
             }
 
             mkdir -p /var/lib/qiuchenly
+            if [ -s ${channelsFile} ]; then
+              qiuchenly_channels="$(qiuchenly_run channel list)"
+              while IFS=' ' read -r name url; do
+                current_url="$(printf '%s\n' "$qiuchenly_channels" | /usr/bin/awk -v target="$name" '$1 == target { print $2; exit }')"
+                if [ "$current_url" != "$url" ]; then
+                  if [ -n "$current_url" ]; then
+                    qiuchenly_run channel remove "$name"
+                  fi
+                  qiuchenly_run channel add "$name" "$url"
+                fi
+              done < ${channelsFile}
+            fi
+
             qiuchenly_list="$(qiuchenly_run list --all)"
 
-            while IFS=' ' read -r app precracked; do
+            while IFS=' ' read -r app precracked channel; do
               [ -n "$app" ] || continue
               if qiuchenly_installed "$app"; then
-                qiuchenly_outdated="$(qiuchenly_run outdated "$app")"
+                qiuchenly_outdated="$(qiuchenly_run outdated "$app" --channel "$channel")"
                 printf '%s\n' "$qiuchenly_outdated"
                 if [ "$qiuchenly_outdated" != "没有可用更新" ]; then
-                  qiuchenly_install "$app" "$precracked"
+                  qiuchenly_install "$app" "$precracked" "$channel"
                 fi
               else
-                qiuchenly_install "$app" "$precracked"
+                qiuchenly_install "$app" "$precracked" "$channel"
               fi
             done < ${appsFile}
 
@@ -96,10 +124,13 @@
             cp ${appsFile} /var/lib/qiuchenly/apps.tmp
             mv /var/lib/qiuchenly/apps.tmp /var/lib/qiuchenly/apps
 
-            while IFS= read -r app; do
-              [ -n "$app" ] || continue
-              qiuchenly_run inject "$app"
-            done < ${injectFile}
+            if [ -s ${injectFile} ]; then
+              qiuchenly_run inject --update
+              while IFS= read -r app; do
+                [ -n "$app" ] || continue
+                qiuchenly_run inject "$app"
+              done < ${injectFile}
+            fi
           )
         '';
       };
