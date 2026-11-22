@@ -156,7 +156,8 @@
               set --
             fi
 
-            clash2sing-box convert "${secretPath claudeNodeList}" | jq '${selectClaudeNodes}' > "$work/claude.json"
+            # Haru's nodes are unreachable straight from China
+            clash2sing-box convert "${secretPath claudeNodeList}" | jq '${selectClaudeNodes} | .outbounds[].detour = "warp"' > "$work/claude.json"
 
             # `(?<!-)` keeps a region group off the hyphenated qualifiers that sit elsewhere in a name: the CDN-side location in `HK¹-US⁰`, TikTok's `TK-US`, and the `|IN-XX` entry tag. Client fragment tags carry no exit region, so each region group names its own naive nodes; WARP would win every race it entered
             clash2sing-box convert \
@@ -303,7 +304,17 @@ in {
         # Without tailscaled, resolved gets no tailnet search domain and so never sends bare peer names to sing-box, which expands them itself.
         services.resolved.settings.Resolve.ResolveUnicastSingleLabel = true;
 
-        age.secrets = ageSecrets secrets {} (secretsIn settings);
+        age.secrets = ageSecrets secrets {} (secretsIn settings ++ ["tailscale/oauth-secret"]);
+
+        systemd.services.sing-box.serviceConfig = {
+          # tsnet reads TS_AUTHKEY only while it has no node state; the bare OAuth secret would enroll an ephemeral node, deleted soon after it goes offline.
+          ExecStartPre = lib.mkBefore [
+            "+${pkgs.writeShellScript "sing-box-tailscale-auth-key" ''
+              printf 'TS_AUTHKEY=%s?ephemeral=false&preauthorized=true\n' "$(<${secretPath "tailscale/oauth-secret"})" > /run/sing-box/tailscale.env
+            ''}"
+          ];
+          EnvironmentFile = "-/run/sing-box/tailscale.env";
+        };
       };
 
       stateDir = "/var/lib/sing-box-outbounds";
@@ -311,10 +322,23 @@ in {
       checker = "subs-check";
 
       desktopSettings = let
-        base = profile "linux";
+        base = profile config.mzwing.sing-box.desktopProfile;
+        campusRule = lib.findFirst (rule: (rule.mode or null) == "and" && (builtins.head rule.rules) ? ip_cidr) null (lib.importJSON (fragmentDir + "/routes/rules/client/common.json")).route.rules;
       in
         base
         // {
+          endpoints = map (endpoint:
+            if endpoint.tag == "mzwing-tailscale-endpoint"
+            then
+              endpoint
+              # The OAuth secret only enrolls tagged nodes
+              // {advertise_tags = ["tag:server"];}
+              # The exit node also routes every network the campus rule sends direct
+              // lib.optionalAttrs (endpoint.advertise_exit_node or false) {
+                advertise_routes = (builtins.head campusRule.rules).ip_cidr ++ endpoint.advertise_routes or [];
+              }
+            else endpoint)
+          base.endpoints;
           route =
             base.route
             // {
@@ -331,10 +355,17 @@ in {
             };
         };
     in {
-      options.mzwing.sing-box.serverProfile = lib.mkOption {
-        type = lib.types.str;
-        default = "server";
-        description = "The data/sing-box profile this server merges.";
+      options.mzwing.sing-box = {
+        serverProfile = lib.mkOption {
+          type = lib.types.str;
+          default = "server";
+          description = "The data/sing-box profile this server merges.";
+        };
+        desktopProfile = lib.mkOption {
+          type = lib.types.str;
+          default = "linux";
+          description = "The data/sing-box profile this desktop merges.";
+        };
       };
 
       config = lib.mkMerge [
@@ -359,7 +390,7 @@ in {
             (service settings)
             {
               age.secrets =
-                ageSecrets secrets {} [inbounds claudeNodeList "tailscale/oauth-secret"]
+                ageSecrets secrets {} [inbounds claudeNodeList]
                 // ageSecrets secrets {owner = config.services.caddy.user;} [caddySites];
 
               services.caddy.extraConfig = "import ${secretPath caddySites}";
@@ -381,13 +412,8 @@ in {
                 serviceConfig = {
                   ExecStartPre = [
                     "+${pkgs.coreutils}/bin/ln -sf ${secretPath inbounds} /run/sing-box/inbounds.json"
-                    # tsnet reads TS_AUTHKEY only while it has no node state; the bare OAuth secret would enroll an ephemeral node, deleted soon after it goes offline.
-                    "+${pkgs.writeShellScript "sing-box-tailscale-auth-key" ''
-                      printf 'TS_AUTHKEY=%s?ephemeral=false&preauthorized=true\n' "$(<${secretPath "tailscale/oauth-secret"})" > /run/sing-box/tailscale.env
-                    ''}"
                     "+${lib.getExe claudeOutboundsCommand}"
                   ];
-                  EnvironmentFile = "-/run/sing-box/tailscale.env";
                 };
                 restartTriggers = [secrets.${inbounds} secrets.${claudeNodeList}];
               };

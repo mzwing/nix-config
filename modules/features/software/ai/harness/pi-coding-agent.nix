@@ -131,8 +131,8 @@ in {
               instructions = "In a Rust project, never ask the developer to compile Rust code unless the brief says the user explicitly authorized it through the coordinator.";
             };
             developer = {
-              model = "magpie/auto/claude-opus-5-5";
-              thinking = "max";
+              model = "magpie/auto/gpt-6.1-terra";
+              thinking = "xhigh";
               instructions = "Never rebuild the whole system. In a Rust project, never compile Rust code, whether with cargo build, check, clippy, test, run or anything like them, unless the brief says the user explicitly authorized it through the coordinator. In other projects, run checks, tests and builds on your own. These rules override the general rule on building.";
             };
             reviewer = {

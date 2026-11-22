@@ -18,7 +18,6 @@
       nixos = pkgs:
         with pkgs; [
           llama-cpp
-          stable-diffusion-cpp-cuda
         ];
     };
 

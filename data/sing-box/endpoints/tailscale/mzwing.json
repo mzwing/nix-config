@@ -3,7 +3,8 @@
     {
       "type": "tailscale",
       "tag": "mzwing-tailscale-endpoint",
-      "accept_routes": true
+      "accept_routes": true,
+      "exit_node": "mzwing-matrix"
     }
   ]
 }

@@ -81,7 +81,6 @@ in {
         threshold = 0.7;
         # Signed-in subscriptions and vendors' own APIs are trusted, and checking them would spend their quota.
         excludeProviders = [
-          "antigravity"
           "claude"
           "cline"
           "codex"
@@ -110,6 +109,9 @@ in {
           "remote-magpie-cn"
           "remote-magpie-us"
           "wokey"
+          "cupboard-misakacloud"
+          "agy-cli"
+          "devin"
         ];
         aliases = {
           # lm-detector fingerprints GPT-6 Astra and GPT-6.1 Sol as one model.

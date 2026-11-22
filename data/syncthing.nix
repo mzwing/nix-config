@@ -19,5 +19,9 @@
       address = "tcp://mzwing-instabox:22000";
       repos = ["MZWNET/baton" "mzwing/nix-config"];
     };
+    mzwing-matrix = {
+      id = "EP2K7TO-FSMM3VQ-QNQY73O-XM5D6GV-GOBXADC-FWXAXPZ-V6JH5H2-PXSXCQN";
+      address = "tcp://mzwing-matrix:22000";
+    };
   };
 }

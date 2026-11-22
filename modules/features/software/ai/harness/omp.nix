@@ -53,7 +53,7 @@ in {
       yamlFormat = pkgs.formats.yaml {};
       inherit (config.mzwing.magpie) gateway;
       proxyModel = id: "magpie/${id}";
-      taskModel = proxyModel "auto/gpt-6.1-terra:xhigh";
+      taskModel = proxyModel "auto/gpt-6.1-terra:high";
       cheapModelId = proxyModel "auto/deepseek-v4.1-flash";
       cheapModel = "${cheapModelId}:low";
       docsModelId = proxyModel "auto/gemini-4-hydrogen";
@@ -66,7 +66,8 @@ in {
         thinking_level = "high";
       };
       sensitiveModels = {
-        main = proxyModel "auto/kimi-k3.1-pro";
+        main = proxyModel "auto/kimi-k2.8-preview";
+        expert = proxyModel "auto/kimi-k3.1-pro";
         sub = proxyModel "auto/glm-5.3";
         flash = proxyModel "auto/glm-5.3-flash";
       };
@@ -85,11 +86,11 @@ in {
         };
         sensitive = with sensitiveModels; {
           default = main;
-          slow = main;
-          plan = main;
+          slow = expert;
+          plan = expert;
           task = sub;
           smol = sub;
-          docs = sub;
+          docs = main;
           security = sub;
           commit = flash;
           tiny = flash;
@@ -215,8 +216,8 @@ in {
             maxRetries = 3;
             fallbackChains =
               {
-                default = [(proxyModel "auto/gpt-6.2-sol") sensitiveModels.main];
-                smol = [(proxyModel "auto/claude-sonnet-5-5:xhigh") sensitiveModels.sub sensitiveModels.flash];
+                default = [(proxyModel "auto/gpt-6.2-sol") sensitiveModels.expert];
+                smol = [sensitiveModels.flash];
                 # Otherwise the default chain would retry commit/tiny on opus
                 ${cheapModelId} = [];
                 ${docsModelId} = [(proxyModel "auto/claude-opus-5-5:xhigh")];
@@ -224,13 +225,19 @@ in {
               # Suffixless model keys win over role keys at any effort, so the sensitive team never falls back to the default team's models
               // (with sensitiveModels; {
                 ${main} = [sub];
+                ${expert} = [sub];
                 ${sub} = [flash];
                 ${flash} = [];
               });
           };
 
           task = {
-            agentModelOverrides.security-reviewer = ["@security"];
+            agentModelOverrides = {
+              security-reviewer = ["@security"];
+              sonic = [sensitiveModels.flash];
+            };
+            # glm-5.3-flash spirals instead of giving up, and sonic can't hand off to expert
+            agentSoftRequestBudget.sonic = 40;
             perCallModel = "on";
             showResolvedModelBadge = true;
           };

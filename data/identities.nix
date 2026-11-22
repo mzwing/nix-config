@@ -19,6 +19,8 @@
     # Not its sshd key either: made once at ~/.ssh/agenix inside the container, and it never leaves there
     mzwing-instabox = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHFDSJYX9nf1Sbhr/U61a3XQjvp0HpojqcFd/JIIn8RC root@mzwing-instabox";
     mzwing-lycheen-us = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBeVV5WX9pgH5iUCUtTggM3ufxOm1sblo8eoYGJJpsHU root@lycheen.server.mzwing.eu.org";
+    # Not its sshd key: made with nixos-anywhere's install at /home/mzwing/.ssh/agenix, which both agenixes decrypt with
+    mzwing-matrix = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILA12//xGompHlok00537uLWGn1+GQKdMquIWW9lpv3c root@mzwing-matrix";
     mzwing-upcloud-sg = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFN6u5TVLoI3OzCfCqjVYThl+4UcAXZ8noRJO05aoHcL root@mzwing-upcloud-sg";
     mzwing-wap = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILGW67hQftVipTLuqRhnICn8zYUSQ/hpu0YGjdtCaS8N root@wap.server.mzwing.eu.org";
   };

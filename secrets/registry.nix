@@ -18,6 +18,7 @@ in {
       mzwing
       hosts.mzwing-cnb
       hosts.mzwing-instabox
+      hosts.mzwing-matrix
     ];
   };
 
@@ -55,6 +56,7 @@ in {
       mzwing
       hosts.mzwing-cnb
       hosts.mzwing-instabox
+      hosts.mzwing-matrix
     ];
   };
 
@@ -107,6 +109,16 @@ in {
     recipients = ownedBy "mzwing-instabox";
   };
 
+  "matrix/magpie/mzwing-azure" = {
+    file = ./matrix/magpie/mzwing-azure.age;
+    recipients = ownedBy "mzwing-matrix";
+  };
+
+  "matrix/paseo/password" = {
+    file = ./matrix/paseo/password.age;
+    recipients = ownedBy "mzwing-matrix";
+  };
+
   # A whole systemd-networkd unit, for a host whose addresses are static
   "lycheen-us/network/public" = {
     file = ./lycheen-us/network/public.age;
@@ -131,28 +143,28 @@ in {
   # The sing-box client's, like subs-check/* below. The Mac reads them with the mzwing key, and every NixOS desktop selecting software/network/sing-box belongs on these lists.
   "sing-box/api-secret" = {
     file = ./sing-box/api-secret.age;
-    recipients = [mzwing];
+    recipients = [mzwing hosts.mzwing-matrix];
   };
 
   "sing-box/clash-api-secret" = {
     file = ./sing-box/clash-api-secret.age;
-    recipients = [mzwing];
+    recipients = [mzwing hosts.mzwing-matrix];
   };
 
   # sing-box/client/<name>: a whole sing-box fragment merged into every client profile, whose outbounds and endpoints join `proxy`.
   "sing-box/client/mzwing-azure-naive" = {
     file = ./sing-box/client/mzwing-azure-naive.age;
-    recipients = [mzwing];
+    recipients = [mzwing hosts.mzwing-matrix];
   };
 
   "sing-box/client/mzwing-lycheen-us-naive" = {
     file = ./sing-box/client/mzwing-lycheen-us-naive.age;
-    recipients = [mzwing];
+    recipients = [mzwing hosts.mzwing-matrix];
   };
 
   "sing-box/client/warp" = {
     file = ./sing-box/client/warp.age;
-    recipients = [mzwing];
+    recipients = [mzwing hosts.mzwing-matrix];
   };
 
   # sing-box/<server>/inbounds: that server's proxy inbounds as a whole sing-box fragment, ports included.
@@ -169,7 +181,7 @@ in {
   # YAML merged over data/subs-check/config.yaml: the subscriptions and sub-store-path.
   "subs-check/config" = {
     file = ./subs-check/config.age;
-    recipients = [mzwing];
+    recipients = [mzwing hosts.mzwing-matrix];
   };
 
   # subs-check/self/<name>: a Clash node list checked alongside the subscriptions. Every server selecting software/network/sing-box also builds its claude group from haru, so belongs on haru's list.
@@ -179,22 +191,23 @@ in {
       mzwing
       hosts.mzwing-azure
       hosts.mzwing-lycheen-us
+      hosts.mzwing-matrix
     ];
   };
 
   "subs-check/self/mzwing-azure" = {
     file = ./subs-check/self/mzwing-azure.age;
-    recipients = [mzwing];
+    recipients = [mzwing hosts.mzwing-matrix];
   };
 
   "subs-check/self/mzwing-lycheen-us" = {
     file = ./subs-check/self/mzwing-lycheen-us.age;
-    recipients = [mzwing];
+    recipients = [mzwing hosts.mzwing-matrix];
   };
 
   "subs-check/self/sci" = {
     file = ./subs-check/self/sci.age;
-    recipients = [mzwing];
+    recipients = [mzwing hosts.mzwing-matrix];
   };
 
   "syncthing/mzwing-MacBook-Pro" = {
@@ -217,7 +230,12 @@ in {
     recipients = ownedBy "mzwing-instabox";
   };
 
-  # Every NixOS host selecting software/network/tailscale, or software/network/sing-box as a server, belongs on this list.
+  "syncthing/mzwing-matrix" = {
+    file = ./syncthing/mzwing-matrix.age;
+    recipients = ownedBy "mzwing-matrix";
+  };
+
+  # Every NixOS host selecting software/network/tailscale or software/network/sing-box belongs on this list.
   "tailscale/oauth-secret" = {
     file = ./tailscale/oauth-secret.age;
     recipients = [
@@ -227,6 +245,7 @@ in {
       hosts.mzwing-huaweicloud-gz
       hosts.mzwing-instabox
       hosts.mzwing-lycheen-us
+      hosts.mzwing-matrix
     ];
   };
 
@@ -251,6 +270,7 @@ in {
       mzwing
       hosts.mzwing-cnb
       hosts.mzwing-instabox
+      hosts.mzwing-matrix
     ];
   };
 

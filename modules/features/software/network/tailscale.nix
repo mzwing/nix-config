@@ -13,6 +13,7 @@ in {
 
     nixos = {
       config,
+      features,
       hostname,
       lib,
       secrets,
@@ -20,7 +21,7 @@ in {
       username,
       ...
     }:
-      lib.mkMerge [
+      lib.mkIf (!lib.elem "software/network/sing-box" features) (lib.mkMerge [
         {
           services.tailscale = {
             enable = true;
@@ -85,7 +86,7 @@ in {
             pathConfig.PathExists = config.services.tailscale.authKeyFile;
           };
         })
-      ];
+      ]);
 
     home = {
       lib,

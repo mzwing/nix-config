@@ -87,6 +87,11 @@
               },
               {
                 "default_interface_address": [
+                  "2001:250:3002:4b9d::/64"
+                ]
+              },
+              {
+                "default_interface_address": [
                   "202.116.0.0/16"
                 ]
               },
@@ -138,7 +143,8 @@
           ".sysu.edu.cn",
           ".matrix.moe"
         ],
-        "action": "resolve"
+        "action": "route",
+        "outbound": "mzwing-tailscale-endpoint"
       },
       {
         "preferred_by": [

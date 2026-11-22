@@ -31,7 +31,7 @@
         then "${homeDirectory}/Library/Caches/baton"
         else "${config.xdg.cacheHome}/baton";
       projects = "${homeDirectory}/repos";
-      repoRoots = ["/Users/mzwing/repos" "/root/repos"];
+      repoRoots = ["/Users/mzwing/repos" "/home/mzwing/repos" "/root/repos"];
       pathMap = lib.concatStringsSep ":" (map (root: "${root}=${projects}") (lib.filter (root: root != projects) repoRoots));
       paseo = osConfig.services.paseo or {enable = false;};
       agentByHarness = {

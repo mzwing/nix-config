@@ -1,6 +1,6 @@
 # The fragments each profile merges, in order. Proxies stay out of here: clients merge the sing-box/client/* secrets, and each server its sing-box/<host>/inbounds.
 let
-  client = [
+  clientWith = endpoint: [
     "log.json"
     "dns/servers/local.json"
     "dns/servers/dohna.json"
@@ -10,7 +10,7 @@ let
     "dns/rules/client/common.json"
     "inbounds/mixed.json"
     "outbounds/common.json"
-    "endpoints/tailscale/mzwing.json"
+    "endpoints/tailscale/${endpoint}.json"
     "http_clients.json"
     "experimental/common.json"
     "experimental/clash-api.json"
@@ -19,6 +19,8 @@ let
     "routes/rule-sets/common.json"
     "routes/rule-sets/client.json"
   ];
+
+  client = clientWith "mzwing";
 
   # An exit's rules follow the steering ones and precede every catch-all, the DNS ones included
   serverWith = exits:
@@ -46,6 +48,8 @@ in {
   macos = client ++ ["inbounds/tun/common.json"];
   android = client ++ ["inbounds/tun/common.json" "routes/android.json"];
   linux = client ++ ["inbounds/tun/linux.json"];
+  # The lab VM, the exit node campus traffic leaves through
+  matrix = clientWith "matrix" ++ ["inbounds/tun/linux.json"];
 
   server = serverWith [];
   # Netflix, ChatGPT and all of IPv6 leave through WARP, for a server that picks software/network/sing-box-warp
