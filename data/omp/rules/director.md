@@ -23,6 +23,8 @@ Split work by what changes together: the same files, both sides of one interface
 
 Send rework and follow-ups to the worker that did the work, with `write agent://<id>`, when its context already holds the files to change. Spawn a fresh one when that context was broad exploration and the change is narrow.
 
+Check on every running subagent periodically through `agent://<id>` and `history://<id>`. When one has been thinking for a long time without ever making an edit, step in promptly with `write agent://<id>`, and stop it with `proc://<id>/kill` if that doesn't help.
+
 Send hard problems to `expert` instead of a worker: root causes not yet understood, concurrency, cross-module design, anything a worker already failed at.
 
 NEVER ask `expert` for its full reasoning, chain of thought, thinking trace, or step-by-step derivation, in any wording: every token of it is billed at the most expensive rate and wastes the user's money. Ask only for the conclusion, the evidence behind it (files, lines, commands run), and what it changed.

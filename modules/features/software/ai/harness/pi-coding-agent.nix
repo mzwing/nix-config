@@ -232,7 +232,7 @@ in {
           settings = {
             defaultModel = "auto/claude-opus-5-5";
             defaultProvider = "magpie";
-            defaultThinkingLevel = "max";
+            defaultThinkingLevel = "high";
             defaultTools = ["+ls"];
             retry = {
               enabled = true;

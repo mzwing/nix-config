@@ -132,14 +132,12 @@ in {
         settings = {
           includeCoAuthoredBy = false;
           model = "opus[1m]";
+          effortLevel = "high";
           theme = "dark";
           outputStyle = "concise";
           tui = "fullscreen";
 
           hooks = config.programs.gryph.hooks.claude-code;
-
-          # The persisted `effortLevel` only accepts low/medium/high/xhigh, so `max` has to come in through the env var; the `/model` picker ignores it and still shows the model default.
-          env.CLAUDE_CODE_EFFORT_LEVEL = "max";
 
           permissions.defaultMode = "auto";
 

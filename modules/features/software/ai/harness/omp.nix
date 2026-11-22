@@ -73,9 +73,9 @@ in {
       };
       teams = {
         default = {
-          default = proxyModel "auto/claude-opus-5-5:max";
-          slow = proxyModel "auto/claude-opus-5-5:max";
-          plan = proxyModel "auto/claude-opus-5-5:max";
+          default = proxyModel "auto/claude-opus-5-5:high";
+          slow = proxyModel "auto/claude-opus-5-5:xhigh";
+          plan = proxyModel "auto/claude-opus-5-5:xhigh";
           task = taskModel;
           smol = taskModel;
           docs = "${docsModelId}:high";
