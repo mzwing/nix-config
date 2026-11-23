@@ -63,7 +63,7 @@
         system.activationScripts.postActivation.text = lib.mkAfter ''
           ( set -euo pipefail
             qiuchenly_run() {
-              sudo --user=${lib.escapeShellArg config.homebrew.user} --set-home ${pkgs.qiuchenly-cli}/bin/qiuchenly "$@"
+              sudo --user=${lib.escapeShellArg config.homebrew.user} --set-home env PATH=${pkgs.aria2}/bin:/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin ${pkgs.qiuchenly-cli}/bin/qiuchenly "$@"
             }
 
             qiuchenly_installed() {
@@ -72,9 +72,9 @@
 
             qiuchenly_install() {
               if [ "$2" = true ]; then
-                qiuchenly_run install "$1" --precracked --channel "$3" --aria2c ${pkgs.aria2}/bin/aria2c
+                qiuchenly_run install "$1" --precracked --channel "$3"
               else
-                qiuchenly_run install "$1" --channel "$3" --aria2c ${pkgs.aria2}/bin/aria2c
+                qiuchenly_run install "$1" --channel "$3"
               fi
             }
 

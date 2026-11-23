@@ -66,7 +66,7 @@ in {
         thinking_level = "high";
       };
       sensitiveModels = {
-        main = proxyModel "auto/kimi-k2.8-preview";
+        main = proxyModel "auto/kimi-for-coding";
         expert = proxyModel "auto/kimi-k3.1-pro";
         sub = proxyModel "auto/glm-5.3";
         flash = proxyModel "auto/glm-5.3-flash";
