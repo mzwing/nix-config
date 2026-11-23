@@ -33,8 +33,8 @@
     so1ve = {
       author = "so1ve";
       cache = {
-        url = "https://so1ve.cachix.org";
-        publicKey = "so1ve.cachix.org-1:51jcW4FkJhiLcqPsiUx3nglRP469les8F9zjFxio1nw=";
+        url = "https://cache.so1ve.dev";
+        publicKey = "cache.so1ve.dev-1:SijyzF9iE/VZwMXgMpd/HrNX9iItDZ1tdiNdeGakQGY=";
       };
     };
   };

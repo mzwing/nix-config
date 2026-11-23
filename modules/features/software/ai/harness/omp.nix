@@ -66,8 +66,7 @@ in {
         thinking_level = "high";
       };
       sensitiveModels = {
-        main = proxyModel "auto/kimi-for-coding";
-        expert = proxyModel "auto/kimi-k3.1-pro";
+        main = proxyModel "auto/kimi-k3.1-pro";
         flash = proxyModel "auto/glm-5.3-flash";
       };
       teams = {
@@ -85,8 +84,8 @@ in {
         };
         sensitive = with sensitiveModels; {
           default = main;
-          slow = expert;
-          plan = expert;
+          slow = main;
+          plan = main;
           task = flash;
           smol = flash;
           docs = main;
@@ -215,7 +214,7 @@ in {
             maxRetries = 3;
             fallbackChains =
               {
-                default = [(proxyModel "auto/gpt-6.2-sol") sensitiveModels.expert];
+                default = [(proxyModel "auto/gpt-6.2-sol") sensitiveModels.main];
                 smol = [sensitiveModels.flash];
                 # Otherwise the default chain would retry commit/tiny on opus
                 ${cheapModelId} = [];
@@ -224,7 +223,6 @@ in {
               # Suffixless model keys win over role keys at any effort, so the sensitive team never falls back to the default team's models
               // (with sensitiveModels; {
                 ${main} = [flash];
-                ${expert} = [flash];
                 ${flash} = [proxyModel "auto/hy4flash-free"];
               });
           };
