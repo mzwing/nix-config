@@ -223,7 +223,7 @@ in {
               # Suffixless model keys win over role keys at any effort, so the sensitive team never falls back to the default team's models
               // (with sensitiveModels; {
                 ${main} = [flash];
-                ${flash} = [proxyModel "auto/hy4flash-free"];
+                ${flash} = [(proxyModel "auto/hy4flash-free")];
               });
           };
 
