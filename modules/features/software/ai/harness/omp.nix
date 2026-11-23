@@ -68,7 +68,6 @@ in {
       sensitiveModels = {
         main = proxyModel "auto/kimi-for-coding";
         expert = proxyModel "auto/kimi-k3.1-pro";
-        sub = proxyModel "auto/glm-5.3";
         flash = proxyModel "auto/glm-5.3-flash";
       };
       teams = {
@@ -88,10 +87,10 @@ in {
           default = main;
           slow = expert;
           plan = expert;
-          task = sub;
-          smol = sub;
+          task = flash;
+          smol = flash;
           docs = main;
-          security = sub;
+          security = flash;
           commit = flash;
           tiny = flash;
         };
@@ -224,10 +223,9 @@ in {
               }
               # Suffixless model keys win over role keys at any effort, so the sensitive team never falls back to the default team's models
               // (with sensitiveModels; {
-                ${main} = [sub];
-                ${expert} = [sub];
-                ${sub} = [flash];
-                ${flash} = [];
+                ${main} = [flash];
+                ${expert} = [flash];
+                ${flash} = [proxyModel "auto/hy4flash-free"];
               });
           };
 
