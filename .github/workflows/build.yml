@@ -15,8 +15,8 @@ jobs:
     name: Distributed build
     permissions:
       contents: read
-      # actions: write is required to clear the store cache family before each save.
-      actions: write
+      id-token: write
+      packages: write
     uses: mzwing/nix-actions/.github/workflows/distributed-build.yml@master
     with:
       name-prefix: nix
@@ -24,7 +24,6 @@ jobs:
     secrets:
       TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
       TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
-      CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
   # A job here rather than a workflow_run listener: runs dispatched by update.yml's GITHUB_TOKEN never fire workflow_run.
   mirror:

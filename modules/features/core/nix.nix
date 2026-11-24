@@ -52,7 +52,7 @@ in {
             in
               lib.mkForce (
                 reachable (config.mzwing.nix.mirrorSubstituters ++ cacheData.defaultSubstituters)
-                # Caches rank by the priority they advertise (numtide 30, cuda 50) before list position; pin these to the cachix caches' 41.
+                # Caches rank by the priority they advertise (numtide 30, cuda 50) before list position; pin these to the NUR caches' 41
                 ++ map (url: "${url}?priority=41") (reachable config.mzwing.nix.extraSubstituters)
                 ++ reachable (map (cache: cache.url) nurCaches)
               );

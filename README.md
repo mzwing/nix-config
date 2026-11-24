@@ -42,7 +42,7 @@ This repo will use GitHub Actions to build and cache the packages which not yet 
 
 Most design is originally from [Misaka13514/flake](https://github.com/Misaka13514/flake).
 
-Currently I use Cachix, see <https://mzwing.cachix.org>.
+The binary cache is [firn](https://github.com/so1ve/firn) at <https://nix-cache.service.mzwing.eu.org>, public key `nix-cache.service.mzwing.eu.org-1:ZI+74ziFu8O5j5jSAz45VTPo09uLYH7O8F2dBYBQYsk=`.
 
 ## Credits
 

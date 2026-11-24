@@ -14,15 +14,14 @@
       "https://nix-community.cachix.org"
       "https://cache.nixos-cuda.org?priority=41"
       "https://cache.numtide.com?priority=41"
-      # "https://mzwing.cachix.org"
-      "https://cachix.service.mzwing.eu.org"
+      "https://nix-cache.service.mzwing.eu.org"
       "https://cache.so1ve.dev"
     ];
     extra-trusted-public-keys = [
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
       "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
-      "mzwing.cachix.org-1:tOO3NqAwrXyPCnecEl/0wXwparCRksM5TeuS/wZK+KA="
+      "nix-cache.service.mzwing.eu.org-1:ZI+74ziFu8O5j5jSAz45VTPo09uLYH7O8F2dBYBQYsk="
       "cache.so1ve.dev-1:SijyzF9iE/VZwMXgMpd/HrNX9iItDZ1tdiNdeGakQGY="
     ];
   };
@@ -79,7 +78,7 @@
     # Deliberately no `follows`: upstream only builds against its own nixpkgs pin, and overriding it means cache.numtide.com misses and everything rebuilds.
     llm-agents.url = "github:numtide/llm-agents.nix";
 
-    # No `follows` either, so the build matches mzwing.cachix.org's
+    # No `follows` either, so the build matches nix-cache.service.mzwing.eu.org's
     baton.url = "github:MZWNET/baton";
 
     # No `follows`, so uptarn-agent matches cache.so1ve.dev's build

@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
-# Build the root devenv shell for every system this run's fleet can build for. devenv's own Cachix push daemon publishes whatever it realises, so nothing here collects or reconciles output paths.
+# Build the root devenv shell for every system this run's fleet can build for; the coordinator's firn post-build hook uploads what it builds
 set -euo pipefail
-
-# Gitignored, so only CI ever pushes; a developer shell stays pull-only.
-printf '{ cachix.push = "mzwing"; }\n' >devenv.local.nix
 
 # Sits after the 200-minute target build inside the coordinator's 350.
 timeout_minutes=60

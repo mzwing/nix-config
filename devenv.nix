@@ -27,8 +27,6 @@
       cnb-cli
     ]);
 
-  cachix.pull = ["mzwing"];
-
   enterTest = ''
     act --version
     actionlint -version

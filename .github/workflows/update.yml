@@ -33,7 +33,6 @@ jobs:
         uses: mzwing/nix-actions/nix/setup@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          cachix-pull: 'false'
           install-devenv: 'true'
 
       # Sole writer of the cache family build.yml and tests.yml restore from.
