@@ -11,6 +11,12 @@ let
     hosts.${host}
   ];
 in {
+  # <host>/uptarn/token: the bearer token that host's agent registers itself with on first report
+  "azure/uptarn/token" = {
+    file = ./azure/uptarn/token.age;
+    recipients = ownedBy "mzwing-azure";
+  };
+
   # git-crypt's symmetric key for MZWNET/agent-history, the repository baton-sync keeps agent sessions in
   "baton/git-crypt-key" = {
     file = ./baton/git-crypt-key.age;
@@ -104,6 +110,11 @@ in {
     ];
   };
 
+  "huaweicloud-gz/uptarn/token" = {
+    file = ./huaweicloud-gz/uptarn/token.age;
+    recipients = ownedBy "mzwing-huaweicloud-gz";
+  };
+
   # instabox/magpie/<server>: the key `magpie gateway-key add mzwing-instabox` printed on that server
   "instabox/magpie/mzwing-azure" = {
     file = ./instabox/magpie/mzwing-azure.age;
@@ -125,9 +136,19 @@ in {
     recipients = ownedBy "mzwing-matrix";
   };
 
+  "matrix/uptarn/token" = {
+    file = ./matrix/uptarn/token.age;
+    recipients = ownedBy "mzwing-matrix";
+  };
+
   # A whole systemd-networkd unit, for a host whose addresses are static
   "lycheen-us/network/public" = {
     file = ./lycheen-us/network/public.age;
+    recipients = ownedBy "mzwing-lycheen-us";
+  };
+
+  "lycheen-us/uptarn/token" = {
+    file = ./lycheen-us/uptarn/token.age;
     recipients = ownedBy "mzwing-lycheen-us";
   };
 
@@ -268,6 +289,18 @@ in {
   "upcloud-sg/network/utility-ipv4" = {
     file = ./upcloud-sg/network/utility-ipv4.age;
     recipients = ownedBy "mzwing-upcloud-sg";
+  };
+
+  # The hub's ENROLLMENT_TOKEN, UPTARN_ENROLLMENT_TOKEN in MZWNET/actions. Every host selecting software/system/uptarn belongs on this list
+  "uptarn/enroll-token" = {
+    file = ./uptarn/enroll-token.age;
+    recipients = [
+      mzwing
+      hosts.mzwing-azure
+      hosts.mzwing-huaweicloud-gz
+      hosts.mzwing-lycheen-us
+      hosts.mzwing-matrix
+    ];
   };
 
   "wakatime/api-key" = {

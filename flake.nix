@@ -82,6 +82,9 @@
     # No `follows` either, so the build matches mzwing.cachix.org's
     baton.url = "github:MZWNET/baton";
 
+    # No `follows`, so uptarn-agent matches cache.so1ve.dev's build
+    uptarn.url = "github:so1ve/uptarn";
+
     # Only for its home-manager module; the omp package still comes from llm-agents.
     oh-my-pi = {
       url = "github:can1357/oh-my-pi";

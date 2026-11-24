@@ -23,6 +23,7 @@
       "software/security/ssh"
       "software/server/caddy"
       "software/shell"
+      "software/system/uptarn"
       "software/vcs/git"
       "users/mzwing"
       "users/root"

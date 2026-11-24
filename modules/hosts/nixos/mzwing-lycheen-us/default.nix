@@ -23,6 +23,7 @@
       "software/server/caddy"
       "software/server/openlist"
       "software/shell"
+      "software/system/uptarn"
       "software/vcs/git"
       "users/mzwing"
       "users/root"

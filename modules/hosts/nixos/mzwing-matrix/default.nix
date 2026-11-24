@@ -35,6 +35,7 @@
       "software/security/gpg"
       "software/security/ssh"
       "software/shell"
+      "software/system/uptarn"
       "software/vcs"
       "ui/fonts"
       "users/mzwing"

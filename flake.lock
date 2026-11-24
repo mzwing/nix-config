@@ -660,6 +660,22 @@
         "type": "github"
       }
     },
+    "nixpkgs_4": {
+      "locked": {
+        "lastModified": 1795234589,
+        "narHash": "sha256-f/VVvxf5RsQgWVhUtefoca5ktVg0DA2bnkMOcmSnozo=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "2786a2a72088ecf32aea5b3ec52099e6a7cff78f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nur": {
       "inputs": {
         "flake-parts": "flake-parts_3",
@@ -769,6 +785,7 @@
         "oh-my-pi": "oh-my-pi",
         "paseo": "paseo",
         "qiuchenly-cli": "qiuchenly-cli",
+        "uptarn": "uptarn",
         "zen-browser": "zen-browser"
       }
     },
@@ -921,6 +938,24 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
+        "type": "github"
+      }
+    },
+    "uptarn": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_4"
+      },
+      "locked": {
+        "lastModified": 1795551046,
+        "narHash": "sha256-CzSQUObWnwUEDJ1hAUkqzRXZlOOrFXjq0xV2YyAsTCM=",
+        "owner": "so1ve",
+        "repo": "uptarn",
+        "rev": "25fb8175710af13cb0e9c0ede5c5ff266566f148",
+        "type": "github"
+      },
+      "original": {
+        "owner": "so1ve",
+        "repo": "uptarn",
         "type": "github"
       }
     },
