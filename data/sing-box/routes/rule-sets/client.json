@@ -2,6 +2,26 @@
   "route": {
     "rule_set": [
       {
+        "tag": "geosite-anthropic",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/lyc8503/sing-box-rules@rule-set-geosite/geosite-anthropic.srs"
+      },
+      {
+        "tag": "claude",
+        "type": "inline",
+        "rules": [
+          {
+            "domain_suffix": [
+              "anthropic.com",
+              "claude.ai",
+              "claude.com",
+              "claudeusercontent.com"
+            ]
+          }
+        ]
+      },
+      {
         "tag": "geosite-disney",
         "type": "remote",
         "format": "binary",

@@ -9,17 +9,6 @@
         "server": "dns-mzwing-tailscale"
       },
       {
-        "query_type": [
-          "AAAA"
-        ],
-        "rule_set": [
-          "geosite-anthropic",
-          "claude"
-        ],
-        "action": "predefined",
-        "rcode": "NOERROR"
-      },
-      {
         "inbound": [
           "tun-in"
         ],

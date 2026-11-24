@@ -48,10 +48,6 @@
 
   clientFragments = secrets: lib.filter (lib.hasPrefix "sing-box/client/") (builtins.attrNames secrets);
 
-  # Haru's Los Angeles nodes with clean IPs, taken from Haru's own list since subs-check renames every node after its exit.
-  claudeNodeList = "subs-check/self/haru";
-  selectClaudeNodes = ''{outbounds: [.outbounds[] | select(.tag | endswith(" - 洛杉矶纯净"))]}'';
-
   # One subs-check-pro run over every subscription, then the outbounds sing-box routes through, grouped by region and service. The speed tests pick this machine's Google cache node and WARP peer, and `render` fills them into what a profile merges.
   mkOutboundsCommand = {
     pkgs,
@@ -156,13 +152,9 @@
               set --
             fi
 
-            # Haru's nodes are unreachable straight from China
-            clash2sing-box convert "${secretPath claudeNodeList}" | jq '${selectClaudeNodes} | .outbounds[].detour = "warp"' > "$work/claude.json"
-
             # `(?<!-)` keeps a region group off the hyphenated qualifiers that sit elsewhere in a name: the CDN-side location in `HK¹-US⁰`, TikTok's `TK-US`, and the `|IN-XX` entry tag. Client fragment tags carry no exit region, so each region group names its own naive nodes; WARP would win every race it entered
             clash2sing-box convert \
               "$output/sub/all.yaml" \
-              "$work/claude.json" \
               ${lib.concatMapStringsSep " " (name: ''"${secretPath name}"'') (clientFragments secrets)} \
               "$@" \
               --outbound-no-urltest warp \
@@ -172,7 +164,6 @@
               --outbound-group 'sg=(?<!-)\bSG\b|^azure-naive$' \
               --outbound-group 'us=(?<!-)\bUS\b|^lycheen-us-naive$' \
               --outbound-group 'openai=GPT⁺' \
-              --outbound-group 'claude= - 洛杉矶纯净$' \
               --outbound-group 'gemini=(?<!-)\bGM\b' \
               --outbound-group 'copilot=(?<!-)\bCP\b' \
               --outbound-group 'youtube=\bYT\b' \
@@ -373,24 +364,12 @@ in {
           settings = profile config.mzwing.sing-box.serverProfile;
           inbounds = "sing-box/${hostname}/inbounds";
           caddySites = "caddy/${hostname}";
-
-          # The group clash2sing-box's --outbound-group builds, without the proxy and urltest-proxy groups every conversion adds.
-          claudeOutboundsCommand = pkgs.writeShellApplication {
-            name = "sing-box-claude-outbounds";
-            runtimeInputs = [
-              pkgs.jq
-              pkgs.nur.repos.mzwing.clash2sing-box
-            ];
-            text = ''
-              clash2sing-box convert "${secretPath claudeNodeList}" | jq '${selectClaudeNodes} | .outbounds += [{type: "urltest", tag: "claude", outbounds: .outbounds | map(.tag)}]' > /run/sing-box/claude.json
-            '';
-          };
         in
           lib.mkMerge [
             (service settings)
             {
               age.secrets =
-                ageSecrets secrets {} [inbounds claudeNodeList]
+                ageSecrets secrets {} [inbounds]
                 // ageSecrets secrets {owner = config.services.caddy.user;} [caddySites];
 
               services.caddy.extraConfig = "import ${secretPath caddySites}";
@@ -410,12 +389,9 @@ in {
 
               systemd.services.sing-box = {
                 serviceConfig = {
-                  ExecStartPre = [
-                    "+${pkgs.coreutils}/bin/ln -sf ${secretPath inbounds} /run/sing-box/inbounds.json"
-                    "+${lib.getExe claudeOutboundsCommand}"
-                  ];
+                  ExecStartPre = ["+${pkgs.coreutils}/bin/ln -sf ${secretPath inbounds} /run/sing-box/inbounds.json"];
                 };
-                restartTriggers = [secrets.${inbounds} secrets.${claudeNodeList}];
+                restartTriggers = [secrets.${inbounds}];
               };
             }
           ]))

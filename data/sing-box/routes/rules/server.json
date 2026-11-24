@@ -26,22 +26,6 @@
         ],
         "action": "route",
         "outbound": "mzwing-tailscale-endpoint"
-      },
-      {
-        "rule_set": [
-          "geosite-anthropic",
-          "claude"
-        ],
-        "action": "resolve",
-        "strategy": "ipv4_only"
-      },
-      {
-        "rule_set": [
-          "geosite-anthropic",
-          "claude"
-        ],
-        "action": "route",
-        "outbound": "claude"
       }
     ],
     "auto_detect_interface": true,
