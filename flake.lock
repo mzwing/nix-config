@@ -422,11 +422,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795540681,
-        "narHash": "sha256-dkeUyOXsI/D1YFD1+dmBEp990OysRUIbuO5p+mX6V60=",
+        "lastModified": 1795551908,
+        "narHash": "sha256-DJ6DomRtOoSX+IlO1wms0/i+XMoWv5UT/d6IzaGib3E=",
         "owner": "yetone",
         "repo": "magpie-releases",
-        "rev": "755edbb62b57f1a18d12f7606b1c904cdbf6ba87",
+        "rev": "25711badb39c21faea12b40c5a87c7816300436f",
         "type": "github"
       },
       "original": {
@@ -668,11 +668,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795541179,
-        "narHash": "sha256-rvKOlqTrrOfkCeshGnoQKb+QIqckgeBEiTsszkICLBo=",
+        "lastModified": 1795552884,
+        "narHash": "sha256-jB7qKuGfrrQhg+ysL+9z75dtL2PDIM6ziX6405d7MX8=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "88d52fe59821e40cb1c6ea908ec52d39e8b651a5",
+        "rev": "786645fee1e03f6fd843b9ce769a1cfb71cbcdc5",
         "type": "github"
       },
       "original": {
@@ -694,11 +694,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1795540221,
-        "narHash": "sha256-vnyF4Irc5BNVORNahrQTmM/Nli8zQvcWfjRmDIpwsDU=",
+        "lastModified": 1795546358,
+        "narHash": "sha256-421XVm0QuyVAxvh6sqsTpB+4AQw9LVPUhW1Jw8gpwME=",
         "owner": "can1357",
         "repo": "oh-my-pi",
-        "rev": "230e7494405bee0188c9597d3c4647828a0824ba",
+        "rev": "03597e34f1ac039b9d0e2cb5bc3e296e6a8c5cd5",
         "type": "github"
       },
       "original": {
