@@ -43,6 +43,12 @@ in {
     recipients = ownedBy "mzwing-lycheen-us";
   };
 
+  # chromium/<name>: the private key that signs a Chromium extension packed from its GitHub release and fixes its ID
+  "chromium/google-qr-sms-helper" = {
+    file = ./chromium/google-qr-sms-helper.age;
+    recipients = [mzwing hosts.mzwing-matrix];
+  };
+
   # `TELEGRAM_BOT_TOKEN=…` for the bot claude-tg sessions talk through
   "claude-code/telegram-bot-token" = {
     file = ./claude-code/telegram-bot-token.age;

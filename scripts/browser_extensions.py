@@ -2,6 +2,8 @@
 
 `add` lists an extension by its Chrome Web Store or addons.mozilla.org page, for Chromium or Zen, under the name in the page's URL unless one is given. A Chromium extension is also pinned in data/chromium/extensions.lock.json, since ungoogled-chromium never downloads extensions itself; Zen installs and updates its own from AMO. `update` re-pins every Chromium extension to its newest release. Run it from the repo root, through `just browser-extension-add` and `just chromium-extensions-update`.
 
+GitHub-released Chromium extensions are added by hand with a signing key in secrets/chromium/<name>.age and a lock entry carrying `repo`. `update` re-pins them to their latest GitHub release.
+
     python3 scripts/browser_extensions.py add https://chromewebstore.google.com/detail/bitwarden-password-manager/nngceckbapebfimnlniiiahkandclblb
     python3 scripts/browser_extensions.py add https://addons.mozilla.org/firefox/addon/ublock-origin/ ublock
     python3 scripts/browser_extensions.py update
@@ -10,12 +12,15 @@
 from __future__ import annotations
 
 import base64
+import hashlib
+import io
 import json
 import re
 import sys
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 
 CHROMIUM_EXTENSIONS = Path("data/chromium/extensions.json")
@@ -69,17 +74,42 @@ def pin(extension_ids: list[str]) -> tuple[dict[str, dict[str, str]], list[str]]
     return pins, unavailable
 
 
+def pin_github(repo: str) -> dict[str, str]:
+    with urllib.request.urlopen(
+        f"https://api.github.com/repos/{repo}/releases/latest"
+    ) as response:
+        release = json.load(response)
+    [url] = [
+        asset["browser_download_url"]
+        for asset in release["assets"]
+        if asset["name"].endswith(".zip")
+    ]
+    with urllib.request.urlopen(url) as response:
+        data = response.read()
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        version = json.loads(archive.read("manifest.json"))["version"]
+    return {
+        "hash": "sha256-" + base64.b64encode(hashlib.sha256(data).digest()).decode(),
+        "repo": repo,
+        "url": url,
+        "version": version,
+    }
+
+
 def update() -> int:
     names_by_id = {
         extension_id: name
         for name, extension_id in read_json(CHROMIUM_EXTENSIONS).items()
     }
-    pins, unavailable = pin(list(names_by_id))
+    lock = read_json(CHROMIUM_LOCK)
+    github = {i: lock[i]["repo"] for i in names_by_id if "repo" in lock.get(i, {})}
+    pins, unavailable = pin([i for i in names_by_id if i not in github])
     if unavailable:
         names = ", ".join(sorted(names_by_id[i] for i in unavailable))
         print(f"not served by the Chrome Web Store: {names}", file=sys.stderr)
         return 1
 
+    pins.update({i: pin_github(repo) for i, repo in github.items()})
     write_json(CHROMIUM_LOCK, pins)
     print(f"pinned {len(pins)} extensions in {CHROMIUM_LOCK}")
     return 0

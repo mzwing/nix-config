@@ -25,7 +25,7 @@ in {
       "nixos"
     ];
 
-    requires = ["darwin/homebrew"];
+    requires = ["darwin/homebrew" "home/agenix"];
 
     packages.nixos = pkgs: [pkgs.ungoogled-chromium];
 
@@ -40,10 +40,29 @@ in {
       config,
       lib,
       pkgs,
+      secrets,
       ...
     }: let
       inherit (pkgs.stdenv.hostPlatform) isDarwin;
       lock = lib.importJSON ../../../../data/chromium/extensions.lock.json;
+      pinned =
+        lib.mapAttrs (name: id: {
+          inherit id;
+          pin = lock.${id} or (throw "software/browser/chromium: ${name} is missing from data/chromium/extensions.lock.json; run `just chromium-extensions-update`");
+        })
+        extensions;
+      github = lib.filterAttrs (_: extension: extension.pin ? repo) pinned;
+      crxDir = "${config.xdg.stateHome}/chromium-extensions";
+      crxPath = name: pin: "${crxDir}/${name}-${pin.version}.crx";
+
+      # Agenix decrypts its secrets after activation, so the signing key is decrypted here
+      packCrx = pkgs.writeShellApplication {
+        name = "chromium-pack-crx";
+        runtimeInputs = [pkgs.go-crx3 config.age.package];
+        text = ''
+          crx3 pack "$1" -p <(age --decrypt ${lib.concatMapStringsSep " " (path: "-i ${lib.escapeShellArg path}") config.age.identityPaths} "$2") -o "$3"
+        '';
+      };
 
       chromiumDir =
         if isDarwin
@@ -93,20 +112,40 @@ in {
         # The cask and packages.nixos install the browser.
         package = null;
         extensions =
-          lib.mapAttrsToList (name: id: let
-            pin = lock.${id} or (throw "software/browser/chromium: ${name} is missing from data/chromium/extensions.lock.json; run `just chromium-extensions-update`");
-          in {
+          lib.mapAttrsToList (name: {
+            id,
+            pin,
+          }: {
             inherit id;
             inherit (pin) version;
-            crxPath = pkgs.fetchurl {
-              name = "${name}-${pin.version}.crx";
-              inherit (pin) url hash;
-            };
+            crxPath =
+              if pin ? repo
+              then crxPath name pin
+              else
+                pkgs.fetchurl {
+                  name = "${name}-${pin.version}.crx";
+                  inherit (pin) url hash;
+                };
           })
-          extensions;
+          pinned;
       };
 
       home.activation = {
+        chromiumGithubExtensions = lib.hm.dag.entryAfter ["writeBoundary"] (lib.concatStringsSep "\n" (lib.mapAttrsToList (name: {pin, ...}: let
+            zip = pkgs.fetchurl {
+              name = "${name}-${pin.version}.zip";
+              inherit (pin) url hash;
+            };
+            output = crxPath name pin;
+          in ''
+            if [[ ! -f ${lib.escapeShellArg output} ]]; then
+              run mkdir -p ${lib.escapeShellArg crxDir}
+              run ${lib.getExe packCrx} ${zip} ${secrets."chromium/${name}"} ${lib.escapeShellArg output}
+              run find ${lib.escapeShellArg crxDir} -maxdepth 1 -name ${lib.escapeShellArg "${name}-*.crx"} ! -name ${lib.escapeShellArg "${name}-${pin.version}.crx"} -delete
+            fi
+          '')
+          github));
+
         # Not -q: an early exit would SIGPIPE `profiles` and fail the pipeline under pipefail.
         chromiumPolicies = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
           if ! /usr/bin/profiles show -type configuration | grep -F 'profileUUID: ${mobileconfigUUID}' >/dev/null; then
