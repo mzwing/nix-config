@@ -157,29 +157,29 @@
       },
       "deja-vu-skills": {
         "branch": "main",
-        "hash": "sha256-oFd/Yh46Soax9VymVNU1OqTFcmTaxCoMdB0Gm4107Rs=",
+        "hash": "sha256-iX33JlFHmoN26LucuULbeNW7imoOzW5fbjOxVk3v57M=",
         "repository": {
           "owner": "vshulcz",
           "repo": "deja-vu",
           "type": "GitHub"
         },
-        "revision": "e9825f764f76c71ad05a30ea3132ffe028a74094",
+        "revision": "ca2d012837efc217ef894b7b34377d2a90d30690",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vshulcz/deja-vu/archive/e9825f764f76c71ad05a30ea3132ffe028a74094.tar.gz"
+        "url": "https://github.com/vshulcz/deja-vu/archive/ca2d012837efc217ef894b7b34377d2a90d30690.tar.gz"
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-HEuwV80KIsJD6SHL+acaZyRiqqjVtT9sn/SlgM+kaqU=",
+        "hash": "sha256-Jy0Ti9BrkV54kRqZwmNeN8LnHyQqnUYBGUJ03EO4/LA=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "cf6b3a5d82a89d6795a4b3e4df70a6fe9e8cce70",
+        "revision": "6aec61ce5435e0c2df4f09825054f094ca101e50",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/cf6b3a5d82a89d6795a4b3e4df70a6fe9e8cce70.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/6aec61ce5435e0c2df4f09825054f094ca101e50.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
