@@ -173,7 +173,7 @@
           ".gstatic.com"
         ],
         "action": "route",
-        "outbound": "proxy"
+        "outbound": "gemini"
       },
       {
         "rule_set": [
@@ -197,13 +197,6 @@
         ],
         "action": "route",
         "outbound": "openai"
-      },
-      {
-        "rule_set": [
-          "geosite-google-gemini"
-        ],
-        "action": "route",
-        "outbound": "gemini"
       },
       {
         "rule_set": [
@@ -282,6 +275,14 @@
         ],
         "action": "route",
         "outbound": "direct"
+      },
+      {
+        "rule_set": [
+          "geosite-google-gemini",
+          "geosite-google"
+        ],
+        "action": "route",
+        "outbound": "gemini"
       }
     ],
     "auto_detect_interface": true,
