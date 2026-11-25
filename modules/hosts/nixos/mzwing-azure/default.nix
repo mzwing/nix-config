@@ -19,6 +19,7 @@
       "software/ai/magpie"
       "software/editor/neovim"
       "software/network/sing-box"
+      "software/network/syncthing"
       # Azure gives the VM no IPv6
       "software/network/sing-box-warp"
       "software/security/gpg"

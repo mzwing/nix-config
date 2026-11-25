@@ -312,8 +312,8 @@ in {
       outboundsCommand = mkOutboundsCommand {inherit pkgs secrets secretPath stateDir;};
       checker = "subs-check";
 
-      desktopSettings = let
-        base = profile config.mzwing.sing-box.desktopProfile;
+      clientSettings = let
+        base = profile config.mzwing.sing-box.clientProfile;
         campusRule = lib.findFirst (rule: (rule.mode or null) == "and" && (builtins.head rule.rules) ? ip_cidr) null (lib.importJSON (fragmentDir + "/routes/rules/client/common.json")).route.rules;
       in
         base
@@ -347,20 +347,28 @@ in {
         };
     in {
       options.mzwing.sing-box = {
+        role = lib.mkOption {
+          type = lib.types.enum ["server" "client"];
+          default =
+            if type == "server"
+            then "server"
+            else "client";
+          description = "Whether this host serves the proxy inbounds or runs the subscription client.";
+        };
         serverProfile = lib.mkOption {
           type = lib.types.str;
           default = "server";
           description = "The data/sing-box profile this server merges.";
         };
-        desktopProfile = lib.mkOption {
+        clientProfile = lib.mkOption {
           type = lib.types.str;
           default = "linux";
-          description = "The data/sing-box profile this desktop merges.";
+          description = "The data/sing-box profile this client merges.";
         };
       };
 
       config = lib.mkMerge [
-        (lib.mkIf (type == "server") (let
+        (lib.mkIf (config.mzwing.sing-box.role == "server") (let
           settings = profile config.mzwing.sing-box.serverProfile;
           inbounds = "sing-box/${hostname}/inbounds";
           caddySites = "caddy/${hostname}";
@@ -396,8 +404,8 @@ in {
             }
           ]))
 
-        (lib.mkIf (type == "desktop") (lib.mkMerge [
-          (service desktopSettings)
+        (lib.mkIf (config.mzwing.sing-box.role == "client") (lib.mkMerge [
+          (service clientSettings)
           {
             users.users.${checker} = {
               isSystemUser = true;

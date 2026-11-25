@@ -2,7 +2,7 @@
   mzwing.hosts.nixos.mzwing-matrix = {
     hostname = "mzwing-matrix";
     system = "x86_64-linux";
-    type = "desktop";
+    type = "server";
     username = "mzwing";
     useremail = "mzwing@mzwing.eu.org";
 
@@ -10,7 +10,6 @@
       "core/nix"
       "home/base"
       "network/china-mirrors"
-      "nixos/desktop"
       "nixos/server/base"
       "nixos/server/ssh"
       "nixos/server/zram"
@@ -22,16 +21,11 @@
       "software/ai/paseo"
       "software/ai/skills"
       "software/ai/tools"
-      "software/browser/chromium"
-      "software/browser/zen"
       "software/development"
       "software/editor/neovim"
-      "software/editor/vscode"
-      "software/editor/zed-editor"
       "software/network/sing-box"
       "software/network/syncthing"
       "software/network/tools"
-      "software/security/bitwarden"
       "software/security/gpg"
       "software/security/ssh"
       "software/shell"
@@ -46,13 +40,17 @@
       ./_disk.nix
       ./_hardware.nix
       {
+        age.identityPaths = ["/home/mzwing/.ssh/agenix"];
         mzwing.nix.unreachableSubstituters = [
           "https://mirror.sjtu.edu.cn/nix-channels/store"
           "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
         ];
-        mzwing.sing-box.desktopProfile = "matrix";
-        # matrix.server.mzwing.eu.org points at the EUI-64 address. NetworkManager.conf takes only the number here and silently falls back to stable-privacy on "eui64"
-        networking.networkmanager.settings.connection."ipv6.addr-gen-mode" = 0;
+        mzwing.sing-box = {
+          role = "client";
+          clientProfile = "matrix";
+        };
+        # networkd's SLAAC default keeps the EUI-64 address matrix.server.mzwing.eu.org points at
+        networking.useNetworkd = true;
       }
     ];
   };

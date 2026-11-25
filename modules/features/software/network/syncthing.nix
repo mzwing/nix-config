@@ -86,12 +86,11 @@ in {
       lib,
       pkgs,
       secrets,
-      type,
       ...
     }: let
       repos = "${config.services.syncthing.dataDir}/repos";
     in
-      lib.mkIf (type == "server") {
+      lib.mkIf (lib.elem hostname syncthing.transit) {
         age.secrets.syncthing-key.file = secrets."syncthing/${hostname}";
 
         services.syncthing = {
@@ -122,7 +121,7 @@ in {
       type,
       ...
     }:
-      lib.mkIf (type != "server") {
+      lib.mkIf (!lib.elem hostname syncthing.transit) {
         age.secrets.syncthing-key.file = secrets."syncthing/${hostname}";
 
         services.syncthing = {

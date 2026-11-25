@@ -18,6 +18,7 @@
       "software/ai/magpie"
       "software/editor/neovim"
       "software/network/sing-box"
+      "software/network/syncthing"
       "software/security/gpg"
       "software/security/ssh"
       "software/server/caddy"

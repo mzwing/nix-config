@@ -167,7 +167,7 @@ in {
     recipients = ownedBy "mzwing-lycheen-us";
   };
 
-  # The sing-box client's, like subs-check/* below. The Mac reads them with the mzwing key, and every NixOS desktop selecting software/network/sing-box belongs on these lists.
+  # The sing-box client's, like subs-check/* below. The Mac reads them with the mzwing key, and every NixOS host whose mzwing.sing-box.role is client belongs on these lists.
   "sing-box/api-secret" = {
     file = ./sing-box/api-secret.age;
     recipients = [mzwing hosts.mzwing-matrix];
@@ -232,6 +232,11 @@ in {
     recipients = [mzwing];
   };
 
+  "syncthing/mzwing-azure" = {
+    file = ./syncthing/mzwing-azure.age;
+    recipients = ownedBy "mzwing-azure";
+  };
+
   "syncthing/mzwing-cnb" = {
     file = ./syncthing/mzwing-cnb.age;
     recipients = ownedBy "mzwing-cnb";
@@ -245,6 +250,11 @@ in {
   "syncthing/mzwing-instabox" = {
     file = ./syncthing/mzwing-instabox.age;
     recipients = ownedBy "mzwing-instabox";
+  };
+
+  "syncthing/mzwing-lycheen-us" = {
+    file = ./syncthing/mzwing-lycheen-us.age;
+    recipients = ownedBy "mzwing-lycheen-us";
   };
 
   "syncthing/mzwing-matrix" = {
