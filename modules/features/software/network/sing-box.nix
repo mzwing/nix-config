@@ -289,6 +289,12 @@ in {
         # Replies to the TUN arrive on an interface the main table doesn't route their source through.
         networking.firewall.checkReversePath = "loose";
 
+        # networkd otherwise deletes the routes and ip rules auto_route and the tailscale endpoint add whenever it starts or reconfigures a link
+        systemd.network.config.networkConfig = {
+          ManageForeignRoutes = false;
+          ManageForeignRoutingPolicyRules = false;
+        };
+
         # sing-box answers every DNS query here, even lego's to the authoritative servers, and can serve the challenge record's cached absence for longer than lego keeps checking.
         security.acme.defaults.extraLegoFlags = ["--dns.propagation.wait" "1m"];
 
@@ -412,6 +418,9 @@ in {
               group = checker;
             };
             users.groups.${checker} = {};
+
+            # resolved's LLMNR listens on 5355, the port of the mixed-in-proxy inbound
+            services.resolved.settings.Resolve.LLMNR = false;
 
             # The checker also reads the client fragments: convert groups them with the subscription nodes, and the WARP one holds the identity its speed test probes with
             age.secrets = ageSecrets secrets {owner = checker;} (subsCheckSecrets secrets ++ clientFragments secrets);
