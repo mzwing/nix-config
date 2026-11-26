@@ -200,15 +200,6 @@
             ;;
 
           warp-speed-test)
-            family="''${2:-ipv4}"
-            case "$family" in
-              ipv4 | ipv6) ;;
-              *)
-                echo 'usage: sing-box-outbounds warp-speed-test [ipv4|ipv6]' >&2
-                exit 1
-                ;;
-            esac
-
             work="$(mktemp -d)"
             trap 'rm -rf "$work"' EXIT
 
@@ -216,10 +207,17 @@
             private_key="$(jq -r '.endpoints[0].private_key' "$endpoint")"
             public_key="$(jq -r '.endpoints[0].peers[0].public_key' "$endpoint")"
             reserved="$(jq -r '.endpoints[0].peers[0].reserved | "[\(join(", "))]"' "$endpoint")"
-            CloudflareWarpSpeedTest -all -pri "$private_key" -pub "$public_key" -reserved "$reserved" -f "${seeds}/warp-$family" -o "$work/result.csv"
 
-            # Row 1 of the body is the fastest: the tool sorts by latency ascending. IPv4 rows read `1.2.3.4:port`, IPv6 rows `[2606:...]:port`.
-            best="$(awk -F, 'NR == 2 { print $1; exit }' "$work/result.csv")"
+            # A scan that finds nothing writes no CSV. Rows read `IP:Port,Loss,Latency`, IPv6 ones `[2606:...]:port`
+            touch "$work/candidates"
+            for family in ipv4 ipv6; do
+              CloudflareWarpSpeedTest -all -pri "$private_key" -pub "$public_key" -reserved "$reserved" -f "${seeds}/warp-$family" -o "$work/$family.csv"
+              if [ -f "$work/$family.csv" ]; then
+                tail -n +2 "$work/$family.csv" >> "$work/candidates"
+              fi
+            done
+
+            best="$(sort -t, -k2,2n -k3,3n "$work/candidates" | awk -F, 'NR == 1 { print $1 }')"
             if [ -z "$best" ]; then
               echo 'scan found no endpoint under the latency/loss limits' >&2
               exit 1
@@ -238,7 +236,7 @@
             ;;
 
           *)
-            echo 'usage: sing-box-outbounds check|convert|google-speed-test|warp-speed-test [ipv4|ipv6]|render <directory>' >&2
+            echo 'usage: sing-box-outbounds check|convert|google-speed-test|warp-speed-test|render <directory>' >&2
             exit 1
             ;;
         esac
@@ -426,7 +424,7 @@ in {
             age.secrets = ageSecrets secrets {owner = checker;} (subsCheckSecrets secrets ++ clientFragments secrets);
 
             systemd.services.sing-box-outbounds = {
-              description = "Check the subscriptions and rebuild the sing-box outbounds from the nodes that pass";
+              description = "Check the subscriptions, rerun the speed tests and rebuild the sing-box outbounds";
               wants = ["network-online.target"];
               after = ["network-online.target"];
               serviceConfig = {
@@ -436,20 +434,24 @@ in {
                 ExecStart = [
                   "${lib.getExe outboundsCommand} check"
                   "${lib.getExe outboundsCommand} convert"
+                  # A speed test that finds nothing keeps its last result
+                  "-${lib.getExe outboundsCommand} google-speed-test"
+                  "-${lib.getExe outboundsCommand} warp-speed-test"
                 ];
                 # A reload would keep what sing-box rendered at its last start.
                 ExecStartPost = "+${config.systemd.package}/bin/systemctl restart sing-box.service";
               };
             };
 
-            # The speed tests are run by hand as the checker, whose traffic goes direct, followed by a restart of sing-box.
+            # Manual runs go through `sudo -u subs-check`, whose traffic goes direct
             environment.systemPackages = [outboundsCommand];
 
             systemd.timers.sing-box-outbounds = {
               wantedBy = ["timers.target"];
+              # On the campus network the results go stale in about 5 hours
               timerConfig = {
-                OnCalendar = "*-*-* 05:00:00";
-                Persistent = true;
+                OnBootSec = "5min";
+                OnUnitActiveSec = "5h";
               };
             };
 
@@ -509,7 +511,7 @@ in {
               printf 'http://%s:5858/config.json\n' "$(ipconfig getifaddr en0)"
               ;;
             *)
-              echo 'usage: sing-box-profile subs-check|google-speed-test|warp-speed-test [ipv4|ipv6]|macos|android' >&2
+              echo 'usage: sing-box-profile subs-check|google-speed-test|warp-speed-test|macos|android' >&2
               exit 1
               ;;
           esac
