@@ -5,17 +5,11 @@
       "nixos"
     ];
 
-    requires = ["darwin/homebrew"];
-
-    darwin.homebrew.casks = ["zen"];
-
     home = {
       inputs,
       lib,
-      pkgs,
       ...
     }: let
-      inherit (pkgs.stdenv.hostPlatform) isDarwin;
       extensions = lib.importJSON ../../../../data/zen/extensions.json;
     in {
       imports = [
@@ -24,13 +18,8 @@
 
       programs.zen-browser = {
         enable = true;
-        # The cask installs it on darwin.
-        package = lib.mkIf isDarwin null;
 
         policies = {
-          # Homebrew leaves a self-updating cask alone, so Zen has to update itself there.
-          DisableAppUpdate = lib.mkIf isDarwin false;
-
           # Zen installs and updates these from AMO itself, and removes every other extension, however it got installed.
           ExtensionSettings =
             lib.mapAttrs' (_: id:
