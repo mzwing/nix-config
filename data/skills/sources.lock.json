@@ -119,12 +119,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-5p6SdE2c9YDex8A9VSqHkXUjKuMiDHzAjoWtp04AqsY=",
+        "hash": "sha256-B7f3nAxxyTrnjigYzUCkOyuD97vWx/YUw32d8tmKJv4=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "5e758de6b5b65b01e82e4981c3af25157666ceea",
+        "revision": "a8ca908a6e9df6abef0dc5e632ed3d6105f6708f",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -157,29 +157,29 @@
       },
       "deja-vu-skills": {
         "branch": "main",
-        "hash": "sha256-SvfeqAAZnrlj3t22ErmN9tniQBbm78o+hhoFVB0lD8M=",
+        "hash": "sha256-HJ/Ip8lKef18Q4ZE3uhm8QwkW3ZK1jbtRDwLslZ4JBc=",
         "repository": {
           "owner": "vshulcz",
           "repo": "deja-vu",
           "type": "GitHub"
         },
-        "revision": "7ea186a1ab555d3e13dd97fd15028425ab14f30d",
+        "revision": "11b76f78861634f0f40c0182e6f33e42fdbc9d9a",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vshulcz/deja-vu/archive/7ea186a1ab555d3e13dd97fd15028425ab14f30d.tar.gz"
+        "url": "https://github.com/vshulcz/deja-vu/archive/11b76f78861634f0f40c0182e6f33e42fdbc9d9a.tar.gz"
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-EUEA+Ss17P1KKC+voT24DpAaLjOVeSOVSa8KvUWl7bc=",
+        "hash": "sha256-9Nxb2z+eiFrXJWleHRiXg6MrIzCpgi/BrJR4alLy8lw=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "e8961dca2752ee963daddc01adbb1b104bac5ab3",
+        "revision": "43131fde48069e0609d45efbe3c61889b39b4282",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/e8961dca2752ee963daddc01adbb1b104bac5ab3.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/43131fde48069e0609d45efbe3c61889b39b4282.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
