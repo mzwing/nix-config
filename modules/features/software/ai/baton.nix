@@ -35,7 +35,7 @@
       pathMap = lib.concatStringsSep ":" (map (root: "${root}=${projects}") (lib.filter (root: root != projects) repoRoots));
       paseo = osConfig.services.paseo or {enable = false;};
       agentByHarness = {
-        antigravity-cli = "antigravity";
+        antigravity = "antigravity";
         claude-code = "claude";
         omp = "omp";
         pi-coding-agent = "pi";
