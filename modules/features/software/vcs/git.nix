@@ -1,4 +1,25 @@
-{
+let
+  # git-cow calls git from PATH, so its own `worktree add` must reach the real git
+  gitWithCow = pkgs: let
+    inherit (pkgs) git;
+    wrapper = pkgs.writeShellScript "git" ''
+      if [ "''${1-}" = worktree ] && [ "''${2-}" = add ] && [ -z "''${GIT_COW_WRAPPED-}" ]; then
+        shift 2
+        GIT_COW_WRAPPED=1 exec ${pkgs.nur.repos.mzwing.git-cow}/bin/git-cow add "$@"
+      fi
+      exec ${git}/bin/git "$@"
+    '';
+  in
+    pkgs.symlinkJoin {
+      name = "git-with-cow-${git.version}";
+      inherit (git) version meta;
+      paths = [git];
+      postBuild = ''
+        rm $out/bin/git
+        ln -s ${wrapper} $out/bin/git
+      '';
+    };
+in {
   mzwing.features."software/vcs/git" = {
     meta.platforms = [
       "darwin"
@@ -7,8 +28,9 @@
 
     packages.system = pkgs:
       with pkgs; [
-        git
+        (gitWithCow pkgs)
         git-extras
+        nur.repos.mzwing.git-cow
       ];
 
     home = {
@@ -24,6 +46,7 @@
 
       programs.git = {
         enable = true;
+        package = gitWithCow pkgs;
         lfs.enable = true;
 
         signing = {

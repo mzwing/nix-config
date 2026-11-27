@@ -27,6 +27,7 @@ let
     (?d).codegraph/[!.]*
     (?d)__pycache__
     (?d).venv
+    (?d).git-cow
     /cache
   '';
 
