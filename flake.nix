@@ -84,6 +84,9 @@
     # No `follows`, so uptarn-agent matches cache.so1ve.dev's build
     uptarn.url = "github:so1ve/uptarn";
 
+    # No `follows`, so the server matches nix-cache.service.mzwing.eu.org's build
+    alpha-persei-cluster.url = "github:MZWNET/Alpha-Persei-Cluster";
+
     # Only for its home-manager module; the omp package still comes from llm-agents.
     oh-my-pi = {
       url = "github:can1357/oh-my-pi";

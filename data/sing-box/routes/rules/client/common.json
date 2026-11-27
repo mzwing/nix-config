@@ -24,6 +24,21 @@
         "action": "sniff"
       },
       {
+        "domain": [
+          "ys4fun.com",
+          "ys4fun.cn",
+          "soboten.com"
+        ],
+        "domain_suffix": [
+          ".ys4fun.com",
+          ".ys4fun.cn",
+          ".soboten.com"
+        ],
+        "action": "route",
+        "outbound": "mzwing-tailscale-endpoint",
+        "override_address": "mzwing-matrix"
+      },
+      {
         "inbound": [
           "mixed-in-direct"
         ],

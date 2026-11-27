@@ -23,6 +23,7 @@
       "software/ai/tools"
       "software/development"
       "software/editor/neovim"
+      "software/games/alpha-persei-cluster"
       "software/network/sing-box"
       "software/network/syncthing"
       "software/network/tools"
@@ -49,6 +50,8 @@
           role = "client";
           clientProfile = "matrix";
         };
+        # Its tailnet address, which clients reach the game ports at; --host-ip only takes an IPv4
+        services.alpha-persei-cluster.hostIp = "100.116.24.23";
         # networkd's SLAAC default keeps the EUI-64 address matrix.server.mzwing.eu.org points at
         networking.useNetworkd = true;
       }
