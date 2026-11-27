@@ -7,5 +7,14 @@
   systemd.network.networks."99-ethernet-default-dhcp".dhcpV4Config.UseDNS = false;
 
   # network/china-mirrors serves the same paths.
-  mzwing.nix.unreachableSubstituters = ["https://cache.nixos.org"];
+  mzwing.nix.unreachableSubstituters = [
+    "https://cache.nixos.org"
+    "https://cache.nixos-cuda.org"
+  ];
+
+  # The EIP drops everything past ~10 Mbit/s, DNS and ssh included; download-speed is per transfer, so this caps nix at ~6.5 Mbit/s
+  nix.settings = {
+    max-substitution-jobs = 4;
+    download-speed = 200;
+  };
 }
