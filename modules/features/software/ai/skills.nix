@@ -23,6 +23,11 @@
 
       agentLib = inputs.agent-skills.lib.agent-skills;
 
+      lockedSources = agentLib.sourcesFromLock {
+        manifestsDir = ../../../../data/skills/sources;
+        lockFile = ../../../../data/skills/sources.lock.json;
+      };
+
       applyEdits = edits: original:
         lib.foldl' (text: edit:
           if !lib.hasInfix edit.from text
@@ -72,10 +77,7 @@
         enable = true;
 
         sources =
-          agentLib.sourcesFromLock {
-            manifestsDir = ../../../../data/skills/sources;
-            lockFile = ../../../../data/skills/sources.lock.json;
-          }
+          lockedSources
           // {
             local = {
               path = ../../../../data/skills/local;
@@ -105,7 +107,8 @@
 
         skills.explicit.modern-web-guidance = {
           from = "modern-web-guidance-skills";
-          transform = {original, ...}:
+          # `original` is read from a per-system derivation (import-from-derivation), which breaks cross-platform eval in CI
+          transform = _:
             applyEdits [
               {
                 from = "MANDATORY: Execute FIRST for all HTML/CSS and clientside JS tasks. Do NOT skip — web APIs evolve rapidly and training weights contain obsolete patterns.";
@@ -128,7 +131,7 @@
                 until = "## Guidelines";
               }
             ]
-            original;
+            (builtins.readFile "${lockedSources.modern-web-guidance-skills.path}/${lockedSources.modern-web-guidance-skills.subdir}/modern-web-guidance/SKILL.md");
         };
 
         # pi and omp read ~/.agents/skills, so neither needs a target of its own.
