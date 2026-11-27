@@ -138,12 +138,12 @@
     "pins": {
       "cnb-skills": {
         "branch": "main",
-        "hash": "sha256-B7f3nAxxyTrnjigYzUCkOyuD97vWx/YUw32d8tmKJv4=",
+        "hash": "sha256-5v905nlbXPjNg4OVIun0yKPGIm1vaa+j9kM36HXPWkY=",
         "repository": {
           "type": "Git",
           "url": "https://cnb.cool/cnb/skills/cnb-skill.git"
         },
-        "revision": "a8ca908a6e9df6abef0dc5e632ed3d6105f6708f",
+        "revision": "bf7631ed585085f34dc555f155327616752c5866",
         "submodules": false,
         "type": "Git",
         "url": null
@@ -176,16 +176,16 @@
       },
       "deja-vu-skills": {
         "branch": "main",
-        "hash": "sha256-HJ/Ip8lKef18Q4ZE3uhm8QwkW3ZK1jbtRDwLslZ4JBc=",
+        "hash": "sha256-hAV9N994UL4Am49dUBOS/DFxzRdRl4TFgKDJ1EIVNfQ=",
         "repository": {
           "owner": "vshulcz",
           "repo": "deja-vu",
           "type": "GitHub"
         },
-        "revision": "11b76f78861634f0f40c0182e6f33e42fdbc9d9a",
+        "revision": "ddc175dbbe10ccf6cd4e639a15b810197e6c3cd0",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vshulcz/deja-vu/archive/11b76f78861634f0f40c0182e6f33e42fdbc9d9a.tar.gz"
+        "url": "https://github.com/vshulcz/deja-vu/archive/ddc175dbbe10ccf6cd4e639a15b810197e6c3cd0.tar.gz"
       },
       "modern-web-guidance-skills": {
         "branch": "main",
@@ -202,29 +202,29 @@
       },
       "so1ve-skills": {
         "branch": "main",
-        "hash": "sha256-9Nxb2z+eiFrXJWleHRiXg6MrIzCpgi/BrJR4alLy8lw=",
+        "hash": "sha256-54TcuPKzNC8aSDyNUQbiVjzwYPUkxb1W4/xhvk18qzY=",
         "repository": {
           "owner": "so1ve",
           "repo": "nix-config",
           "type": "GitHub"
         },
-        "revision": "43131fde48069e0609d45efbe3c61889b39b4282",
+        "revision": "d1ba118cb3a05653b8973d44fd9a713f3d47963d",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/so1ve/nix-config/archive/43131fde48069e0609d45efbe3c61889b39b4282.tar.gz"
+        "url": "https://github.com/so1ve/nix-config/archive/d1ba118cb3a05653b8973d44fd9a713f3d47963d.tar.gz"
       },
       "vercel-skills": {
         "branch": "main",
-        "hash": "sha256-Mc5DOu9W6cY5YdzN4vX6UzOICyj3U3MvhHXym6S9xd0=",
+        "hash": "sha256-dLW+GoYHJzSx2vCCZ1xlj6Mewgya6sWADREx6XBmFl8=",
         "repository": {
           "owner": "vercel-labs",
           "repo": "skills",
           "type": "GitHub"
         },
-        "revision": "57217cf86ba38148a57af9e90d14a4c049558330",
+        "revision": "e7fd0e9e52f029fe87729d8185cb8caf7049f678",
         "submodules": false,
         "type": "Git",
-        "url": "https://github.com/vercel-labs/skills/archive/57217cf86ba38148a57af9e90d14a4c049558330.tar.gz"
+        "url": "https://github.com/vercel-labs/skills/archive/e7fd0e9e52f029fe87729d8185cb8caf7049f678.tar.gz"
       }
     },
     "version": 8
