@@ -53,7 +53,7 @@ in {
       yamlFormat = pkgs.formats.yaml {};
       inherit (config.mzwing.magpie) gateway;
       proxyModel = id: "magpie/${id}";
-      taskModel = proxyModel "auto/gpt-6.1-terra:high";
+      terraModelId = proxyModel "auto/gpt-6.1-terra";
       cheapModelId = proxyModel "auto/deepseek-v4.1-flash";
       cheapModel = "${cheapModelId}:low";
       docsModelId = proxyModel "auto/gemini-4-hydrogen";
@@ -67,32 +67,39 @@ in {
       };
       sensitiveModels = {
         main = proxyModel "auto/kimi-k3.1-pro";
-        flash = proxyModel "auto/glm-5.3-flash";
+        flash = cheapModelId;
+        glmFlash = proxyModel "auto/glm-5.3-flash";
+        freeFlash = proxyModel "auto/hy4flash-free";
       };
       teams = {
         default = {
           default = proxyModel "auto/claude-opus-5-5:high";
           slow = proxyModel "auto/claude-opus-5-5:xhigh";
           plan = proxyModel "auto/claude-opus-5-5:xhigh";
-          task = taskModel;
-          smol = taskModel;
+          task = "${terraModelId}:high";
+          smol = "${terraModelId}:high";
           docs = "${docsModelId}:high";
           commit = cheapModel;
           tiny = cheapModel;
-          # A custom role for security-reviewer, so switching presets switches it too
+          # Custom roles for security-reviewer and sonic, so switching presets switches them too
           security = proxyModel "auto/glm-5.3:max";
+          sonic = "${terraModelId}:medium";
         };
-        sensitive = with sensitiveModels; {
-          default = main;
-          slow = main;
-          plan = main;
-          task = flash;
-          smol = flash;
-          docs = main;
-          security = flash;
-          commit = flash;
-          tiny = flash;
-        };
+        sensitive = with sensitiveModels;
+          lib.mapAttrs (_: model: "${model}:xhigh") {
+            default = main;
+            slow = main;
+            plan = main;
+            docs = main;
+            security = flash;
+            commit = flash;
+            tiny = flash;
+          }
+          // {
+            task = "${flash}:high";
+            smol = "${flash}:high";
+            sonic = "${flash}:medium";
+          };
       };
     in {
       imports = [
@@ -213,26 +220,28 @@ in {
             enabled = true;
             maxRetries = 3;
             fallbackChains =
+              # Suffixless entries keep the failing role's effort
               {
                 default = [(proxyModel "auto/gpt-6.2-sol") sensitiveModels.main];
                 smol = [sensitiveModels.flash];
-                # Otherwise the default chain would retry commit/tiny on opus
-                ${cheapModelId} = [];
+                sonic = with sensitiveModels; [flash glmFlash freeFlash];
                 ${docsModelId} = [(proxyModel "auto/claude-opus-5-5:xhigh")];
               }
-              # Suffixless model keys win over role keys at any effort, so the sensitive team never falls back to the default team's models
+              # Model keys outrank role keys, so every sensitive model needs its own key or its failure walks the default chain into gpt/opus
               // (with sensitiveModels; {
                 ${main} = [flash];
-                ${flash} = [(proxyModel "auto/hy4flash-free")];
+                ${flash} = [glmFlash freeFlash];
+                ${glmFlash} = [freeFlash];
+                ${freeFlash} = [];
               });
           };
 
           task = {
             agentModelOverrides = {
               security-reviewer = ["@security"];
-              sonic = [sensitiveModels.flash];
+              sonic = ["@sonic"];
             };
-            # glm-5.3-flash spirals instead of giving up, and sonic can't hand off to expert
+            # sonic can't hand off to expert
             agentSoftRequestBudget.sonic = 40;
             perCallModel = "on";
             showResolvedModelBadge = true;

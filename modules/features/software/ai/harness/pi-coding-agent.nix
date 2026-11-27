@@ -126,7 +126,7 @@ in {
           roles = {
             coordinator.instructions = "Never rebuild the whole system, and never ask a task to. A Rust project is built only with the user's explicit authorization: put a check or instruction that compiles Rust code into a brief only after the user authorizes it for that task, and then say in the brief that the user authorized it. In other projects, tasks may run checks, tests and builds on their own. Write every commit message, the ones you give task_approve included, with the conventional-commit-message and semver skills. You may commit wherever it is reasonable, which overrides the general rule for `git commit` only: never push with `git push`, `jj git push` or anything else that sends commits, bookmarks or tags to a remote.";
             executor = {
-              model = "magpie/auto/auto/gpt-6.1-terra";
+              model = "magpie/auto/gpt-6.1-terra";
               thinking = "xhigh";
               instructions = "In a Rust project, never ask the developer to compile Rust code unless the brief says the user explicitly authorized it through the coordinator.";
             };
