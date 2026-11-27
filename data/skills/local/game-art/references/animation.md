@@ -5,7 +5,7 @@ Anything that moves: walk and run cycles, attacks, idles, FX, flags, fire. The i
 ## Pipeline
 
 1. Base frame: the subject in its neutral or starting pose, with full style words, the view the game uses, and solid `#FF00FF`. Accept it before animating anything.
-2. Plan the phases. Capture the motion's distinct phases, and for a cycle select exactly one full period by its landmarks: foot contacts, wing extremes, flame peaks. Don't force a count: if the motion reads best in 8, 10, or 12 frames, use that many (more frames play smoother) in a multi-row grid that fits, such as `2x5` for 10.
+2. Plan the phases. Capture the motion's distinct phases, and for a cycle select exactly one full period by its landmarks: foot contacts, wing extremes, flame peaks. Don't force a count: if the motion reads best in 8, 10, or 12 frames, use that many in a multi-row grid that fits, such as `2x5` for 10.
 3. Generate the grid as an edit of the base image, naming the phase in each cell, per [sprite-prompts.md](sprite-prompts.md); grounded high-value actions add an anchor sheet. If one phase keeps failing, generate it alone as an edit of the base and paste it into its cell of the raw sheet before processing.
 4. Process into frames, a transparent sheet, and a GIF. Deliver frames in play order; the processor names them `idle-1` to `idle-16`, so zero-pad the names when there are more than nine, or ship the order from `pipeline-meta.json`. State the intended frame rate (`--duration` is milliseconds per frame).
 

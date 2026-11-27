@@ -1,6 +1,6 @@
 # Characters
 
-Character identity across images: turnarounds (front, side, back), state and damage variants, palette swaps, equipment changes, and the same character in different contexts. The product is the identity, not any single image; apply all of this even when the request never mentions it.
+Character identity across images: turnarounds (front, side, back), state and damage variants, palette swaps, equipment changes, and the same character in different contexts. The product is the identity, not any single image.
 
 ## Asymmetry bookkeeping
 

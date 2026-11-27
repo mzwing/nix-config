@@ -1,9 +1,6 @@
 # 插件任务：搜索与配置生成
 
-CNB 插件即「封装好的 Docker 镜像 + `settings` 参数接口」，能覆盖绝大多数 CI/CD 场景。
-本文件是配置工作流程第 3 步「插件任务」的展开：**先搜市场插件，再按插件 README 生成 `image` + `settings`**。
-
-> 下方 URL 中的 `${CNB_WEB_PROTOCOL:-https}`、`${CNB_WEB_HOST:-cnb.cool}` 为环境变量，使用前先 `echo` 获取实际值再拼接。
+CNB 插件即「封装好的 Docker 镜像 + `settings` 参数接口」，能覆盖绝大多数 CI/CD 场景。本文件是配置工作流程「插件查证」一步的展开：**先搜市场插件，再按插件 README 生成 `image` + `settings`**。
 
 ## 何时必须搜插件
 
@@ -26,25 +23,11 @@ CNB 插件即「封装好的 Docker 镜像 + `settings` 参数接口」，能覆
 
 ## 插件任务 vs 脚本任务
 
-流水线 `Job` 分脚本任务、插件任务、内置任务三类（内置任务见 `builtin-tasks.md`）。插件任务与脚本任务按官方文档 `/zh/build/script-vs-plugin.md` 判断：
+流水线 `Job` 分脚本任务、插件任务、内置任务三类（内置任务见 `builtin-tasks.md`）。按官方文档 `/zh/build/script-vs-plugin.md`：代码构建和测试、与业务强相关的自定义逻辑用脚本任务；通知、发布部署、代码质量检查等有现成插件的通用操作用插件任务。
 
-| 场景 | 推荐 | 原因 |
-|------|------|------|
-| 消息通知（企微/飞书/钉钉等） | 插件任务 | 功能内聚，配置简单 |
-| 通用 CI/CD 操作（发布、部署） | 插件任务 | 市场有成熟方案 |
-| 代码质量检查（lint、扫描） | 插件任务 | 可复用 |
-| 可复用、可分享的通用功能 | 插件任务 | 可发布到市场 |
-| 代码构建和测试 | 脚本任务 | 灵活控制，适配各种构建工具 |
-| 自定义业务逻辑 | 脚本任务 | 需完全控制执行流程 |
-| 与业务强相关 | 脚本任务 | 不适合复用 |
-
-**快速判断**：有现成插件满足需求 → 插件任务；需灵活执行自定义命令 → 脚本任务；功能可复用分享 → 插件任务。
-
-**两者核心区别**：
 - **执行方式**：脚本任务用 `script`/`commands`；插件任务运行镜像内置 `ENTRYPOINT`
-- **参数通道**：脚本任务用 `env`/`imports`；插件任务用 `settings`（自动转 `PLUGIN_*` 大写前缀传入容器）
+- **参数通道**：脚本任务用 `env`/`imports`；插件任务用 `settings`
 - **变量显式引用**：插件任务**不传递** `env`/`imports` 变量，须在 `settings`/`args` 中用 `$VAR` 引用（详见下方「生成配置」）
-- **复用性**：脚本任务与业务强相关；插件任务可分享到插件市场
 
 ## 模式判定
 
@@ -53,18 +36,7 @@ CNB 插件即「封装好的 Docker 镜像 + `settings` 参数接口」，能覆
 
 ## 搜索工作流程
 
-### 1. 意图分析
-
-从用户描述中提取关键信息：
-
-- **操作类型**：构建、检查(lint)、测试、部署、发布、通知、审批、扫描、打tag、生成报告
-- **语言/框架**：Node.js、Go、Python、Java/Maven/Gradle、C++、安卓、微信小程序、Helm
-- **目标平台/服务**：企业微信、飞书、钉钉、TKE、EdgeOne Pages、SCF、COS、TSF、CDN、Cloudflare
-- **特殊需求**：AI 评审、安全扫描、提交规范检查、多架构镜像、知识库
-
-### 2. 搜索插件市场
-
-获取最新插件目录：
+### 1. 搜索插件市场
 
 **默认数据源**（CNB SaaS 插件市场）：
 ```
@@ -72,8 +44,7 @@ URL: ${CNB_WEB_PROTOCOL:-https}://${CNB_WEB_HOST:-cnb.cool}/cnb/plugins/market/-
 提示：从插件列表中找出与"{用户需求关键词}"最相关的插件，返回 id、name、description、tags、readme、images、source，按相关性排序，列出 Top 5
 ```
 
-> **私有化 / 自定义数据源**：若无法获取 SaaS 数据源（私有化部署或自建市场），
-> 可请用户提供 `plugins.json` 内容（格式与 SaaS 一致）或数据源 URL。
+> **私有化 / 自定义数据源**：若无法获取 SaaS 数据源（私有化部署或自建市场），可请用户提供 `plugins.json` 内容（格式与 SaaS 一致）或数据源 URL。
 
 每个插件条目结构（以 wecom-message 为例）：
 ```json
@@ -91,61 +62,24 @@ URL: ${CNB_WEB_PROTOCOL:-https}://${CNB_WEB_HOST:-cnb.cool}/cnb/plugins/market/-
 }
 ```
 
-插件条目各字段说明：
+`mark` 为角标：`official`(官方) / `private`(特定组织) / 空(社区)。
 
-- `id`：插件唯一标识，格式为 `组织名/插件名`
-- `name`：插件名称，全英文，中划线 `-` 分隔
-- `description`：插件描述
-- `tags`：标签数组，用于搜索分类
-- `mark`：角标：`official`(官方) / `private`(特定组织) / 空(社区)
-- `images`：Docker 镜像地址（用于获取 `image` 配置值）
-- `source`：源码仓库地址
-- `bugs`：问题反馈地址
-- `logo`：logo 图片相对地址，可选
-- `readme`：README 文档 raw 地址，直接用于获取文档
+### 2. 推荐确认
 
-**匹配策略**（按优先级）：
-1. **标签命中** — 用户关键词命中 `tags`
-2. **描述命中** — 关键词命中 `name` 或 `description`
-3. **语义相近** — 相关操作类型匹配（如"发通知"匹配 tags: notification/message/webhook）
+向用户展示 Top 3-5 匹配结果（名称、描述、标签、镜像），给出推荐并让用户确认或改选。
 
-### 3. 推荐确认
+### 3. 获取插件文档
 
-向用户展示 Top 3-5 匹配结果，让用户从候选中挑一个：
-
-```
-找到以下匹配插件：
-
-1. wecom-message — 企业微信群里发消息的插件
-   标签: 企业微信, WeCom, 消息, message
-   镜像: tencentcom/wecom-message
-
-2. feishu-message — 飞书群里发消息的插件
-   ...
-
-3. webhook — 通过 Webhook 发送构建状态通知
-   ...
-
-推荐 #1，是否使用？或选择其他编号。
-```
-
-### 4. 获取插件文档
-
-确认插件后，读取插件的 README 文档：
+确认插件后，读取条目 `readme` 字段指向的 README（市场仓库中缓存的 raw 地址）：
 
 ```
 URL: <插件 readme URL>
 提示：提取使用说明，重点关注 settings 参数列表、每个参数的类型和含义、使用示例中的 .cnb.yml 配置片段
 ```
 
-> `plugins.json` 中每个条目已包含 `readme` 字段，直接指向市场仓库中缓存的 README.md raw 地址。
-> 插件 README 建议包含参数表和使用示例，方便精准提取；编写建议见文末「插件 README 编写建议」。
->
 > **README 缺失或信息不足时**，依次回退：`source` 源码仓库 README → Docker Hub 镜像页（`images` 字段）→ 用 `cnb-docs` skill 查官方文档。仍无法确认参数时，如实告知用户，只给带占位符的示例配置并注明需查证。
 
-### 5. 生成配置
-
-根据文档中的 `settings` 参数和用法示例，生成正确的 YAML 配置片段。
+### 4. 生成配置
 
 **生成规则**：
 
@@ -154,41 +88,26 @@ URL: <插件 readme URL>
   - `https://hub.docker.com/repository/docker/<org>/<name>/tags` → `<org>/<name>`
   - `docker.cnb.cool/.../<name>` → 完整路径
   - 其他格式以 `images` 值中能识别的镜像标识为准，不确定时查看插件 README 确认
-  - 如需固定版本可在镜像名后加 `:<版本>`（如 `tencentcom/npm:1.2.3`），规避镜像升级导致的兼容性风险
+  - 如需固定版本在镜像名后加 `:<版本>`（如 `tencentcom/npm:1.2.3`）
 - `settings` — 按文档参数表填写，**参数名保持小写**（CI 自动转为 `PLUGIN_` + 大写前缀传入插件；编写时无需关心此转换）
-- `args` — 插件支持命令行参数时可用 `args:` 数组传递（追加到 ENTRYPOINT，等同 `docker run <image> <args...>`）。
-  - 大部分 CNB 插件优先用 `settings`
-- **变量引用机制（核心）**：`env` 声明的变量**不会直接传入**插件，须在 `settings` 或 `args` 中用 `$VAR` 引用。
-  - `settings` 即参数白名单
-  - 系统内置变量（如 `CNB_REPO_SLUG`）始终传入
-- **环境变量声明**：敏感信息用 `env` 内联声明，`$VAR` 的 `VAR` 必须是 `env` 中声明的真实变量名
+- `args` — 插件支持命令行参数时可用 `args:` 数组传递（追加到 ENTRYPOINT，等同 `docker run <image> <args...>`）；大部分 CNB 插件优先用 `settings`
+- **变量引用机制（核心）**：`env`/`imports` 声明的变量**不会直接传入**插件，须在 `settings` 或 `args` 中用 `$VAR` 引用，`settings` 即参数白名单；系统内置变量（如 `CNB_REPO_SLUG`）始终传入
+- **变量声明**：`$VAR` 的 `VAR` 必须是 `env` 或 `imports` 中真实声明的变量名；敏感值放密钥仓库，用 `imports` 引入（见 `env-variables.md`「声明和导入」）
 
 **配置模板**：
 
 ```yaml
-# 在 .cnb.yml 中使用（用 env 内联声明环境变量）
 main:
   push:
-    - env:
-        MY_TOKEN: <值>      # 内联声明敏感变量
+    - imports:
+        - https://cnb.cool/<org>/<secret-repo>/-/blob/main/secrets.yml  # 声明 MY_TOKEN
       stages:
         - name: <任务名>
           image: <镜像名>    # 不带 tag 使用 latest
           settings:
             <参数>: <值>
-            <参数>: $MY_TOKEN   # MY_TOKEN 必须是上方 env 中声明的变量名
+            <参数>: $MY_TOKEN   # MY_TOKEN 必须是 imports 或 env 中声明的变量名
 ```
-
-### 6. 集成与校验
-
-生成配置后：
-
-- **有则合并**：用户上下文已有 `.cnb.yml` → 定位到目标 Stage 位置，合并配置
-- **无则给片段**：独立查询 → 给出完整的 Stage/Job YAML 片段
-- **配置必校**：生成完整 `.cnb.yml` 后，按 `SKILL.md`「校验命令」验证，不通过则修复
-- 提醒用户：敏感信息用 `env` 内联声明、镜像默认 `latest`（详见上方「生成配置」）
-
-> **通知类插件放置位置**：失败通知放 `failStages`，成功通知放 `stages` 最后一个任务，勿把"仅成功才发的通知"放 `endStages`（详见 `SKILL.md`「Stage 执行语义」）。
 
 ## 常见场景速查
 
@@ -234,55 +153,9 @@ main:
 
 > **注**：open-source 类插件多为命令行工具镜像，使用时**可能需配合 `args:`** 传参（参考上方「生成配置」）。完整列表走[搜索工作流程](#搜索工作流程)。
 
-## 约束速查
+## 无匹配时
 
-### 配置
-- **版本可选**：镜像默认不带 tag（即 `latest`）；如需规避升级风险可追加 `:<版本>` 固定版本
-- **白名单传参**：`settings` 即参数白名单，`env` 声明的变量须在 `settings` 中 `$VAR` 引用才能传入插件
-- **通知归位**：通知类插件放置位置见上方「集成与校验」（失败通知 `failStages`、成功通知 `stages` 末位）
-
-### 无匹配时
-- 如实告知，插件即 Docker 镜像，可引导用户：
-  - 去 Docker Hub 等镜像源找满足需求的镜像，直接在流水线中作插件使用
-  - 自行编写插件：插件写法规范见官方文档 `${CNB_WEB_PROTOCOL:-https}://docs.${CNB_WEB_HOST:-cnb.cool}/zh/build/create-plugin.md`（参数设计、Dockerfile、导出变量、发布流程）
-  - 贡献到市场：官方文档 `${CNB_WEB_PROTOCOL:-https}://docs.${CNB_WEB_HOST:-cnb.cool}/zh/build/contribute-plugin.md`，市场入口 `${CNB_WEB_PROTOCOL:-https}://${CNB_WEB_HOST:-cnb.cool}/cnb/plugins/market?tabValue=CONTRIBUTING-ov-file`
-
-### 与 cnb-docs 的分工
-- 平台级插件知识（插件市场总览 `/zh/plugins.md`、任务类型区别 `/zh/build/script-vs-plugin.md`、插件制作与贡献规范）用 `cnb-docs` 查官方文档
-- 单个插件的 `settings` 参数以插件 README 为准，由本流程直接读取
-
-## 插件 README 编写建议
-
-可控插件建议在 README.md 中包含以下内容，以便精确提取配置信息：
-
-### 参数表（核心）
-
-```markdown
-## 参数
-
-- `webhook`（string，必填）：企业微信群机器人 Webhook 地址
-- `msg_type`（string，可选，默认 `text`）：消息类型：text / markdown
-- `content`（string，必填）：消息内容
-```
-
-### 配置示例（必须有）
-
-```yaml
-# .cnb.yml 中使用（env 内联声明敏感变量）
-main:
-  push:
-    - env:
-        WECOM_WEBHOOK: https://qyapi.weixin.qq.com/cgi-bin/webhook?key=xxx
-      stages:
-        - name: 通知企业微信群
-          image: tencentcom/wecom-message    # 默认 latest
-          settings:
-            webhook: $WECOM_WEBHOOK           # 变量名须与上方 env 中声明的一致
-            msg_type: markdown
-            content: "## 构建完成\n状态：**成功**"
-```
-
-### 要点
-
-- **参数表五项齐全**：便于直接解析并生成对应 `settings` 配置
-- **配置示例可直接使用**：环境变量引用用 `$VAR` 占位，敏感信息用 `env` 内联声明
+如实告知，插件即 Docker 镜像，可引导用户：
+- 去 Docker Hub 等镜像源找满足需求的镜像，直接在流水线中作插件使用
+- 自行编写插件：插件写法规范见官方文档 `${CNB_WEB_PROTOCOL:-https}://docs.${CNB_WEB_HOST:-cnb.cool}/zh/build/create-plugin.md`（参数设计、Dockerfile、导出变量、发布流程）
+- 贡献到市场：官方文档 `${CNB_WEB_PROTOCOL:-https}://docs.${CNB_WEB_HOST:-cnb.cool}/zh/build/contribute-plugin.md`，市场入口 `${CNB_WEB_PROTOCOL:-https}://${CNB_WEB_HOST:-cnb.cool}/cnb/plugins/market?tabValue=CONTRIBUTING-ov-file`

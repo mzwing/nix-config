@@ -12,7 +12,7 @@ Choose a user-facing `map_mode` first, then the lower-level axes:
 4. `collision_model`: `none` | `coarse_shapes` | `precise_shapes` | `tile_collision` | `polygon_walkmesh` | `trigger_zones`
 5. `engine_target`: `raw_canvas` | `Phaser` | `Tiled_JSON` | `LDtk` | `Godot_TileMap` | `Unity_Tilemap` | project-native
 
-Use the parameters the user states; otherwise infer the lightest playable pipeline from the existing game, camera, collision needs, map scale, and editing needs. When the mode and an axis disagree, the mode's playable and editable contract wins: `side_scroll_mode` always needs separate collision and platform data, even next to a beautiful full-width preview. "Hybrid" is a combination of axes, not a category. Each mode, axis, and preset is described in [map-strategies.md](map-strategies.md).
+Use the parameters the user states; otherwise infer the lightest playable pipeline from the existing game, camera, collision needs, map scale, and editing needs. When the mode and an axis disagree, the mode's playable and editable contract wins: `side_scroll_mode` always needs separate collision and platform data, even next to a beautiful full-width preview. "Hybrid" is a combination of axes, not a category.
 
 A playable map, level, stage, room, prototype, or engine scene is never one baked image unless the user asked for a flat background only. A baked image may serve as a background, a reference, or a preview; the playable deliverable exposes gameplay geometry and objects as separate layers, props, tile or object data, collision, zones, or engine-native nodes. Requests mentioning a game, playable, prototype, level, stage, side-scroller, platformer, RPG exploration, tower defense, or engine integration start from the nearest playable preset.
 
@@ -43,37 +43,13 @@ Maps hold scenes, not actors. Characters, enemies, bosses, NPCs, players, projec
 | roguelike room, procedural dungeon, modular rooms | `room_chunk_mode` | chunk sockets, exits, collision, spawn markers, seam validation |
 | visual novel, title screen, point-and-click, boss arena concept, fixed battle background | `baked_scene_mode` | only when no runtime editing or collision is needed |
 
-## Parameters
+## Defaults
 
-Users may state these in plain words:
-
-- `map_mode`, `visual_model`: as above
-- `map_kind`: overworld | town | dungeon | shrine | arena | battle_bg | side_scroller | side_view_action | platformer | metroidvania | brawler | tower_defense | survivors_like | tactical | factory | card_board | room_chunk
-- `size`: pixel dimensions, tile dimensions, or camera-relative size
-- `stage_canvas`, `stage_segment_count`: side-scroll only ([side-scroll.md](side-scroll.md))
-- `perspective`: top-down | 3/4 top-down | side-view | isometric-like
-- `art_style`: clean_hd | pixel_inspired | retro_pixel | hand_painted | project-native
-- `visual_asset_source`: generated | existing_assets | procedural_placeholder
-- `collision_precision`: none | coarse | precise | tile | walkmesh
-- `tile_generation`: none | terrain_tile_bundle | autotile_set | engine_native_tileset
-- `platform_strategy`: platform_rects_with_shared_tiles | platform_strip | tilemap | custom_terrain_chunks
-- `prop_generation`: none | one_by_one | prop_pack_2x2 | prop_pack_3x3 | prop_pack_4x4 | platform_strip_1x3 | platform_strip_1x4 | custom_wide_pack
-- `output_format`: PNG only | layered preview | manifest JSON | engine-native map data
-
-Defaults when unspecified:
-
-- Art comes from the image model; `existing_assets` only when the project already has suitable art, `procedural_placeholder` only when asked.
 - `baked_raster` + `coarse_shapes` only for battle backgrounds, title and menu scenes, cutscenes, decorative backdrops, non-playable previews, or an explicit request for one flat image.
 - `layered_raster` + `y_sorted_props` + `precise_shapes` for top-down RPG exploration with tall props, occlusion, interactables, or reusable props, on a foundation-only base.
 - `tilemap` or `layered_tilemap` only when the engine or editor already uses tiles or the user asks for editable tiles, never flattening gameplay objects into one background.
-- Square prop packs only for 4 or more compact small or medium static props in one style; everything else one by one, as strips, tile or object layers, or custom wide packs ([props.md](props.md)).
 - `art_style` is `clean_hd`: a clean hand-painted top-down 2D RPG map, HD game-asset style, sharp readable terrain shapes, low texture noise, no chunky pixels. `pixel_inspired` only for a pixel-adjacent look without retro chunkiness; `retro_pixel` only when the user asks for 16-bit, retro JRPG, or classic pixel art.
-
-## Art comes from the image model
-
-- Base maps, reference mockups, prop sheets and sprites, tileset art, parallax layers, and battle backgrounds all come from `imagegen.py`, and you write every prompt. Scripts may assemble, slice, key, crop, validate, compose previews, emit JSON, and wire generated assets into engine files such as Godot `.tscn` scenes; they never write creative prompts or draw final art.
-- Procedural or scripted placeholder art only when the user asks for placeholders, test fixtures, debug maps, or scaffolding without final art. With a tile engine target, generate or reuse the tileset art first, then script only tile layers, collision, zones, and scene wiring.
-- Every generated visual asset keeps its prompt beside it as `<asset>.prompt.txt` (which `imagegen.py` writes) or in a manifest field.
+- Existing art is reused only when the project already has suitable art. With a tile engine target, generate or reuse the tileset art first, then script only tile layers, collision, zones, and scene wiring.
 - A rerunnable script that creates the whole art pack is not the solution unless the user asked for procedural placeholders.
 
 ## Layer separation
@@ -117,31 +93,25 @@ A reference mockup is a checkpoint, never the deliverable. Stopping after it is 
 ## Workflow
 
 1. Inspect the target game: camera size, map dimensions, coordinate system, render order, asset loading, collision support, zone data, existing map formats. Keep its style and data contracts.
-2. Choose `map_mode`, then the axes. A playable request gets explicit runtime objects; never downgrade it to `baked_raster`. A playable side-view stage locks to `parallax_layers` + `platform_objects` + `interactive_scene_objects` + `scene_hooks` + `precise_shapes` unless the engine already requires a tilemap. Prefer readable gameplay shapes to decorative texture density.
+2. Choose `map_mode`, then the axes. Prefer readable gameplay shapes to decorative texture density.
 3. Produce the assets:
-   - baked raster: one generated background, or an edit of a supplied image, plus optional collision and zones
    - layered raster: a foundation-only base, then the dressed reference, then final props and placements ([layered-maps.md](layered-maps.md))
-   - tilemaps: generated or reused tileset art first ([tilesets.md](tilesets.md)), then the engine's layer, object, collision, and scene formats; never script-draw the final tileset or flatten object layers into one image
-   - `grid_mode`: generated or reused grid or tileset art, then cell metadata (walkable and buildable flags, move cost, terrain effects, resource nodes, object layers)
+   - tilemaps: generated or reused tileset art first ([tilesets.md](tilesets.md)), then the engine's layer, object, collision, and scene formats
+   - `grid_mode`: generated or reused grid or tileset art, then cell metadata
    - `room_chunk_mode`: chunk dimensions, exits, connection sockets, collision contract, and spawn and trigger metadata before final art; chunks are reusable and validated at their seams
    - side-view stages: [side-scroll.md](side-scroll.md)
-4. Build the metadata:
-   - prop placement, player spawns, actor spawn markers, interactables, blockers, walk bounds, encounter zones, exits, camera bounds, and triggers as structured data
-   - visible dressing on walkable cells or actor lanes gets an occlusion class (`low`, `tall`, `foreground`), an actor-safe area, and an occupant policy (`none`, `rear_shift`, `fade`, `rear_shift_and_fade`, `hide`); render priority alone doesn't keep actors readable
-   - `grid_mode`: grid dimensions, cell size, tile ids, terrain types, walkable and buildable flags, movement cost, collision, resource nodes, object and entity slots
-   - `room_chunk_mode`: chunk id, size, entrances and exits, connection sockets, collision, spawn markers, camera bounds, seam validation hints
-   - collision stays independent of pixels unless the engine uses tile collision
+4. Build the metadata: prop placement, player spawns, actor spawn markers, interactables, blockers, walk bounds, encounter zones, exits, camera bounds, and triggers as structured data. Collision stays independent of pixels unless the engine uses tile collision.
 5. Validate and preview (below).
 
 ## Deliverables
 
-Baked raster, only for non-playable backgrounds and explicitly flat images: `assets/map/<name>.png`, its prompt file, optional `data/<name>-collision.json` or `data/<name>-zones.json`, and the code that loads it. As soon as actors move through the scene, collide with geometry, jump on platforms, collect items, trigger doors, or the level must be edited later, upgrade to a layered, parallax, tilemap, or engine-native deliverable.
+Baked raster, only for non-playable backgrounds and explicitly flat images: `assets/map/<name>.png`, its prompt file, optional `data/<name>-collision.json` or `data/<name>-zones.json`, and the code that loads it.
 
 Layered raster and `scene_mode`: a foundation-only `assets/map/<name>-base.png` and its prompt, the in-world `assets/map/<name>-dressed-reference.png`, `assets/props/<prop>/prop.png` folders from one-by-one props or extracted packs, `data/<name>-props.json`, collision, zones, exits, camera bounds, and scene hooks as needed, `assets/map/<name>-layered-preview.png`, and code that loads the base, props, y-sorted renderables, collision, and zones.
 
 Tilemap or layered tilemap: generated or supplied `assets/tilesets/<name>.png`, optional slicing or atlas metadata, engine-native tile layers (Tiled JSON, LDtk, Godot TileMap, Unity tile placement, or project-native JSON), object layers for spawns, exits, interactables, blockers, and zones, and a flattened preview from the tileset and layer data.
 
-`grid_mode`: generated or supplied grid art, optional `generate2dmap.terrain_tile_bundle.v1` manifests ([tilesets.md](tilesets.md)), grid dimensions, cell size, and map data in a project-native or editor format, cell metadata (walkable, buildable, move cost, terrain effects, resources, collision, placement rules), object layers for units, buildings, machines, board slots, exits, spawns, and triggers, a QA preview with optional debug overlays, and, for decorated walkable cells, occlusion metadata plus an actor-in-place preview at the real camera.
+`grid_mode`: generated or supplied grid art, optional `generate2dmap.terrain_tile_bundle.v1` manifests ([tilesets.md](tilesets.md)), grid dimensions, cell size, and map data in a project-native or editor format, cell metadata (walkable, buildable, move cost, terrain effects, resources, collision, placement rules), object layers for units, buildings, machines, board slots, exits, spawns, and triggers, and a QA preview with optional debug overlays.
 
 `room_chunk_mode`: reusable chunk art or tile and object layers, chunk metadata (`chunk_id`, size, entrances and exits, sockets, spawn markers, blockers, hazards, camera bounds), collision and seam validation, and a chunk preview, plus an assembled layout preview when there are several chunks.
 
@@ -154,14 +124,7 @@ Always validate what the chosen pipeline requires:
 - map files exist at the expected dimensions; generated visible assets have prompt files or manifest fields
 - transparent props have alpha; prop pack manifests parse and accepted props don't touch cell edges
 - placement JSON parses and every referenced file exists; collision and zone JSON parse
-- critical spawn, path, entrance, blocker, and zone points behave as expected
-- playable and editable layered maps use a foundation-only base with no baked runtime objects
-- playable stages have explicit objects or metadata for every gameplay-relevant platform or walkable lane, blocker, hazard, door, pickup, checkpoint, gate, exit, player spawn, actor spawn marker, encounter or arena trigger, and camera bound
+- critical spawn, path, entrance, blocker, and zone points behave as expected; in `grid_mode`, critical walkable and buildable cells too
 - walkable tall props declare `occlusionClass`, `actorSafeArea`, and `occupantPolicy`, and the runtime applies that policy when an actor occupies or selects the cell
 - any playable map with tall props on walkable space gets an actor-in-place preview at the real gameplay camera: the actor's head, torso, weapon or action silhouette, selection state, and path cues stay readable; slight foot overlap is fine
-- `grid_mode` includes grid dimensions, cell size, cell metadata, object layers, and checks of critical walkable and buildable cells
-- terrain tile bundles use portable paths, cover every declared atlas row exactly once, have the expected variant count, and pass contrast and variant-difference QC
-- animated terrain overlays pass standalone FX QC and an in-engine preview: visible above the tile, not depth-clipped, behind actors, readable at gameplay zoom, safe while an actor occupies the cell
-- `room_chunk_mode` includes chunk dimensions, exits and sockets, seam validation, collision, and at least one preview
-- reference mockups preserve the base's dimensions, hold at most 9 distinct object candidates unless more were requested, match the final object and collision metadata, and are followed by final objects, metadata, and a QA preview
 - the flattened preview looks coherent at the game's camera size

@@ -5,7 +5,7 @@ description: Choose and apply SemVer version numbers under a policy that reserve
 
 # SemVer
 
-A version number tells whoever depends on the code how much an upgrade changes. Format and ordering follow [Semantic Versioning 2.0.0](https://semver.org/), but the bump policy below departs from it on purpose: the spec requires a major for every breaking change, while here a major is reserved for significant ones. Where an ecosystem adds to or departs from the spec, see [references/ecosystems.md](references/ecosystems.md).
+Format and ordering follow [Semantic Versioning 2.0.0](https://semver.org/), but the bump policy below departs from it on purpose: the spec requires a major for every breaking change, while here a major is reserved for significant ones. Where an ecosystem adds to or departs from the spec, see [references/ecosystems.md](references/ecosystems.md).
 
 ## Start from what exists
 
@@ -31,23 +31,20 @@ List the changes since the last release (`git log <last-tag>..HEAD`), classify e
 
 A breaking change is significant when consumers have to rework how they use the project: a redesigned API, a removed core feature, or a config or data format that needs migration. Renaming an option, dropping an old runtime version, or tightening an edge case is not. A feature update is significant when it changes what the project does or how it is used, not when it adds another option or command. If a change isn't clearly significant, it doesn't get a major.
 
-Reset everything right of the bumped number: `1.4.2` becomes `2.0.0` or `1.5.0`, never `1.5.2`.
-
-Conventional Commits give a first guess: `fix` points to a patch, `feat` to a minor, and `!` or a `BREAKING CHANGE` footer to a breaking change, which is a major only when significant. Still read the diff, since a commit can be mislabeled.
+Conventional Commits give a first guess, with `!` or a `BREAKING CHANGE` footer becoming a major only when significant. Still read the diff, since a commit can be mislabeled.
 
 When a minor ships a breaking change, call it out in the changelog or release notes. If the user asks for a smaller bump than the changes need, say so before applying it.
 
 ## 0.y.z
 
-- `0.y.z` is initial development, where the spec lets anything change. The first release is `0.1.0`.
+- The first release is `0.1.0`.
 - Before `1.0.0`, breaking changes and new features bump `y` and everything else bumps `z`; Cargo and npm treat `y` as the compatibility boundary there, and every `0.0.z` release as breaking.
-- `1.0.0` declares the public API stable. Software in production or with users depending on its API should probably be there already, but that call is the maintainer's: propose it, don't make it.
+- Software in production or with users depending on its API should probably be at `1.0.0` already, but that call is the maintainer's: propose it, don't make it.
 
 ## Pre-releases and build metadata
 
-- A pre-release follows a hyphen and sorts below its release: `1.0.0-alpha.1 < 1.0.0-beta < 1.0.0-rc.1 < 1.0.0`. Pre-release the version you are heading to: after `1.2.3`, a beta of the next minor is `1.3.0-beta.1`, never `1.2.3-beta.1`, which sorts below `1.2.3`.
+- Pre-release the version you are heading to: after `1.2.3`, a beta of the next minor is `1.3.0-beta.1`, never `1.2.3-beta.1`, which sorts below `1.2.3`.
 - Put the counter after a dot. Numeric identifiers compare as numbers, so `rc.10` sorts after `rc.2`, while `rc10` compares as text and sorts before `rc2`.
-- Pre-release identifiers use only `[0-9A-Za-z-]`, are never empty, and numeric ones have no leading zeros.
 - Build metadata after a `+` (`1.0.0+20130313`) is ignored for precedence, so it never tells two releases apart.
 
 ## Released versions are immutable
@@ -62,6 +59,4 @@ Deprecate first, in a minor release with docs pointing at the replacement. Remov
 
 ## Dependency requirements
 
-- Allow updates up to the dependency's next breaking boundary, written in the ecosystem's syntax.
 - The lower bound promises that every version from there up works; raise it when the code starts using something newer.
-- Libraries don't pin exact versions, which forces conflicts or duplicates on their consumers; applications get reproducible builds from their lockfile.

@@ -2,7 +2,7 @@ SKILL.md and references/animation.md, characters.md, tilesets.md, and ui-icons.m
 
 Source: https://t.me/hatschannel/6077
 
-references/sprites.md, sprite-modes.md, sprite-prompts.md, maps.md, map-strategies.md, layered-maps.md, props.md, side-scroll.md, and the terrain atlas section of tilesets.md, together with scripts/generate2dsprite.py, make_layout_guide.py, make_anchor_layout.py, extract_prop_pack.py, extract_terrain_tiles.py, and compose_layered_preview.py, are adapted from agent-sprite-forge (https://github.com/0x0funky/agent-sprite-forge, commit 64fd0b5) under its license:
+references/sprites.md, sprite-prompts.md, maps.md, layered-maps.md, props.md, side-scroll.md, and the terrain atlas section of tilesets.md, together with scripts/generate2dsprite.py, make_layout_guide.py, make_anchor_layout.py, extract_prop_pack.py, extract_terrain_tiles.py, and compose_layered_preview.py, are adapted from agent-sprite-forge (https://github.com/0x0funky/agent-sprite-forge, commit 64fd0b5) under its license:
 
 MIT License
 

@@ -56,14 +56,15 @@ Enter on the tier's duration and enter curve; exit on the tier's exit duration w
 - Dialogs fade and scale from 0.97 on the slow tier (`--motion-slow` with `--ease-enter-slow`) and leave on the slow exit.
 - Messages and toasts enter from opacity 0, 8px down, and scale 0.96 on the moderate tier, growing from the side they belong to.
 - An element that starts from `display: none` needs a start state: `@starting-style`, or set the open attribute one frame after mounting.
-- Keep an exiting element mounted until its transition ends (`transitionend`, backed by a timer at the exit duration plus 100ms, since background tabs can stall it).
+- Keep an exiting element the framework unmounts mounted until its transition ends (`transitionend`, backed by a timer at the exit duration plus 100ms, since background tabs can stall it).
+- Keep top-layer elements (`<dialog>`, `[popover]`) rendered through their exit by transitioning `display` and `overlay` alongside the animated properties, with `transition-behavior: allow-discrete` as a separate declaration after the `transition` shorthand (inside the shorthand, older browsers drop the whole declaration). Firefox and Safari lack `overlay` and Firefox does not transition `display`, so exits there need the `data-closing` fallback in `modern-web-guidance`'s `animate-to-from-top-layer` guide.
 - Don't animate things into their resting state on first render; animate later changes only.
-- Stagger only infrequent entrances, such as a page header or a first-run list, at about 50ms per item. Never stagger routine, repeated interactions.
+- Stagger only infrequent entrances, such as a page header or a first-run list, at about 50ms per item, computed in CSS with `sibling-index()` where supported (`modern-web-guidance` `dynamic-sibling-animations`). Never stagger routine, repeated interactions.
 - Hover, typing, and keyboard navigation get fast-tier color, opacity, or the shared highlight, and no entrance choreography.
 
 ## What to animate
 
-- `transform` (translate, scale, rotate) and `opacity`, plus `filter: blur()` on crossfades. Never `top`, `left`, `width`, `height`, `margin`, or `padding`: they relayout every frame and slip past reduced-motion handling. The one exception is the shared hover highlight's size, which only changes between items of different sizes.
+- `transform` (translate, scale, rotate) and `opacity`, plus `filter: blur()` on crossfades. Never `top`, `left`, `width`, `height`, `margin`, or `padding`, except the shared hover highlight resizing between items of different sizes.
 - Name the properties; never `transition: all`. Tailwind's bare `transition` class is `all` at 150ms, outside this system.
 - Interactive state uses transitions, which retarget from wherever they are when the user changes their mind. Keyframe animations are for one-shot sequences.
 - `will-change` only on an element that visibly stutters on its first frame, and only for `transform`, `opacity`, or `filter`.
@@ -78,11 +79,6 @@ Enter on the tier's duration and enter curve; exit on the tier's exit duration w
 ## Icon swaps
 
 Two glyphs stacked in one fixed-size cell crossfade, so the cell never resizes. The arriving glyph takes longer than the leaving one, so an appearance always outlasts a disappearance.
-
-| Glyph | Opacity | Blur | Scale | Timing |
-|---|---|---|---|---|
-| Leaving | 1 → 0 | 0 → 4px | 1 → 0.6 | fast exit, `ease-in` |
-| Arriving | 0 → 1 | 4px → 0 | 0.6 → 1 | fast, `ease-out` |
 
 ```css
 .swap { display: inline-grid; }
@@ -164,7 +160,7 @@ The button itself has no background; the pseudo-element is its surface. `--butto
 
 ## Height changes
 
-- Animate collapses to a measured pixel height, never to `auto`.
+- With `interpolate-size: allow-keywords` on `:root`, transition `block-size` to and from `auto` directly; it is Chromium-only (Chrome/Edge 129+), and other browsers jump instantly, so animate to a measured pixel height where the collapse must animate everywhere.
 - A wrapper animates only when it toggles itself. When its measured height changes because a child collapsed, it snaps; otherwise it chases a moving target, lags its child, and lands late, and each nesting level makes it worse.
 - Fade content slightly ahead of the height, in over 60ms and out over 40ms, so it dissolves instead of being cut by the clip edge.
 

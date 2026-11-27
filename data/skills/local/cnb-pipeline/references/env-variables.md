@@ -38,13 +38,7 @@
 
 ### 方式 3：从内置任务导出
 
-```yaml
-- name: release
-  type: git:release
-  options: { tag: v1.0.0 }
-  exports:
-    version: RELEASE_VERSION
-```
+写法同上，可导出字段随任务而定，示例见 `builtin-tasks.md`。
 
 ---
 
@@ -78,7 +72,6 @@
 
 ## 内置变量完整列表
 
-> 所有以 `CNB_` 开头的环境变量均为系统内置只读变量，用户不可自定义同名变量。
 > 完整在线文档：${CNB_WEB_PROTOCOL:-https}://docs.${CNB_WEB_HOST:-cnb.cool}/zh/build/build-in-env.md
 
 ### 基础变量（所有事件可用）
@@ -250,7 +243,6 @@
 
 - 只能包含字母、数字、下划线
 - 不能以数字开头
-- 大小写敏感
 - **不得使用 `CNB_` 前缀**：所有 `CNB_` 开头的变量为系统内置只读变量，用户自定义变量使用其他前缀
 
 > **在线文档**：${CNB_WEB_PROTOCOL:-https}://docs.${CNB_WEB_HOST:-cnb.cool}/zh/build/env.md

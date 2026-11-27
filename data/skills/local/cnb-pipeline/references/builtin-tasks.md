@@ -38,6 +38,8 @@
 | `knowledge:update` | 更新知识库 | `include`, `exclude`, `chunkSize` | 所有事件 |
 | `npc:go` | 执行 AI/NPC 任务 | `role`, `systemPrompt`, `userPrompt` | 所有事件 |
 
+在「支持的触发事件」之外的事件下使用，会导致构建失败或无效果。
+
 > **在线文档**：${CNB_WEB_PROTOCOL:-https}://docs.${CNB_WEB_HOST:-cnb.cool}/zh/build/internal-steps.md
 
 ---
@@ -46,40 +48,6 @@
 
 - `xxx:yyy` 点分名称是**内置任务类型**（如 `npc:go`、`cnb:apply`、`vscode:go`），不是普通命令，更不是游戏用语；含义以本文档和在线文档为准，不确定时**先查证再回答**，禁止凭字面猜测。
 - CNB 语境下 **NPC = 自动化角色**（AI 智能助手，可被 @ 召唤、可在流水线中执行任务），与游戏 Non-Player Character 无关。`npc:go` 即"执行 NPC 任务"的内置任务。
-
----
-
-## 事件限制详情
-
-部分内置任务对触发事件有严格限制，在不受支持的事件下使用会导致构建失败或无效果：
-
-### `git:auto-merge` — 仅 `pull_request.mergeable`
-
-该任务在 PR 满足合并条件时自动合并，仅支持 `pull_request.mergeable` 事件。在其他事件下使用无意义。
-
-### `vscode:go` — 仅 `vscode`, `branch.create`, `api_trigger`, `web_trigger`
-
-该任务控制云开发环境的可用性，仅在云开发相关事件中有效。
-
-### `git:reviewer` — 仅 PR 事件
-
-仅支持 `pull_request`, `pull_request.target`, `pull_request.update` 事件。这些事件与 PR 上下文关联。
-
-### `git:pr-commit-message-preset` — 仅 PR 事件
-
-仅支持 PR 相关事件：`pull_request`, `pull_request.target`, `pull_request.update`, `pull_request.mergeable`, `pull_request.approved`, `pull_request.changes_requested`。
-
-### `cnb:apply` — 限定事件
-
-仅支持：`push`, `commit.add`, `branch.create`, `pull_request.target`, `pull_request.mergeable`, `tag_push`, `pull_request.merged`, `api_trigger`, `web_trigger`, `crontab`, `tag_deploy`。不支持 Issue、NPC、PR 评论等事件。
-
-### `git:release` — 限定事件
-
-仅支持：`push`, `commit.add`, `branch.create`, `tag_push`, `pull_request.merged`, `api_trigger`, `web_trigger`, `tag_deploy`。
-
-### `artifact:remove-tag` — 限定事件
-
-仅支持：`push`, `commit.add`, `tag_push`, `tag_deploy`, `pull_request.merged`, `api_trigger`, `web_trigger`, `crontab`, `branch.create`。
 
 ---
 
@@ -96,13 +64,6 @@
 | `userPrompt` | 用户提示词，描述具体要执行的任务（web_trigger 场景可用 `$userPrompt` 变量接收页面输入） |
 
 **运行环境**：默认镜像 `cnbcool/default-npc:latest`，可自定义 Docker 镜像。
-
-**典型场景**：
-
-1. **NPC 事件触发**：在 Issue/PR 评论中 @NPC（事件 `issue.comment@npc` / `pull_request.comment@npc`）触发流水线执行 `npc:go`，NPC 自动回复或处理任务
-2. **PR 代码审查**：PR 事件中让 NPC 审查代码变更并给出建议
-3. **web_trigger 手动触发**：通过 `userPrompt` 变量接收页面输入的任务
-4. **失败流水线 AI 分析**：放 `failStages` 中，构建失败时让 NPC 总结根因并给出解决方案
 
 **注意事项**：
 
@@ -210,23 +171,7 @@ $:
           type: npc:go
 ```
 
-场景 2：PR 代码审查
-
-```yaml
-$:
-  pull_request:
-    - docker:
-        image: cnbcool/default-npc:latest
-      stages:
-        - name: npc go
-          type: npc:go
-          options:
-            role: 代码审查员
-            systemPrompt: 你是一个专业的代码审查员，请审查代码变更并给出改进建议
-            userPrompt: 审查本次 PR 的代码变更，给出改进建议
-```
-
-场景 3：web_trigger 手动触发（`$userPrompt` 接收页面输入）
+场景 2：web_trigger 手动触发（`$userPrompt` 接收页面输入）
 
 ```yaml
 $:
@@ -242,7 +187,7 @@ $:
             userPrompt: $userPrompt
 ```
 
-场景 4：失败流水线 AI 分析（放 failStages）
+场景 3：失败流水线 AI 分析（放 failStages）
 
 ```yaml
       failStages:

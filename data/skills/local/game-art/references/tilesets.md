@@ -1,6 +1,6 @@
 # Tilesets
 
-Seamless textures, terrain transitions, autotiles, ground and platform tiles, and terrain atlases. A tile's job is invisibility in repetition: judge everything by whether the player will notice the grid, and apply all of this even when the request never mentions it.
+Seamless textures, terrain transitions, autotiles, ground and platform tiles, and terrain atlases. A tile's job is invisibility in repetition: judge everything by whether the player will notice the grid.
 
 ## Seamless single tiles
 

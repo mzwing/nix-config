@@ -37,10 +37,6 @@ Shrubs, grass clusters, and rubble that share a walkable tile prefer a low silho
 - `platform_strip_1x4`: the same plus one slope, corner, broken, end, or underside piece
 - `custom_wide_pack`: several similar wide objects of one category in explicit non-square cells such as `768x256` or `1024x384`
 
-Packs save generation calls but cost per-prop control. They suit rocks, shrubs, flowers, mushrooms, logs, crates, barrels, sacks, pots, small signs, lamps, lanterns, posts, floor ornaments, small statues, ruins, debris, and repeated dressing for one biome. They never hold buildings, gates, wide-canopy trees, bridges, floors, platforms, terrain chunks, ledges, wall runs, rails, ladders, roads, fence rows, long hazards, pipes, conveyors, ramps, slopes, hero objects, key story artifacts, readable statues, animated or multi-state props, or anything that must be pixel-exact, collision-aligned, or too wide or tall for a square cell. Platform strips are not animation frames: never use them for characters, enemies, creatures, NPCs, summons, or animated bodies.
-
-Side-scroller platformers build one shared structural library (strips, tiles, terrain chunks) per stage style before any decoration, and reuse it across segments ([side-scroll.md](side-scroll.md)); compact decorations, pickups, small terminals, crates, lamps, and debris go into square packs only afterwards. Platform placement and collision live in metadata or engine nodes; the image is only the skin.
-
 ## Pack prompt
 
 For `3x3` and `4x4` packs, make a layout guide first and pass it with `--image` as a layout-only reference ([sprite-prompts.md](sprite-prompts.md#layout-guides)):
@@ -66,7 +62,7 @@ Background must be 100% solid flat #FF00FF magenta in every cell, no gradients, 
 No text, labels, UI, watermark, numbers, arrows, borders, grid lines, or readable letters.
 ```
 
-An intentionally empty cell is written as `empty magenta cell`. After a reference mockup, derive the list from the mockup and the base you passed as references, never from memory.
+An intentionally empty cell is written as `empty magenta cell` and labeled `empty` so extraction skips it. After a reference mockup, derive the list from the mockup and the base you passed as references, never from memory.
 
 ## Platform strip prompt
 
@@ -130,6 +126,3 @@ Reject or regenerate a pack when:
 - a prop has text, UI, shadows, or a floor baked in
 - a prop drifts into character or NPC-like art
 - a prop is too large for its intended placement scale
-- a square pack contains a wide, long, tall, large, collision-bearing, platform, floor, bridge, wall, ladder, gate, door, or strip object
-- walkable tall dressing has no actor-safe area or occupant policy
-- an actor-in-place preview at gameplay camera scale hides the actor's head, torso, weapon or action silhouette, selection ring, or path cues

@@ -50,7 +50,7 @@ main:
       docker:                    # 构建环境（三选一）
         image: node:20           # 方式 1：指定镜像
       # docker:
-      #   build:                 # 方式 2：Dockerfile 构建（自动缓存）
+      #   build:                 # 方式 2：Dockerfile 构建（自动缓存，Dockerfile 或依赖文件变化才重建；可简写为 build: ./Dockerfile）
       #     dockerfile: ./Dockerfile
       #     by: [package.json]
       #     versionBy: [package-lock.json]
@@ -79,17 +79,14 @@ main:
 
 ### 构建节点（runner）
 
-`runner.namespace: group` 与 `runner.tags` 必须同时配置，详见 `references/self-hosted-runner.md`。
-
 | 字段 | 说明 |
 |------|------|
 | `runner.tags` | 节点标签，支持变量替换；多个标签为「与」关系 |
 | `runner.cpus` | 最大 CPU 核数（内存 = CPU x 2G）；无 Docker 的自托管构建机上无效 |
-| `runner.namespace` | 仅企业版有效，取值 `group` 时使用所属根组织的自托管构建节点，**必须同时配置 `runner.tags`** |
+| `runner.namespace` | 仅企业版有效，取值 `group` 时使用所属根组织的自托管构建节点，**必须同时配置 `runner.tags`**；自托管构建机的配置、平台限制与排查见 `references/self-hosted-runner.md` |
 
 官方节点标签：`cnb:arch:amd64`（1~64 核）、`cnb:arch:arm64:v8`（1~16 核）、`cnb:arch:amd64:gpu`（固定 16 核 / 48GB 显存）；默认 8 核，单次最长 18 小时。
 
-> 自托管构建机的接入后配置、平台/架构支持与限制见 `references/self-hosted-runner.md`。
 > **在线文档**：${CNB_WEB_PROTOCOL:-https}://docs.${CNB_WEB_HOST:-cnb.cool}/zh/build/build-node.md
 
 ---
@@ -157,7 +154,8 @@ stages:
 > - **点号即源**：引用源 key 以 `.` 开头（如 `.docker-config`、`.wecom`），不会被识别为分支名
 > - **复用分域**：同文件内优先用 YAML 锚点 `&`/`*`（支持 `<<:` 合并），跨文件用 `!reference`
 > - 两者可在同一文件混用：`docker: !reference [.docker-config]` + `<<: *local-base`
-> - 详细实战模式见 `references/best-practices.md` 第 2 节
+> - **键名唯一**：`!reference` 引用源键名须全局唯一，跨文件共享时加前缀避免冲突
+> - `.ci/` 拆分、跨仓库模板等实战模式见 `references/best-practices.md`
 >
 > **在线文档**：${CNB_WEB_PROTOCOL:-https}://docs.${CNB_WEB_HOST:-cnb.cool}/zh/build/simplify-configuration.md
 
@@ -178,16 +176,9 @@ docker:
 
 ---
 
-## 变量替换
-
-以下字段支持 `$VAR` 替换：`env`、`imports`、`options`/`optionsFrom`、`settings`/`settingsFrom`、`docker`(image/build/volumes)、`stage.image`、`ifModify`、`name`、`lock.key`、`allowFailure`、`runner.tags`。用 `\$` 阻止替换。
-
----
-
 ## 部署配置
 
 通过 `.cnb/tag_deploy.yml` 定义部署环境、审批流程、部署按钮，触发 `tag_deploy.*` 事件。
-部署建议配合 `lock` 防排队堆积（详见 `references/best-practices.md` 第 10 节）。
 
 ```yaml
 # .cnb/tag_deploy.yml

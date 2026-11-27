@@ -2,16 +2,6 @@
 
 Hand-painted or generated 2D RPG scenes, monster-taming exploration maps, shrine, town, and dungeon maps, and any top-down scene where actors interact with props.
 
-## Layers
-
-1. `base`: one raster image with only terrain and ground-level detail
-2. `props`: transparent sprites anchored in map coordinates
-3. `actors`: player, NPCs, monsters, pickups, moving objects
-4. `foreground`: optional transparent sprites that cover actors
-5. `collision`: structured metadata, not pixels
-6. `zones`: structured metadata for encounters, rest, triggers, exits, dialogue
-7. `preview`: a flattened QA artifact only
-
 ## Base map prompt
 
 Default to clean HD for gameplay readability unless the user asks for pixel art:
@@ -31,10 +21,7 @@ For a pixel-adjacent look write `clean modern pixel-art-inspired` and still forb
 
 ## Dressed reference
 
-1. Generate the base as ground-only terrain.
-2. Pass it with `--image` to `imagegen.py edit` and ask for a dressed version that only adds props.
-3. Preserve the exact camera, framing, dimensions, terrain, paths, water, anchor pads, collision-relevant boundaries, and map edges.
-4. Use the dressed reference to choose prop identities and placements, but compose the runtime preview from the original base plus the final transparent props ([maps.md](maps.md#after-the-mockup)).
+The edit prompt for the reference mockup ([maps.md](maps.md#reference-mockups)), with the base passed as Image 1:
 
 ```text
 Image 1 is the exact base map reference.
@@ -47,8 +34,6 @@ No UI, no text, no labels, no watermark.
 ```
 
 ## One-by-one props
-
-One-by-one props are safest for large, important, irregular, animated, or identity-critical objects; sets of small static props can share a pack ([props.md](props.md)).
 
 ```text
 Create a single <prop> prop for a top-down 2D RPG map.
@@ -139,7 +124,6 @@ Keep it readable and hand-editable:
 ```
 
 - Blockers cover prop bases, not whole sprite silhouettes.
-- Keep entrances open by testing path centers.
 - Ellipses for lanterns, rocks, trees, and basins; rectangles for fences, walls, buildings, gates, bridges, and posts; polygons only when rectangles and ellipses walk badly.
 
 ## Preview
@@ -158,14 +142,5 @@ Placements anchor at the center bottom unless a prop sets `anchor` (`top-left`, 
 - Interactables block at their base but can be approached.
 - Encounter and rest zones are reachable.
 - Actors sort correctly walking in front of and behind tall props.
-- Walkable tall dressing is tested with a representative actor standing in its footprint, and its occupant policy keeps the actionable silhouette.
 - The flattened preview matches the in-game layered render closely enough for review.
-
-## Anti-patterns
-
-- Cutting props out of a fully baked generated map.
-- A flattened map as the only source when collision or occlusion matters.
-- Text, signs, UI, NPCs, or monsters baked into the base.
-- Prop sprites touching image edges.
-- Transparent PNG bounds treated as collision.
-- Art updated without updating collision and critical point tests.
+- Art changes come with updated collision and critical-point checks.

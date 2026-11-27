@@ -31,9 +31,8 @@ A stage reference is mandatory before any final scene object or metadata. If a r
 
 1. Pass the background with `--image`, look at it, and ask for an in-world stage reference that preserves its exact camera, framing, dimensions, horizon, depth, entrances, and exit direction ([maps.md](maps.md#reference-mockups)).
 2. Place the intended layout as natural game-world objects or subtle blockout geometry: platforms or walkable lanes, terrain chunks, foreground occluders, hazards, pickups, doors, checkpoints, gates, exits.
-3. At most 9 distinct visible object candidates unless the user asks for a larger pass; repeats count once and recur in metadata. Prioritize objects the game renders or collides with separately over small decorative props that will never become assets.
-4. No spawn or actor markers, arena trigger zones, camera bounds, arrows, labels, circles, outlines, numbered callouts, text, legends, or UI; those become scene-hook metadata.
-5. Use the reference to decide object identities, sizes, coordinates, render order, collision shapes, and camera bounds, then continue through [maps.md](maps.md#after-the-mockup).
+3. Prioritize objects the game renders or collides with separately over small decorative props that will never become assets.
+4. Use the reference to decide object identities, sizes, coordinates, render order, collision shapes, and camera bounds, then continue through [maps.md](maps.md#after-the-mockup).
 
 Multi-segment stages may have one reference per segment, all reusing the same object library and camera frame; when time or cost allows only one, it becomes the style and layout reference for the shared library and each segment gets its own placement metadata. The stage reference is never the runtime map, never a collision source, and never a sheet to cut platforms from.
 
@@ -46,7 +45,7 @@ Before decorative props, generate or select one structural library for the whole
 - `platform_tile_set`: tiles for top edge, underside, wall face, corner, and optional slope when the target is tile-based
 - `custom_terrain_chunk`: one-by-one or custom wide assets for important unique terrain
 
-Reuse it across all segments; no fresh unrelated prop pack per segment unless the user asks for biome changes. Platform objects in metadata reference the library by id and declare display width and height, anchor, repeat policy, collision rectangle, and render layer. Floors, ledges, bridges, ladders, walls, slopes, long spike rows, and terrain chunks never go into square prop packs.
+Reuse it across all segments; no fresh unrelated prop pack per segment unless the user asks for biome changes. Platform objects in metadata reference the library by id and declare display width and height, anchor, repeat policy, collision rectangle, and render layer.
 
 ## Runtime geometry
 
@@ -58,7 +57,7 @@ The art skins the metadata; it never defines it. Store:
 - `interactives`: doors, gates, terminals, switches, checkpoints, pickups, exits, destructibles
 - `scene_hooks`: player spawn, actor spawn markers, camera bounds, lock zones, arena triggers, exit links, checkpoint ids
 
-Brawlers replace jump platforms with a walkable belt polygon, plus depth props, enemy wave zones, and camera locks. Simple collision rectangles skinned with repeated cap and middle sprites, as in classic tile and strip workflows, beat any generated foreground layout.
+Brawlers replace jump platforms with a walkable belt polygon, plus depth props, enemy wave zones, and camera locks.
 
 ## Deliverables
 
@@ -79,5 +78,4 @@ Not acceptable as a playable stage: one generated stage image plus collision rec
 - the primary plates, stage references, and previews match `stage_canvas` exactly
 - `stage_segment_count`, `stage_length`, segment ids, and the per-segment or loopable choice are recorded; normal playable levels have at least 2 segments
 - the plates have explicit render order, scroll factors, dimensions, and loop policy, and none is a collision source
-- platforms and terrain use explicit metadata plus the shared library, never a square prop pack
 - the stage reference's object plan matches the final object and collision metadata

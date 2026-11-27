@@ -9,26 +9,6 @@ For API depth, fetch the official LLM reference at https://threejs.org/docs/llms
 - Drive the loop with `renderer.setAnimationLoop(fn)`, which wraps `requestAnimationFrame` and works with WebXR.
 - Use `Timer`, not `Clock` (core in current three.js, `three/addons/misc/Timer.js` in older releases). Call `timer.update()` once per frame, then read `getDelta()` as often as needed; a second `Clock.getDelta()` in the same frame returns about 0, a classic freeze. `timer.connect(document)` avoids the huge delta after a hidden tab.
 - When nothing animates, render on demand: `setAnimationLoop(null)`, or `frameloop="demand"` in React Three Fiber.
-
-```js
-const timer = new THREE.Timer();
-timer.connect(document);
-const FIXED = 1 / 60;
-let accumulator = 0;
-
-renderer.setAnimationLoop(() => {
-  timer.update();
-  const delta = Math.min(timer.getDelta(), 0.1);
-  accumulator += delta;
-  while (accumulator >= FIXED) {
-    fixedUpdate(FIXED);
-    accumulator -= FIXED;
-  }
-  updateVisuals(delta);
-  renderer.render(scene, camera);
-});
-```
-
 - Cap the pixel ratio: `renderer.setPixelRatio(Math.min(devicePixelRatio, 2))`.
 - Prefer `WebGLRenderer`; use `WebGPURenderer` when you need TSL or compute, and `await renderer.init()` before the first render.
 
@@ -51,23 +31,20 @@ The reference is the official `misc_controls_pointerlock` example.
 - Anything parented to the camera, such as a weapon viewmodel, only renders if the camera itself is in the scene: `scene.add(camera)`.
 - Skip `FirstPersonControls`; it behaves like fly controls.
 - Real collisions, slopes, and stairs need a character controller such as Rapier's `KinematicCharacterController` ([collision-physics.md](../collision-physics.md)).
-- Other rigs: `OrbitControls` for inspection; a third-person follow camera as in [controls.md](../controls.md#camera-must-agree).
+- A third-person follow camera works as in [controls.md](../controls.md#camera-must-agree).
 
 ## Performance
 
 Draw calls are the first limit (`renderer.info.render.calls`): aim under 100 per frame; 500 or more stutters, and mobile is stricter.
 
-- Share material instances across meshes.
 - `InstancedMesh` for many identical objects (update with `setMatrixAt` and `instanceMatrix.needsUpdate`); `BatchedMesh` for varied geometries sharing one material, with per-object visibility and culling; merge static scenery with `BufferGeometryUtils.mergeGeometries`, at the cost of per-object culling.
 - Frustum culling is automatic; recompute bounds after editing geometry, and keep `camera.far` as small as practical.
-- three.js never frees GPU memory by itself: when removing objects or changing levels, call `dispose()` on geometries, materials, and textures, and watch `renderer.info.memory`.
-- No `new Vector3()` or `new Matrix4()` per frame; reuse temporaries.
-- `LOD` for distant objects; Draco or Meshopt geometry and KTX2 textures; few real-time lights, small shadow maps, baked lighting where possible.
-- Watch frame time with Stats.js while developing, and profile on the target device.
+- Call `dispose()` on geometries, materials, and textures when removing objects or changing levels, and watch `renderer.info.memory`.
+- `LOD` for distant objects; glTF/GLB with Draco or Meshopt geometry and KTX2 textures; few real-time lights, small shadow maps, baked lighting where possible.
 
 ## Physics
 
-Rapier (`@dimforge/rapier3d-compat`) is the default: fast WASM, deterministic with fixed steps, with a good character controller. cannon-es is a lighter alternative. Step the world on the fixed timestep, never once per frame with variable delta.
+Rapier (`@dimforge/rapier3d-compat`) is the default: fast WASM, deterministic with fixed steps, with a good character controller. cannon-es is a lighter alternative.
 
 ## React Three Fiber
 
@@ -79,24 +56,6 @@ When the project already uses React, write the scene as components inside `<Canv
 - R3F disposes what it creates, but not textures or loaders you made by hand.
 - `dpr={[1, 2]}` caps the pixel ratio.
 
-## Assets
+## Textures
 
-- glTF/GLB with Draco or Meshopt geometry and KTX2 textures, texture atlases, and a small total download.
-- Set `crossOrigin = "anonymous"` on images used as textures or drawn to a canvas, or the canvas gets tainted.
-
-## Common bugs
-
-- `Clock.getDelta()` read twice a frame → things freeze or jitter.
-- Model faces backwards → mesh +Z vs camera −Z confusion; fix the geometry rotation or use `lookAt`.
-- Pointer lock never engages → no user gesture or overlay.
-- Memory climbs after level reloads → geometries, materials, or textures not disposed.
-- Frame drops → too many draw calls, per-frame allocations, uncompressed textures.
-- Blurry or misaligned on high-DPI screens → pixel ratio or canvas resize not handled.
-- Viewmodel invisible → camera not added to the scene.
-
-## Sources
-
-- three.js docs: https://threejs.org/docs/ (`Timer`, `PointerLockControls`, `Object3D.lookAt`, `InstancedMesh`, `BatchedMesh`); pointer lock example: https://threejs.org/examples/misc_controls_pointerlock.html
-- Discover three.js, the animation loop: https://discoverthreejs.com/book/first-steps/animation-loop/
-- React Three Fiber: https://r3f.docs.pmnd.rs; drei: https://github.com/pmndrs/drei; react-three-rapier: https://github.com/pmndrs/react-three-rapier
-- Gaffer On Games, Fix Your Timestep: https://gafferongames.com/post/fix_your_timestep/
+Set `crossOrigin = "anonymous"` on images used as textures or drawn to a canvas, or the canvas gets tainted.

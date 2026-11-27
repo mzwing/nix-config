@@ -24,28 +24,25 @@ Use the engine the project already has, and read its current docs instead of rel
 - Drive the game from the engine's frame callback (`requestAnimationFrame` or `setAnimationLoop`, Phaser `update`, Godot `_process` and `_physics_process`, Bevy systems). Never time gameplay with `setInterval`, `setTimeout`, or wall-clock reads.
 - Scale all movement and animation by delta time in seconds, computed once per frame and reused. Check the unit: Phaser passes milliseconds.
 - Cap delta at about 0.1s so a hitch or a background tab doesn't teleport everything.
-- Step physics and gameplay on a fixed timestep: accumulate delta, step at 1/60s, render at display rate, and interpolate between the last two states. This prevents tunneling and keeps the simulation deterministic.
+- Step physics and gameplay on a fixed timestep: accumulate delta, step at 1/60s, render at display rate, and interpolate between the last two states. This keeps the simulation stable and deterministic.
 - Keep simulation separate from presentation: screenshake, tweens, and particles never change outcomes.
 
 ## World and camera
 
 - Know the engine's handedness, up axis, and forward axis before writing orientation math; the table is in [controls.md](references/controls.md#coordinate-systems).
 - Compute `forward` and `right` once per frame and share them between movement and camera; camera code never mutates them.
-- Debug controls in order: keys register, then movement signs are right, then the camera agrees.
-- In 3D, characters stand upright on the ground, not lying down or sunk in.
 
 ## Performance
 
 - Pool things that spawn often (bullets, enemies, particles, floating text); no allocations in per-frame code.
 - Keep draw calls down: share materials, instance repeated objects, pack sprites into atlases.
 - Free GPU resources when leaving a level if the engine doesn't (three.js and Babylon.js don't).
-- Add a broadphase before precise collision tests once there are many colliders.
 
 ## Assets
 
 - Interactive 3D things (characters, weapons, props, projectiles) are geometry or glTF models; a flat picture standing in for a 3D object looks wrong and can't animate.
 - Abstract games (tetris, snake, pong, breakout) are drawn procedurally; decorative sprites make them worse.
-- Menus, HUD, and overlays follow the design-ui skill.
+- Menus, HUD, and overlays follow the design-ui skill; DOM-built menus and overlays also follow the modern-web-guidance skill.
 
 ## Platform
 
@@ -55,7 +52,6 @@ Use the engine the project already has, and read its current docs instead of rel
 
 ## Done means
 
-- It loads without errors and shows gameplay, not a blank screen.
 - The control self-test passed.
 - In 3D, objects stand upright and the camera agrees with movement.
 - It holds its frame rate on the weakest target device, with touch controls where the platform needs them.
@@ -71,7 +67,7 @@ Use the engine the project already has, and read its current docs instead of rel
 | Action mapping, keyboard, pointer, touch, gamepad, buffering | [input.md](references/input.md) |
 | Sound, mixing, latency, spatial audio | [audio.md](references/audio.md) |
 | Storage, save versioning, autosave | [save.md](references/save.md) |
-| Seeded randomness, noise, dungeons, mazes, WFC | [procedural-generation.md](references/procedural-generation.md) |
+| Seeded randomness, noise, dungeons, WFC | [procedural-generation.md](references/procedural-generation.md) |
 | Pathfinding, steering, state machines, behavior trees | [ai-pathfinding.md](references/ai-pathfinding.md) |
 | Entities and game state, ECS or plain objects | [architecture.md](references/architecture.md) |
 | Co-op and realtime multiplayer | [multiplayer.md](references/multiplayer.md) |

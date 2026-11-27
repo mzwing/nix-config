@@ -23,6 +23,23 @@
 
       agentLib = inputs.agent-skills.lib.agent-skills;
 
+      applyEdits = edits: original:
+        lib.foldl' (text: edit:
+          if !lib.hasInfix edit.from text
+          then throw "software/ai/skills: missing edit anchor '${edit.from}'"
+          else if edit ? until
+          then let
+            parts = lib.splitString edit.from text;
+            remainder = lib.concatStringsSep edit.from (builtins.tail parts);
+            endParts = lib.splitString edit.until remainder;
+          in
+            if !lib.hasInfix edit.until remainder
+            then throw "software/ai/skills: missing edit anchor '${edit.until}' after '${edit.from}'"
+            else builtins.head parts + edit.until + lib.concatStringsSep edit.until (builtins.tail endParts)
+          else builtins.replaceStrings [edit.from] [edit.to] text)
+        original
+        edits;
+
       # `structure = "link"` needs a literal path under $HOME, but upstream's dests are shell expressions and its own extraction only handles the `${VAR:-$HOME/...}` form, not the plain `$HOME/...` that agents uses.
       staticDest = name: let
         dest = agentLib.defaultTargets.${name}.dest;
@@ -67,6 +84,7 @@
           };
 
         skills.enable = [
+          "chrome-extensions"
           "clarify-code-names"
           "cnb-docs"
           "cnb-pipeline"
@@ -84,6 +102,34 @@
           "typescript-dev"
           "write-docs"
         ];
+
+        skills.explicit.modern-web-guidance = {
+          from = "modern-web-guidance-skills";
+          transform = {original, ...}:
+            applyEdits [
+              {
+                from = "MANDATORY: Execute FIRST for all HTML/CSS and clientside JS tasks. Do NOT skip — web APIs evolve rapidly and training weights contain obsolete patterns.";
+                to = "Use at the start of HTML/CSS and client-side JS tasks; training data lags the web platform.";
+              }
+              {
+                from = "Run `modern-web-guidance` directly with `npx` using a";
+                to = "Run `modern-web-guidance` with the commands below, using a";
+              }
+              {
+                from = "npx -y modern-web-guidance@latest";
+                to = "nix shell nixpkgs#pnpm nixpkgs#nodejs -c pnpx modern-web-guidance@latest";
+              }
+              {
+                from = "### Step 4. Disclose Skill Usage";
+                until = "## Alternative flow";
+              }
+              {
+                from = "## Using npx / pnpx";
+                until = "## Guidelines";
+              }
+            ]
+            original;
+        };
 
         # pi and omp read ~/.agents/skills, so neither needs a target of its own.
         # `link` gives each skill its own home.file entry; the default `symlink-tree` would rsync --delete the agents' own plugins away.

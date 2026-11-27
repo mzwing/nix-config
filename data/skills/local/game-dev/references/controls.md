@@ -1,6 +1,6 @@
 # Controls
 
-What left, right, up, and forward mean to the player, and how to prove it. Inverted A/D is the most common ship-blocker in vehicle and flight games. Device plumbing lives in [input.md](input.md).
+What left, right, up, and forward mean to the player, and how to prove it. Inverted A/D is the most common ship-blocker in vehicle and flight games. Device plumbing, including resolving keys into `throttle`, `steer`, `pitch`, and `roll` actions, lives in [input.md](input.md).
 
 ## Hard rules
 
@@ -102,10 +102,6 @@ D / → moves right on screen and A / ← left. Gravity flips only if the genre 
 - Compute `forward` once and share it with the camera. Never rebuild it in camera code with the opposite yaw sign, and never let camera code mutate a shared temporary vector.
 - Debug order: keys register → signs correct → camera agrees.
 
-## Input plumbing
-
-Track held keys by physical key code, clear them when the window loses focus, and move in the game loop with dt, never in the key handler. Map keyboard, touch, and gamepad into actions (`throttle`, `steer`, `pitch`, `roll`); details in [input.md](input.md).
-
 ## Mouse look
 
 - Browser: Pointer Lock requested from a user gesture behind a "click to play" overlay, reading `movementX/Y`; see [engines/three.md](engines/three.md#first-person-controls).
@@ -158,19 +154,4 @@ expect(wrap(yawAfterA - yawBefore)).toBeGreaterThan(0.05);
 expect(wrap(yawAfterD - yawBefore)).toBeLessThan(-0.05);
 ```
 
-For planes, assert roll or the on-screen bank the same way: A banks left.
-
-### What not to do
-
-- Don't only test that "D increases some internal variable".
-- Don't use FPS "D → +X when facing −Z" as the vehicle pass condition.
-- Don't flip mesh bank, camera, and steering at once when fixing: change one sign and retest.
-
-## Finish checklist
-
-- [ ] Read this before writing movement, steering, or flight code.
-- [ ] Genre map chosen, and the start screen or HUD labels match it.
-- [ ] Chase-cam A/D test passed.
-- [ ] Probe or unit test exists and ran once.
-- [ ] Mesh bank agrees with roll and steer input.
-- [ ] Keys are held-state and dt-scaled; no sticky thrust from a single tap unless intended and labeled.
+For planes, assert roll or the on-screen bank the same way: A banks left. A test that only checks that D changes some internal variable, or uses FPS strafe (`D → +X` facing −Z) as the pass condition, doesn't count.

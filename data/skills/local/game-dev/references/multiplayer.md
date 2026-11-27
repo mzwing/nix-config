@@ -33,9 +33,3 @@ Never put competitive, ranked, or cheat-sensitive play on P2P. Peers also learn 
 - Clients predict their own movement and reconcile when the server's state arrives; other players are interpolated slightly in the past.
 - Validate everything a client sends, scores and saves included.
 - Deterministic lockstep needs every machine to run the same random number generator in the same order ([procedural-generation.md](procedural-generation.md)).
-
-## Sources
-
-- Gabriel Gambetta, Fast-Paced Multiplayer: https://www.gabrielgambetta.com/client-server-game-architecture.html
-- Glenn Fiedler, Gaffer On Games: https://gafferongames.com
-- MDN, Using WebRTC data channels: https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Using_data_channels

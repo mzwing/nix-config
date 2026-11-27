@@ -44,18 +44,16 @@ Two translucent tokens serve every hover and active fill, so they read correctly
 
 ## Icons
 
-- One icon set, the project's.
 - Stroke matches the adjacent text on a 24px grid: 1.5px next to regular 14–16px text, 2px next to medium or semibold, 2.5px next to bold. One stroke weight per surface; inline icons are 1–1.25em.
 - One SVG drawn with `currentColor`; CSS sets the hover, selected, and disabled colors. Strip hardcoded fills and strokes on import.
 - Outline for the default state, filled for selected or active (the active tab, a saved bookmark); the change is an [icon swap](motion.md#icon-swaps).
 - Hover or selection may thicken a stroke from 1.5px to 2px on the fast tier along with its color.
 - Check each icon at the smallest size it renders (often 16px) and use the set's native sizes (16, 20, 24).
 - In right-to-left layouts flip directional icons (back and forward, chevrons, send) and nothing else (logos, check marks, clocks, media controls).
-- Icon-only controls get an accessible name; decorative icons are hidden from assistive technology.
 
 ## Hit areas
 
-Visible controls may be 28px or 36px tall, but the hit area stays at least 40px, 44px on touch. Extend small controls with a pseudo-element, shrinking it where it would overlap a neighbour's hit area:
+Extend controls smaller than 40px (44px on touch) with a pseudo-element, shrinking it where it would overlap a neighbour's hit area:
 
 ```css
 .icon-button { position: relative; }

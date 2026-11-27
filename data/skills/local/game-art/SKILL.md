@@ -61,15 +61,13 @@ Anything that will be cut out is generated on 100% solid flat `#FF00FF`, with no
 
 | Read | When |
 |---|---|
-| [sprites.md](references/sprites.md) | any sprite, sheet, animation, FX, or prop sprite: planning, generating, processing, QC, Godot export |
-| [sprite-modes.md](references/sprite-modes.md) | the asset type, action, bundle, or sheet shape is ambiguous |
-| [sprite-prompts.md](references/sprite-prompts.md) | writing a sprite prompt |
+| [sprites.md](references/sprites.md) | any sprite, sheet, animation, FX, or prop sprite: planning, bundles, grids, processing, QC, Godot export |
+| [sprite-prompts.md](references/sprite-prompts.md) | writing a sprite prompt, layout guides, anchor sheets |
 | [animation.md](references/animation.md) | anything that moves: motion laws and the flip test |
 | [characters.md](references/characters.md) | turnarounds, variants, and any recurring character |
 | [ui-icons.md](references/ui-icons.md) | buttons, panels, bars, logos, icon sets |
 | [tilesets.md](references/tilesets.md) | seamless textures, transition sets, terrain tile atlases |
-| [maps.md](references/maps.md) | any map, level, stage, room, or background |
-| [map-strategies.md](references/map-strategies.md) | choosing the map mode and pipeline axes |
+| [maps.md](references/maps.md) | any map, level, stage, room, or background, and choosing its mode and pipeline axes |
 | [layered-maps.md](references/layered-maps.md) | a top-down base plus props: prompts, placement, collision, render order |
 | [props.md](references/props.md) | map props and scene objects: classification, prop packs, platform strips, extraction |
 | [side-scroll.md](references/side-scroll.md) | side-scroller, platformer, runner, and brawler stages |

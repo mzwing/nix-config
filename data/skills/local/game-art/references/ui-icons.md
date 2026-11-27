@@ -1,6 +1,6 @@
 # UI and icons
 
-Buttons with interaction states, panels, bars, wordmark logos, and icon sets. UI is a system: the set matters more than any piece. Apply all of this even when the request never mentions it.
+Buttons with interaction states, panels, bars, wordmark logos, and icon sets.
 
 ## Interaction states
 
@@ -18,7 +18,7 @@ Buttons with interaction states, panels, bars, wordmark logos, and icon sets. UI
 
 - Panels and dialogs are blank and text-ready, with borders that survive 9-slicing: uniform edges, ornament concentrated in the corners.
 - Bars separate the frame clearly from the fill, and the fill design works at any percentage.
-- Wordmark logos get garbled by image models: generate, then read the text back letter by letter; any wrong, merged, or extra letter means a retry. Deliver the logo isolated on a flat keyable background, not as a full scene, unless a title screen was requested.
+- Deliver a wordmark logo isolated on a flat keyable background, not as a full scene, unless a title screen was requested.
 
 ## No text anywhere else
 

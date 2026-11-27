@@ -76,6 +76,25 @@
       },
       "subdir": "skills"
     },
+    "modern-web-guidance-skills": {
+      "filter": {
+        "maxDepth": 1,
+        "nameRegex": null
+      },
+      "idPrefix": null,
+      "pin": {
+        "at": null,
+        "branch": "main",
+        "owner": "GoogleChrome",
+        "preReleases": false,
+        "releasePrefix": null,
+        "repo": "modern-web-guidance",
+        "submodules": false,
+        "type": "github",
+        "versionUpperBound": null
+      },
+      "subdir": "skills"
+    },
     "so1ve-skills": {
       "filter": {
         "maxDepth": 1,
@@ -167,6 +186,19 @@
         "submodules": false,
         "type": "Git",
         "url": "https://github.com/vshulcz/deja-vu/archive/11b76f78861634f0f40c0182e6f33e42fdbc9d9a.tar.gz"
+      },
+      "modern-web-guidance-skills": {
+        "branch": "main",
+        "hash": "sha256-UfeLMKMpwfOvJgyuyiysQy+ExGnLEJLY1CG/y4uIJHw=",
+        "repository": {
+          "owner": "GoogleChrome",
+          "repo": "modern-web-guidance",
+          "type": "GitHub"
+        },
+        "revision": "2b4aa13a72dd47cd135b06ce5abfccd92e19b24f",
+        "submodules": false,
+        "type": "Git",
+        "url": "https://github.com/GoogleChrome/modern-web-guidance/archive/2b4aa13a72dd47cd135b06ce5abfccd92e19b24f.tar.gz"
       },
       "so1ve-skills": {
         "branch": "main",
