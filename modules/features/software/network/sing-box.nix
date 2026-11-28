@@ -262,6 +262,7 @@ in {
       config,
       hostname,
       lib,
+      options,
       pkgs,
       secrets,
       type,
@@ -419,6 +420,9 @@ in {
 
             # resolved's LLMNR listens on 5355, the port of the mixed-in-proxy inbound
             services.resolved.settings.Resolve.LLMNR = false;
+
+            # Without a system interface the tailscale endpoint delivers tailnet connections through the TUN
+            networking.firewall.interfaces.tun0 = lib.mkMerge (map (def: def.tailscale0 or {}) options.networking.firewall.interfaces.definitions);
 
             # The checker also reads the client fragments: convert groups them with the subscription nodes, and the WARP one holds the identity its speed test probes with
             age.secrets = ageSecrets secrets {owner = checker;} (subsCheckSecrets secrets ++ clientFragments secrets);
