@@ -26,6 +26,7 @@
       author = "mzwing";
       cache = {
         url = "https://nix-cache.service.mzwing.eu.org";
+        cdnUrl = "https://edgeone.nix-cache.service.mzwing.eu.org";
         publicKey = "nix-cache.service.mzwing.eu.org-1:ZI+74ziFu8O5j5jSAz45VTPo09uLYH7O8F2dBYBQYsk=";
       };
     };

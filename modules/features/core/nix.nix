@@ -21,6 +21,8 @@
       default = [];
       description = "Substituters this host cannot reach, dropped from every layer.";
     };
+
+    useCacheCdn = lib.mkEnableOption "fetching NUR caches through their CDN mirror where one exists";
   };
 in {
   mzwing.features."core/nix" = {
@@ -49,12 +51,16 @@ in {
 
             substituters = let
               reachable = lib.subtractLists config.mzwing.nix.unreachableSubstituters;
+              nurUrl = cache:
+                if config.mzwing.nix.useCacheCdn
+                then cache.cdnUrl or cache.url
+                else cache.url;
             in
               lib.mkForce (
                 reachable (config.mzwing.nix.mirrorSubstituters ++ cacheData.defaultSubstituters)
                 # Caches rank by the priority they advertise (numtide 30, cuda 50) before list position; pin these to the NUR caches' 41
                 ++ map (url: "${url}?priority=41") (reachable config.mzwing.nix.extraSubstituters)
-                ++ reachable (map (cache: cache.url) nurCaches)
+                ++ reachable (map nurUrl nurCaches)
               );
 
             # trusted-public-keys rather than the extra- form: nixos-anywhere seeds the installer from this exact setting, and never reads the other one.

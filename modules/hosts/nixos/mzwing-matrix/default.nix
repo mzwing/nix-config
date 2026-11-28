@@ -46,12 +46,14 @@
           "https://mirror.sjtu.edu.cn/nix-channels/store"
           "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
         ];
+        mzwing.nix.useCacheCdn = true;
         mzwing.sing-box = {
           role = "client";
           clientProfile = "matrix";
         };
         # Its tailnet address, which clients reach the game ports at; --host-ip only takes an IPv4
         services.alpha-persei-cluster.hostIp = "100.116.24.23";
+        services.alpha-persei-cluster.cdnMode = "relay";
         # networkd's SLAAC default keeps the EUI-64 address matrix.server.mzwing.eu.org points at
         networking.useNetworkd = true;
       }

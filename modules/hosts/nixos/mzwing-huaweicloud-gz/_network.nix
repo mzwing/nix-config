@@ -11,6 +11,7 @@
     "https://cache.nixos.org"
     "https://cache.nixos-cuda.org"
   ];
+  mzwing.nix.useCacheCdn = true;
 
   # The EIP drops everything past ~10 Mbit/s, DNS and ssh included; download-speed is per transfer, so this caps nix at ~6.5 Mbit/s
   nix.settings = {
